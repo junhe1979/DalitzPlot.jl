@@ -1,7 +1,7 @@
 name = "DalitzPlot"
 uuid = "d7968580-7d6f-4f79-bc09-617baf523457"
 authors = ["Your name <your-email>"]
-version = "1.0.0-DEV"
+version = "0.1"
 
 [deps]
 Distributed = "8ba89e20-285c-5b6f-9357-94700520ee1b"
