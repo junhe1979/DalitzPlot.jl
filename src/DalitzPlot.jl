@@ -4,6 +4,8 @@ export GENEV,Xsection, Xsection2,plotDP
 using StaticArrays, ProgressBars, Distributed
 
 
+
+
 function cut(a::Int32)::Int64
     binary_string = bitstring(a * 69069)
     binary_str = binary_string[end-31:end]
