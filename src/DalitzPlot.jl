@@ -5,7 +5,7 @@ export GENEV, Xsection, Xsection2, plotD, III, GA, GS, epsilon, Uc, Ubc, LCV, cd
 using StaticArrays, ProgressBars, ProgressMeter, Distributed, Plots, LaTeXStrings, Colors, Compose, DelimitedFiles
 
 #############################################################################3
-# QFT
+# QFT #
 #############################################################################3
 const III = SMatrix{4,4,ComplexF64}([
     1.0+0.0im 0.0+0.0im 0.0+0.0im 0.0+0.0im;
