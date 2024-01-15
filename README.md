@@ -5,4 +5,6 @@
 [![Build Status](https://github.com/gridap/DalitzPlot.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/gridap/DalitzPlot.jl/actions/workflows/CI.yml?query=branch%3Amain)
 [![Coverage](https://codecov.io/gh/gridap/DalitzPlot.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/gridap/DalitzPlot.jl)
 
-This package is used to plot the Dalitz plot for a given amplitudes.
+This package is used to plot the Dalitz plot with a given amplitudes.
+
+
