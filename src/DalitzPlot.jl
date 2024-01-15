@@ -243,6 +243,7 @@ function Nsum2(bin, kf)::Int64
 end
 
 
+
 function Xsection(tecm, ch; nevtot=Int64(1e6), Nbin=100, para=(l=1.))
 
     Nf = length(ch.p_f)
@@ -268,7 +269,6 @@ function Xsection(tecm, ch; nevtot=Int64(1e6), Nbin=100, para=(l=1.))
         amp0 = ch.amp(kf, ch, para)
         wt = wt * amp0
 
-
         Nsum = Nsum3(bin, kf)
         for i in 1:Nf
             zsumt[i, Nsum[i]] += wt
@@ -281,8 +281,8 @@ function Xsection(tecm, ch; nevtot=Int64(1e6), Nbin=100, para=(l=1.))
     cs0 = zsum / nevtot * 0.389379e-3
     cs1 = zsumt / nevtot * 0.389379e-3
     cs2 = zsumd / nevtot * 0.389379e-3
-    
-    return cs0,cs1,cs2,axes
+    res=(cs0=cs0,cs1=cs1,cs2=cs2,axes=axes)
+    return res
 end
 
 function Xsection2(tecm, ch; nevtot=Int64(1e6), Nbin=100, para=(),min=[0.0], max=[10.0])

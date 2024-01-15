@@ -1,8 +1,3 @@
-using DalitzPlot
-using Test
-
-@testset "DalitzPlot.jl" begin
-    
     amp_fp2KKp(kf, ch, para)=1.
     p_K, p_p, p_f, p_L = 0.493677, 0.938272081, 0.987, 1.115683
     ch = (p_i=[p_f, p_p], p_f=[p_K, p_K, p_p],
@@ -16,5 +11,3 @@ using Test
     res=Xsection(tecm, ch,nevtot=Int64(1e6),para=(pW=pW, l=1.0))
     @show pW, res.cs0
     plotDP.plotD(res,ch,axes=[1, 3])
-
-end
