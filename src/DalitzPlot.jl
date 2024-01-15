@@ -640,10 +640,10 @@ function plotD(res, ch; axes=[1, 2], cg=cgrad([:white, :green, :blue, :red], [0,
 
     l = @layout [a _
         b{0.8w,0.8h} c]
-    Plots.plot(p1, p3, p2, layout=l, titleloc=:left, titlefont=10, size=(1000, 900), left_margin=0mm, right_margin=0mm, bottom_margin=0mm, top_margin=0mm, link=:all)
-    Plots.show()
+    DP=Plots.plot(p1, p3, p2, layout=l, titleloc=:left, titlefont=10, size=(1000, 900), left_margin=0mm, right_margin=0mm, bottom_margin=0mm, top_margin=0mm, link=:all)
+    
     Plots.savefig("DP.png")
-
+    return DP 
 end
 
 end
