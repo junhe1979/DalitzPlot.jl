@@ -484,10 +484,6 @@ function GENEV(tecm::Float64, EM::Vector{Float64})
 end
 
 
-function cdot(Q::SVector{5,Float64}, W::SVector{5,Float64})::Float64
-    temp = Q[4] * W[4] - Q[1] * W[1] - Q[2] * W[2] - Q[3] * W[3]
-    return temp
-end
 function binx(i::Int64, bin, iaxis::Int64)::Float64
     return bin.min[iaxis] + (i - 0.5) / bin.Nbin * (bin.max[iaxis] - bin.min[iaxis])
 end
