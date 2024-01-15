@@ -1,45 +1,45 @@
 
-module DalitzPlot 
+module DalitzPlot
 
-export GENEV,Xsection, Xsection2,plotD,III, GA, GS, epsilon, Uc, Ubc, LCV, cdot
+export GENEV, Xsection, Xsection2, plotD, III, GA, GS, epsilon, Uc, Ubc, LCV, cdot
 using StaticArrays, ProgressBars, Distributed, Plots, LaTeXStrings, Colors, Compose, DelimitedFiles
 
 #############################################################################3
 # QFT
 #############################################################################3
-const III = SMatrix{ 4,4,ComplexF64}([
+const III = SMatrix{4,4,ComplexF64}([
     1.0+0.0im 0.0+0.0im 0.0+0.0im 0.0+0.0im;
     0.0+0.0im 1.0+0.0im 0.0+0.0im 0.0+0.0im;
     0.0+0.0im 0.0+0.0im 1.0+0.0im 0.0+0.0im;
     0.0+0.0im 0.0+0.0im 0.0+0.0im 1.0+0.0im])
-const GA = [SMatrix{ 4,4,ComplexF64}([
+const GA = [SMatrix{4,4,ComplexF64}([
         0.0+0.0im 0.0+0.0im 0.0+0.0im 1.0+0.0im;
         0.0+0.0im 0.0+0.0im 1.0+0.0im 0.0+0.0im;
         0.0+0.0im -1.0+0.0im 0.0+0.0im 0.0+0.0im;
         -1.0+0.0im 0.0+0.0im 0.0+0.0im 0.0+0.0im]),
-        SMatrix{ 4,4,ComplexF64}([
+    SMatrix{4,4,ComplexF64}([
         0.0+0.0im 0.0+0.0im 0.0+0.0im 0.0-1.0im
         0.0+0.0im 0.0+0.0im 0.0+1.0im 0.0+0.0im
         0.0+0.0im 0.0+1.0im 0.0+0.0im 0.0+0.0im
         0.0-1.0im 0.0+0.0im 0.0+0.0im 0.0+0.0im]),
-        SMatrix{ 4,4,ComplexF64}([
+    SMatrix{4,4,ComplexF64}([
         0.0+0.0im 0.0+0.0im 1.0+0.0im 0.0+0.0im
         0.0+0.0im 0.0+0.0im 0.0+0.0im -1.0+0.0im
         -1.0+0.0im 0.0+0.0im 0.0+0.0im 0.0+0.0im
         0.0+0.0im 1.0+0.0im 0.0+0.0im 0.0+0.0im]),
-        SMatrix{ 4,4,ComplexF64}([
+    SMatrix{4,4,ComplexF64}([
         1.0+0.0im 0.0+0.0im 0.0+0.0im 0.0+0.0im
         0.0+0.0im 1.0+0.0im 0.0+0.0im 0.0+0.0im
         0.0+0.0im 0.0+0.0im -1.0+0.0im 0.0+0.0im
         0.0+0.0im 0.0+0.0im 0.0+0.0im -1.0+0.0im]),
-        SMatrix{ 4,4,ComplexF64}([
+    SMatrix{4,4,ComplexF64}([
         0.0+0.0im 0.0+0.0im 1.0+0.0im 0.0+0.0im
         0.0+0.0im 0.0+0.0im 0.0+0.0im 1.0+0.0im
         1.0+0.0im 0.0+0.0im 0.0+0.0im 0.0+0.0im
         0.0+0.0im 1.0+0.0im 0.0+0.0im 0.0+0.0im])]
 
 function GS(k::SVector{5,ComplexF64})::SMatrix{4,4,ComplexF64}
-    tmp =  @MArray zeros(ComplexF64,4,4)
+    tmp = @MArray zeros(ComplexF64, 4, 4)
     tmp[1, 1] = k[4]
     tmp[1, 3] = -k[3]
     tmp[1, 4] = -k[1] + im * k[2]
@@ -84,7 +84,7 @@ function epsilon(k::SVector{5,Float64}, ib::Int64, l::Int64)::SVector{5,ComplexF
         xexpp = cp + im * sp
     end
 
-    eps = @MArray  zeros(Complex{Float64}, 5)
+    eps = @MArray zeros(Complex{Float64}, 5)
     if ib == 0
         if l == 1
             eps[4] = 0.0
@@ -158,7 +158,7 @@ function Uc(k::SVector{5,Float64}, l::Int64)::MVector{4,ComplexF64}
         xexpp = cp + im * sp
     end
 
-    U =@MVector  zeros(ComplexF64, 4)
+    U = @MVector zeros(ComplexF64, 4)
 
     if l == 1
         U[1] = zk0m * ct2 / xexpp
@@ -209,7 +209,7 @@ function Ubc(k::SVector{5,Float64}, l::Int64)::MVector{4,ComplexF64}
         xexpp = cp + im * sp
     end
 
-    U =@MVector  zeros(ComplexF64, 4)
+    U = @MVector zeros(ComplexF64, 4)
 
     if l == 1
         U[1] = zk0m * ct2 * xexpp
@@ -228,7 +228,7 @@ function Ubc(k::SVector{5,Float64}, l::Int64)::MVector{4,ComplexF64}
 end
 
 function LCV(a, b, c)::SVector{5,ComplexF64}
-    V =@MArray  zeros(ComplexF64, 5)
+    V = @MArray zeros(ComplexF64, 5)
     V[4] = -a[1] * b[2] * c[3] + a[1] * b[3] * c[2] + a[2] * b[1] * c[3] - a[2] * b[3] * c[1] - a[3] * b[1] * c[2] + a[3] * b[2] * c[1]
     V[1] = -a[4] * b[2] * c[3] + a[4] * b[3] * c[2] + a[2] * b[4] * c[3] - a[2] * b[3] * c[4] - a[3] * b[4] * c[2] + a[3] * b[2] * c[4]
     V[2] = a[4] * b[1] * c[3] - a[4] * b[3] * c[1] - a[1] * b[4] * c[3] + a[1] * b[3] * c[4] + a[3] * b[4] * c[1] - a[3] * b[1] * c[4]
@@ -257,7 +257,7 @@ function cdot(Q::SVector{5,ComplexF64}, W::SVector{5,ComplexF64})::ComplexF64
 end
 
 import Base: *
-function *(A::MVector{4, ComplexF64}, B::SMatrix{4, 4, ComplexF64, 16})::MVector{4,ComplexF64}
+function *(A::MVector{4,ComplexF64}, B::SMatrix{4,4,ComplexF64,16})::MVector{4,ComplexF64}
     temp = @MVector zeros(Complex{Float64}, 4)  # 使用Complex{Float64}来指定元素的类型
     @inbounds for i in 1:4
         @inbounds for j in 1:4
@@ -267,7 +267,7 @@ function *(A::MVector{4, ComplexF64}, B::SMatrix{4, 4, ComplexF64, 16})::MVector
     return temp
 end
 
-function *(A::MVector{4, ComplexF64}, B::MVector{4, ComplexF64})::ComplexF64
+function *(A::MVector{4,ComplexF64}, B::MVector{4,ComplexF64})::ComplexF64
     temp = ComplexF64(0.0)  # 使用complex(0.0, 0.0)来创建一个复数
     @inbounds for i in 1:4
         temp += A[i] * B[i]
@@ -275,11 +275,11 @@ function *(A::MVector{4, ComplexF64}, B::MVector{4, ComplexF64})::ComplexF64
     return temp
 end
 
-function *(A::SMatrix{4, 4, ComplexF64, 16}, B::SMatrix{4, 4, ComplexF64, 16})::SMatrix{4, 4, ComplexF64, 16} 
-    C =@MArray zeros(Complex{Float64}, 4,4)   # 使用complex(0.0, 0.0)来创建一个复数
+function *(A::SMatrix{4,4,ComplexF64,16}, B::SMatrix{4,4,ComplexF64,16})::SMatrix{4,4,ComplexF64,16}
+    C = @MArray zeros(Complex{Float64}, 4, 4)   # 使用complex(0.0, 0.0)来创建一个复数
     @inbounds for i in 1:4
         for j in 1:4
-            for k in 1:4 
+            for k in 1:4
                 C[i, j] += A[i, k] * B[k, j]
             end
         end
@@ -531,7 +531,7 @@ end
 
 
 
-function Xsection(tecm, ch; nevtot=Int64(1e6), Nbin=100, para=(l=1.))
+function Xsection(tecm, ch; nevtot=Int64(1e6), Nbin=100, para=(l = 1.0), ProgressBars=false)
 
     Nf = length(ch.p_f)
     min, max = binrange(tecm, ch)
@@ -541,13 +541,15 @@ function Xsection(tecm, ch; nevtot=Int64(1e6), Nbin=100, para=(l=1.))
     zsum = 0e0
     zsumt = zeros(Float64, 3, bin.Nbin + 1)
     zsumd = zeros(Float64, 3, 3, bin.Nbin + 1, bin.Nbin + 1)
-    if nprocs() > 1
-        ne = 1:nevtot
-        if myid() == 2
+    if ProgressBars == true
+        if nprocs() > 1
+            ne = 1:nevtot
+            if myid() == 2
+                ne = ProgressBar(1:nevtot)
+            end
+        else
             ne = ProgressBar(1:nevtot)
         end
-    else
-        ne = ProgressBar(1:nevtot)
     end
 
     for ine in ne
@@ -568,11 +570,11 @@ function Xsection(tecm, ch; nevtot=Int64(1e6), Nbin=100, para=(l=1.))
     cs0 = zsum / nevtot * 0.389379e-3
     cs1 = zsumt / nevtot * 0.389379e-3
     cs2 = zsumd / nevtot * 0.389379e-3
-    res=(cs0=cs0,cs1=cs1,cs2=cs2,axes=axes)
+    res = (cs0=cs0, cs1=cs1, cs2=cs2, axes=axes)
     return res
 end
 
-function Xsection2(tecm, ch; nevtot=Int64(1e6), Nbin=100, para=(),min=[0.0], max=[10.0])
+function Xsection2(tecm, ch; nevtot=Int64(1e6), Nbin=100, para=(), min=[0.0], max=[10.0])
 
     Nf = length(ch.p_f)
     bin0 = (Nbin=Nbin, min=min, max=max)
@@ -610,7 +612,7 @@ function Xsection2(tecm, ch; nevtot=Int64(1e6), Nbin=100, para=(),min=[0.0], max
 end
 
 function plotD(res, ch; axes=[1, 2], cg=cgrad([:white, :green, :blue, :red], [0, 0.01, 0.1, 0.5, 1.0]))
-    
+
     Laxes = [ch.Lp_f[2] * ch.Lp_f[3], ch.Lp_f[1] * ch.Lp_f[3], ch.Lp_f[1] * ch.Lp_f[2]]
     cs0 = res[1]
     cs1 = res[2]
@@ -619,31 +621,31 @@ function plotD(res, ch; axes=[1, 2], cg=cgrad([:white, :green, :blue, :red], [0,
     Nbin = length(axesV[1])
     x1 = [axesV[axes[1]][i] for i in 1:Nbin]
     y1 = [cs1[axes[1], i] / cs0 for i in 1:Nbin]
-    xlims=(minimum(x1),maximum(x1))
-    ylims=(minimum(y1),maximum(y1))
-    p1=Plots.plot(x1, y1,xlims=xlims,ylims=ylims, xticks=:auto,  ylabel=L"\sigma (\textrm{ barn})", framestyle=:box,xmirror=true,legend=:none,linetype =:steppre)
-  
+    xlims = (minimum(x1), maximum(x1))
+    ylims = (minimum(y1), maximum(y1))
+    p1 = Plots.plot(x1, y1, xlims=xlims, ylims=ylims, xticks=:auto, ylabel=L"\sigma (\textrm{ barn})", framestyle=:box, xmirror=true, legend=:none, linetype=:steppre)
+
 
     y2 = [axesV[axes[2]][i] for i in 1:Nbin]
     x2 = [cs1[axes[2], i] / cs0 for i in 1:Nbin]
-    xlims=(minimum(x2),maximum(x2))
-    ylims=(minimum(y2),maximum(y2))
-    p2 = Plots.plot(x2, y2,xlims=xlims,ylims=ylims, xlabel=L"\sigma (\textrm{ barn})", framestyle=:box,ymirror=true ,legend=:none,linetype =:steppre)
+    xlims = (minimum(x2), maximum(x2))
+    ylims = (minimum(y2), maximum(y2))
+    p2 = Plots.plot(x2, y2, xlims=xlims, ylims=ylims, xlabel=L"\sigma (\textrm{ barn})", framestyle=:box, ymirror=true, legend=:none, linetype=:steppre)
 
     x = [axesV[axes[1]][ix] for ix in 1:Nbin]
     y = [axesV[axes[2]][iy] for iy in 1:Nbin]
-    xlims=(minimum(x),maximum(x))
-    ylims=(minimum(y),maximum(y))
+    xlims = (minimum(x), maximum(x))
+    ylims = (minimum(y), maximum(y))
     z = [cs2[axes[1], axes[2], ix, iy] / cs0 for iy in 1:Nbin, ix in 1:Nbin]
-    p3 = Plots.heatmap(x, y, z,xlims=xlims,ylims=ylims, c=cg, xlabel=latexstring(Laxes[axes[1]]), ylabel=latexstring(Laxes[axes[2]]), framestyle=:box, cb=:none)
+    p3 = Plots.heatmap(x, y, z, xlims=xlims, ylims=ylims, c=cg, xlabel=latexstring(Laxes[axes[1]]), ylabel=latexstring(Laxes[axes[2]]), framestyle=:box, cb=:none)
 
 
     l = @layout [a _
         b{0.8w,0.8h} c]
-    DP=Plots.plot(p1, p3, p2, layout=l, titleloc=:left, titlefont=10, size=(1000, 900), left_margin=0mm, right_margin=0mm, bottom_margin=0mm, top_margin=0mm, link=:all)
-    
+    DP = Plots.plot(p1, p3, p2, layout=l, titleloc=:left, titlefont=10, size=(1000, 900), left_margin=0mm, right_margin=0mm, bottom_margin=0mm, top_margin=0mm, link=:all)
+
     Plots.savefig("DP.png")
-    return DP 
+    return DP
 end
 
 end
