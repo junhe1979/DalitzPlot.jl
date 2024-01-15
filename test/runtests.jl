@@ -3,7 +3,7 @@ using Test
 
 @testset "DalitzPlot.jl" begin
     
-    function amp_fp2KKp(kf::MMatrix{5,18,Float64,90}, ch::NamedTuple, para::NamedTuple)
+    function amp_fp2KKp(kf, ch, para)
 
         ebm1 = sqrt(para.pW^2 + ch.p_i[1]^2)
         tecm = sqrt((ebm1 + ch.p_i[2])^2 - para.pW^2)

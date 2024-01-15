@@ -4,6 +4,9 @@ module DalitzPlot
 export GENEV,Xsection, Xsection2,plotD,III, GA, GS, epsilon, Uc, Ubc, LCV, cdot
 using StaticArrays, ProgressBars, Distributed, Plots, LaTeXStrings, Colors, Compose, DelimitedFiles
 
+#############################################################################3
+# QFT
+#############################################################################3
 const III = SMatrix{ 4,4,ComplexF64}([
     1.0+0.0im 0.0+0.0im 0.0+0.0im 0.0+0.0im;
     0.0+0.0im 1.0+0.0im 0.0+0.0im 0.0+0.0im;
@@ -285,6 +288,9 @@ function *(A::SMatrix{4, 4, ComplexF64, 16}, B::SMatrix{4, 4, ComplexF64, 16})::
 end
 
 
+#############################################################################3
+# GEN
+#############################################################################3
 
 function cut(a::Int32)::Int64
     binary_string = bitstring(a * 69069)
@@ -488,7 +494,9 @@ function binx(i::Int64, bin, iaxis::Int64)::Float64
     return bin.min[iaxis] + (i - 0.5) / bin.Nbin * (bin.max[iaxis] - bin.min[iaxis])
 end
 
+#############################################################################3
 #Dalitz plot
+#############################################################################3
 #range
 function binrange(tecm, ch)
     min = Float64[(ch.p_f[2]+ch.p_f[3])^2*0.99,
@@ -633,6 +641,7 @@ function plotD(res, ch; axes=[1, 2], cg=cgrad([:white, :green, :blue, :red], [0,
     l = @layout [a _
         b{0.8w,0.8h} c]
     Plots.plot(p1, p3, p2, layout=l, titleloc=:left, titlefont=10, size=(1000, 900), left_margin=0mm, right_margin=0mm, bottom_margin=0mm, top_margin=0mm, link=:all)
+    Plots.show
     Plots.savefig("DP.png")
 
 end
