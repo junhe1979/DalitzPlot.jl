@@ -2,7 +2,7 @@
 module DalitzPlot
 
 export GENEV, Xsection, Xsection2, plotD, III, GA, GS, epsilon, Uc, Ubc, LCV, cdot
-using StaticArrays, ProgressBars, Distributed, Plots, LaTeXStrings, Colors, Compose, DelimitedFiles
+using StaticArrays, ProgressBars, ProgressMeter, Distributed, Plots, LaTeXStrings, Colors, Compose, DelimitedFiles
 
 #############################################################################3
 # QFT
