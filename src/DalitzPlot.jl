@@ -3,9 +3,6 @@ module DalitzPlot
 export GENEV,Xsection, Xsection2,plotDP
 using StaticArrays, ProgressBars, Distributed
 
-
-
-
 function cut(a::Int32)::Int64
     binary_string = bitstring(a * 69069)
     binary_str = binary_string[end-31:end]
@@ -323,6 +320,45 @@ function Xsection2(tecm, ch; nevtot=Int64(1e6), Nbin=100, para=(),min=[0.0], max
     cs1 = zsumt / nevtot * 0.389379e-3
 
     return bin, cs0, cs1
+end
+
+export plotD
+using Plots, LaTeXStrings, Colors, Compose, DelimitedFiles
+
+function plotD(res, ch; axes=[1, 2], cg=cgrad([:white, :green, :blue, :red], [0, 0.01, 0.1, 0.5, 1.0]))
+    
+    Laxes = [ch.Lp_f[2] * ch.Lp_f[3], ch.Lp_f[1] * ch.Lp_f[3], ch.Lp_f[1] * ch.Lp_f[2]]
+    cs0 = res[1]
+    cs1 = res[2]
+    cs2 = res[3]
+    axesV = res[4]
+    Nbin = length(axesV[1])
+    x1 = [axesV[axes[1]][i] for i in 1:Nbin]
+    y1 = [cs1[axes[1], i] / cs0 for i in 1:Nbin]
+    xlims=(minimum(x1),maximum(x1))
+    ylims=(minimum(y1),maximum(y1))
+    p1=Plots.plot(x1, y1,xlims=xlims,ylims=ylims, xticks=:auto,  ylabel=L"\sigma (\textrm{ barn})", framestyle=:box,xmirror=true,legend=:none,linetype =:steppre)
+  
+
+    y2 = [axesV[axes[2]][i] for i in 1:Nbin]
+    x2 = [cs1[axes[2], i] / cs0 for i in 1:Nbin]
+    xlims=(minimum(x2),maximum(x2))
+    ylims=(minimum(y2),maximum(y2))
+    p2 = Plots.plot(x2, y2,xlims=xlims,ylims=ylims, xlabel=L"\sigma (\textrm{ barn})", framestyle=:box,ymirror=true ,legend=:none,linetype =:steppre)
+
+    x = [axesV[axes[1]][ix] for ix in 1:Nbin]
+    y = [axesV[axes[2]][iy] for iy in 1:Nbin]
+    xlims=(minimum(x),maximum(x))
+    ylims=(minimum(y),maximum(y))
+    z = [cs2[axes[1], axes[2], ix, iy] / cs0 for iy in 1:Nbin, ix in 1:Nbin]
+    p3 = Plots.heatmap(x, y, z,xlims=xlims,ylims=ylims, c=cg, xlabel=latexstring(Laxes[axes[1]]), ylabel=latexstring(Laxes[axes[2]]), framestyle=:box, cb=:none)
+
+
+    l = @layout [a _
+        b{0.8w,0.8h} c]
+    Plots.plot(p1, p3, p2, layout=l, titleloc=:left, titlefont=10, size=(1000, 900), left_margin=0mm, right_margin=0mm, bottom_margin=0mm, top_margin=0mm, link=:all)
+    Plots.savefig("DP.png")
+
 end
 
 end
