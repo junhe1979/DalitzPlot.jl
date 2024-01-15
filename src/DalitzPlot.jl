@@ -550,6 +550,8 @@ function Xsection(tecm, ch; nevtot=Int64(1e6), Nbin=100, para=(l = 1.0), Progres
         else
             ne = ProgressBar(1:nevtot)
         end
+    else
+        ne = 1:nevtot
     end
 
     for ine in ne
