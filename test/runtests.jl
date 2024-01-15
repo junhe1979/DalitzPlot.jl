@@ -75,7 +75,7 @@ using Test
     ebm =  sqrt(pW^2 + ch.p_i[1]^2) #
     tecm = sqrt((ebm + ch.p_i[2])^2 - pW^2)
 
-    res=Xsection(tecm, ch,nevtot=Int64(1e6),para=(pW=pW, l=1.0))
+    res=Xsection(tecm, ch,nevtot=Int64(1e5),para=(pW=pW, l=1.0))
     @show pW, res.cs0
     plotD(res,ch,axes=[1, 3])
 
