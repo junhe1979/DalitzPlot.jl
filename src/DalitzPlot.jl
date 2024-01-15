@@ -1,7 +1,7 @@
 module DalitzPlot 
 
-export GENEV,Xsection, Xsection2,plotDP
-using StaticArrays, ProgressBars, Distributed
+export GENEV,Xsection, Xsection2,plotD
+using StaticArrays, ProgressBars, Distributed, Plots, LaTeXStrings, Colors, Compose, DelimitedFiles
 
 function cut(a::Int32)::Int64
     binary_string = bitstring(a * 69069)
@@ -321,9 +321,6 @@ function Xsection2(tecm, ch; nevtot=Int64(1e6), Nbin=100, para=(),min=[0.0], max
 
     return bin, cs0, cs1
 end
-
-export plotD
-using Plots, LaTeXStrings, Colors, Compose, DelimitedFiles
 
 function plotD(res, ch; axes=[1, 2], cg=cgrad([:white, :green, :blue, :red], [0, 0.01, 0.1, 0.5, 1.0]))
     
