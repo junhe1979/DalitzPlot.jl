@@ -38,7 +38,7 @@ using Test
         p = pf - kKm
         p2 = cdot(p, p)
     
-        # propagator with monopole form factor
+        # propagator with monopole form factor.
         gfKK = 5.0 #sqrt(64.0 * pi * p_f * sqrt(p_K * EB))
         #gfKK = gfKK / (p2 - p_K^2+im*p_K*5.3169e-17)
         gfKK = gfKK / (p2 - p_K^2 + im * p_K * 5.3169e-6)
