@@ -1,7 +1,7 @@
 using StaticArrays
 using Test
-include("../src/DalitzPlot.jl")
-using .DalitzPlot,StaticArrays
+
+using DalitzPlot,StaticArrays
 
 @testset "DalitzPlot.jl" begin
     
