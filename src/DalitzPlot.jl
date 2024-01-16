@@ -499,12 +499,12 @@ end
 #############################################################################
 #range
 function binrange(tecm, ch)
-    min = Float64[(ch.p_f[2]+ch.p_f[3])^2*0.99,
-        (ch.p_f[1]+ch.p_f[3])^2*0.99,
-        (ch.p_f[1]+ch.p_f[2])^2*0.99]
-    max = Float64[(tecm-ch.p_f[1])^2*1.01,
-        (tecm-ch.p_f[2])^2*1.01,
-        (tecm-ch.p_f[3])^2*1.01]
+    min = Float64[(ch.mf[2]+ch.mf[3])^2*0.99,
+        (ch.mf[1]+ch.mf[3])^2*0.99,
+        (ch.mf[1]+ch.mf[2])^2*0.99]
+    max = Float64[(tecm-ch.mf[1])^2*1.01,
+        (tecm-ch.mf[2])^2*1.01,
+        (tecm-ch.mf[3])^2*1.01]
     return min, max
 end
 #bin
@@ -531,7 +531,7 @@ end
 
 function Xsection(tecm, ch; nevtot=Int64(1e6), Nbin=100, para=(l = 1.0), ProgressBars=false)
 
-    Nf = length(ch.p_f)
+    Nf = length(ch.mf)
     min, max = binrange(tecm, ch)
     bin = (Nbin=Nbin, min=min, max=max)
     axes = [[binx(ix, bin, iaxes) for ix in 1:Nbin] for iaxes in 1:3]
@@ -554,7 +554,7 @@ function Xsection(tecm, ch; nevtot=Int64(1e6), Nbin=100, para=(l = 1.0), Progres
 
     for ine in ne
 
-        kf, wt = GENEV(tecm, ch.p_f)
+        kf, wt = GENEV(tecm, ch.mf)
         amp0 = ch.amp(kf, ch, para)
         wt = wt * amp0
 
@@ -576,7 +576,7 @@ end
 
 function Xsection2(tecm, ch; nevtot=Int64(1e6), Nbin=100, para=(), min=[0.0], max=[10.0])
 
-    Nf = length(ch.p_f)
+    Nf = length(ch.mf)
     bin0 = (Nbin=Nbin, min=min, max=max)
     axes = [[binx(ix, bin0, 1) for ix in 1:Nbin]]
     bin = (Nbin=Nbin, min=min, max=max, axes=axes)
@@ -594,7 +594,7 @@ function Xsection2(tecm, ch; nevtot=Int64(1e6), Nbin=100, para=(), min=[0.0], ma
 
     for ine in ne
 
-        kf, wt = GENEV(Nf, tecm, ch.p_f)
+        kf, wt = GENEV(Nf, tecm, ch.mf)
         amp0 = ch.amp(kf, ch, para)
         wt = wt * amp0
 
@@ -613,7 +613,7 @@ end
 
 function plotD(res, ch; axes=[1, 2], cg=cgrad([:white, :green, :blue, :red], [0, 0.01, 0.1, 0.5, 1.0]))
 
-    Laxes = [ch.Lp_f[2] * ch.Lp_f[3], ch.Lp_f[1] * ch.Lp_f[3], ch.Lp_f[1] * ch.Lp_f[2]]
+    Laxes = [ch.namef[2] * ch.namef[3], ch.namef[1] * ch.namef[3], ch.namef[1] * ch.namef[2]]
     cs0 = res[1]
     cs1 = res[2]
     cs2 = res[3]
@@ -652,25 +652,25 @@ end
 #Transfer
 #############################################################################
 
-function plab2pcm(p::Float64,p_i::Vector{Float64})
-    ebm =  sqrt(p^2 + p_i[1]^2) #
-    W = sqrt((ebm + p_i[2])^2 - p^2)
+function plab2pcm(p::Float64,mi::Vector{Float64})
+    ebm =  sqrt(p^2 + mi[1]^2) #
+    W = sqrt((ebm + mi[2])^2 - p^2)
     return W
 end
 
 function kcm2klab(p, kf::MMatrix{5,18,Float64,90},ch::NamedTuple)
 
-    ebm =  sqrt(p^2 + ch.p_i[1]^2) #
-    tecm = sqrt((ebm + ch.p_i[2])^2 - p^2)
+    ebm =  sqrt(p^2 + ch.mi[1]^2) #
+    tecm = sqrt((ebm + ch.mi[2])^2 - p^2)
 
-    GAM = (ebm + ch.p_i[2]) / tecm
+    GAM = (ebm + ch.mi[2]) / tecm
     ETA = p / tecm
     for i in 1:3
         EI = kf[4, i]
         PX = kf[1, i]
         kf[1, i] = GAM * PX + ETA * EI
         kf[4, i] = ETA * PX + GAM * EI
-        kf[5, i] = ch.p_f[i] #注意GENEV产生的kf[5]是三动量的大小
+        kf[5, i] = ch.mf[i] #注意GENEV产生的kf[5]是三动量的大小
     end
 
     k1 = SVector{5,Float64}(kf[:, 1]) 
@@ -680,10 +680,10 @@ function kcm2klab(p, kf::MMatrix{5,18,Float64,90},ch::NamedTuple)
     return k1,k2,k3
 end
 
-function plab(p::Float64, p_i::Vector{Float64})
+function plab(p::Float64, mi::Vector{Float64})
 
-    p1 = SVector{5,Float64}([p 0.0 0.0 sqrt(p^2 + p_i[1]^2) p_i[1]]) #f0
-    p2 = SVector{5,Float64}([0.0 0.0 0.0 p_i[2] p_i[2]]) #p
+    p1 = SVector{5,Float64}([p 0.0 0.0 sqrt(p^2 + mi[1]^2) mi[1]]) #f0
+    p2 = SVector{5,Float64}([0.0 0.0 0.0 mi[2] mi[2]]) #p
   
     return p1,p2   
 end
