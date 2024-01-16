@@ -1,7 +1,7 @@
 
 module DalitzPlot
 
-export GENEV, Xsection, Xsection2, plotD, III, GA, GS, epsilon, Uc, Ubc, LCV, cdot,plab2pcm,kcm2klab,plab
+export GENEV, Xsection, Xsection2, plotD, III, GA, GS, epsilon, Uc, Ubc, LCV, cdot,plab2pcm,getkf,plab,pcm
 using StaticArrays, ProgressBars,  Distributed, Plots, LaTeXStrings, Colors, Compose, DelimitedFiles
 
 #############################################################################
@@ -555,7 +555,7 @@ function Xsection(tecm, ch; nevtot=Int64(1e6), Nbin=100, para=(l = 1.0), Progres
     for ine in ne
 
         kf, wt = GENEV(tecm, ch.mf)
-        amp0 = ch.amp(kf, ch, para)
+        amp0 = ch.amp(tecm,kf, ch, para)
         wt = wt * amp0
 
         Nsum = Nsum3(bin, kf)
@@ -658,7 +658,7 @@ function plab2pcm(p::Float64,mi::Vector{Float64})
     return W
 end
 
-function kcm2klab(p, kf::MMatrix{5,18,Float64,90},ch::NamedTuple)
+function getkf(p, kf::MMatrix{5,18,Float64,90},ch::NamedTuple)
 
     ebm =  sqrt(p^2 + ch.mi[1]^2) #
     tecm = sqrt((ebm + ch.mi[2])^2 - p^2)
@@ -680,13 +680,33 @@ function kcm2klab(p, kf::MMatrix{5,18,Float64,90},ch::NamedTuple)
     return k1,k2,k3
 end
 
+function getkf(kf::MMatrix{5,18,Float64,90})
+
+    k1 = SVector{5,Float64}(kf[:, 1]) 
+    k2 = SVector{5,Float64}(kf[:, 2]) 
+    k3 = SVector{5,Float64}(kf[:, 3]) 
+
+    return k1,k2,k3
+end
+
 function plab(p::Float64, mi::Vector{Float64})
 
-    p1 = SVector{5,Float64}([p 0.0 0.0 sqrt(p^2 + mi[1]^2) mi[1]]) #f0
-    p2 = SVector{5,Float64}([0.0 0.0 0.0 mi[2] mi[2]]) #p
+    m1,m2=mi[1],mi[2]
+    p1 = SVector{5,Float64}([p 0.0 0.0 sqrt(p^2 + m1^2) m1]) #f0
+    p2 = SVector{5,Float64}([0.0 0.0 0.0 m2 m2]) #p
   
     return p1,p2   
 end
 
+function pcm(tecm::Float64, mi::Vector{Float64})
+    m1,m2=mi[1],mi[2]
+    E1=(tecm^2+m1^2-m2^2)/(2. *tecm)
+    E2=(tecm^2+m2^2-m1^2)/(2. *tecm)
+    p=sqrt(E2^2-m2^2)
+    p1 = SVector{5,Float64}([ p 0.0 0.0 E1 m1]) #f0
+    p2 = SVector{5,Float64}([-p 0.0 0.0 E2 m2]) #p
+  
+    return p1,p2   
+end
 
 end

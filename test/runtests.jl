@@ -1,21 +1,28 @@
-using DalitzPlot
+include("../src/DalitzPlot.jl")
+using .DalitzPlot
 using Test
 
 @testset "DalitzPlot.jl" begin
     
-    function amp(kf, ch, para)
+    function amp(tecm,kf, ch, para)
+        
+        #产生的kf为质心系动量，
+        #质心系
+        #k1,k2,k3=getkf(kf)       
+        #质心系->实验室系
+        k1,k2,k3=getkf(para.p, kf,ch)
+        
+        #入射粒子动量
+        #质心系  p1=[p 0.0 0.0 E1]
+        p1,p2=pcm(tecm, ch.mi)
+        #实验室系
+        p1,p2=plab(para.p, ch.mi)
 
         #入射流
         #flux factor for cross section
         fac = 1 / (4 * para.p * ch.mi[2] * (2 * pi)^5)
         #fermion, aevrage on initial particele 
         fac = fac * 2.0 * ch.mi[2] * 2.0 * ch.mf[2] / 2.0
-        
-        #产生的kf为质心系动量，质心系->实验室系
-        k1,k2,k3=kcm2klab(para.p, kf,ch)
-        
-        #质心系下入射粒子动量
-        p1,p2=plab(para.p, ch.mi)
 
        
         k12=k1+k2
@@ -35,7 +42,7 @@ using Test
     p= 10.0    
     res=Xsection(plab2pcm(p,ch.mi), ch,nevtot=Int64(1e7),para=(p=p, l=1.0),ProgressBars=true)
     @show p, res.cs0
-    plotD(res,ch,axes=[1, 2])
+    plotD(res,ch,axes=[1, 3])
     end 
 
     main()
