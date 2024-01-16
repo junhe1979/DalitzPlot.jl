@@ -1,12 +1,12 @@
 
 module DalitzPlot
 
-export GENEV, Xsection, Xsection2, plotD, III, GA, GS, epsilon, Uc, Ubc, LCV, cdot
+export GENEV, Xsection, Xsection2, plotD, III, GA, GS, epsilon, Uc, Ubc, LCV, cdot,plab2pcm,kcm2klab,plab
 using StaticArrays, ProgressBars,  Distributed, Plots, LaTeXStrings, Colors, Compose, DelimitedFiles
 
-#############################################################################3
+#############################################################################
 # QFT #
-#############################################################################3
+#############################################################################
 const III = SMatrix{4,4,ComplexF64}([
     1.0+0.0im 0.0+0.0im 0.0+0.0im 0.0+0.0im;
     0.0+0.0im 1.0+0.0im 0.0+0.0im 0.0+0.0im;
@@ -288,9 +288,9 @@ function *(A::SMatrix{4,4,ComplexF64,16}, B::SMatrix{4,4,ComplexF64,16})::SMatri
 end
 
 
-#############################################################################3
+#############################################################################
 # GEN
-#############################################################################3
+#############################################################################
 
 function cut(a::Int32)::Int64
     binary_string = bitstring(a * 69069)
@@ -494,9 +494,9 @@ function binx(i::Int64, bin, iaxis::Int64)::Float64
     return bin.min[iaxis] + (i - 0.5) / bin.Nbin * (bin.max[iaxis] - bin.min[iaxis])
 end
 
-#############################################################################3
+#############################################################################
 #Dalitz plot
-#############################################################################3
+#############################################################################
 #range
 function binrange(tecm, ch)
     min = Float64[(ch.p_f[2]+ch.p_f[3])^2*0.99,
@@ -528,8 +528,6 @@ function Nsum2(bin, kf)::Int64
     Nsum = convert(Int64, cld((k1sq - bin.min[1]) * bin.Nbin, (bin.max[1] - bin.min[1])))
     return Nsum
 end
-
-
 
 function Xsection(tecm, ch; nevtot=Int64(1e6), Nbin=100, para=(l = 1.0), ProgressBars=false)
 
@@ -649,5 +647,46 @@ function plotD(res, ch; axes=[1, 2], cg=cgrad([:white, :green, :blue, :red], [0,
     Plots.savefig("DP.png")
     return DP
 end
+
+#############################################################################
+#Transfer
+#############################################################################
+
+function plab2pcm(p::Float64,p_i::Vector{Float64})
+    ebm =  sqrt(p^2 + p_i[1]^2) #
+    W = sqrt((ebm + p_i[2])^2 - p^2)
+    return W
+end
+
+function kcm2klab(p, kf::MMatrix{5,18,Float64,90},ch::NamedTuple)
+
+    ebm =  sqrt(p^2 + ch.p_i[1]^2) #
+    tecm = sqrt((ebm + ch.p_i[2])^2 - p^2)
+
+    GAM = (ebm + ch.p_i[2]) / tecm
+    ETA = p / tecm
+    for i in 1:3
+        EI = kf[4, i]
+        PX = kf[1, i]
+        kf[1, i] = GAM * PX + ETA * EI
+        kf[4, i] = ETA * PX + GAM * EI
+        kf[5, i] = ch.p_f[i] #注意GENEV产生的kf[5]是三动量的大小
+    end
+
+    k1 = SVector{5,Float64}(kf[:, 1]) 
+    k2 = SVector{5,Float64}(kf[:, 2]) 
+    k3 = SVector{5,Float64}(kf[:, 3]) 
+
+    return k1,k2,k3
+end
+
+function plab(p::Float64, p_i::Vector{Float64})
+
+    p1 = SVector{5,Float64}([p 0.0 0.0 sqrt(p^2 + p_i[1]^2) p_i[1]]) #f0
+    p2 = SVector{5,Float64}([0.0 0.0 0.0 p_i[2] p_i[2]]) #p
+
+    return p1,p2   
+end
+
 
 end
