@@ -3,20 +3,20 @@ using .DalitzPlot
 using Test
 
 @testset "DalitzPlot.jl" begin
-    
-    function amp(tecm,kf, ch, para)
-        
+
+    function amp(tecm, kf, ch, para)
+
         #产生的kf为质心系动量，
         #质心系
         #k1,k2,k3=getkf(kf)       
         #质心系->实验室系
-        k1,k2,k3=getkf(para.p, kf,ch)
-        
+        k1, k2, k3 = getkf(para.p, kf, ch)
+
         #入射粒子动量
         #质心系  p1=[p 0.0 0.0 E1]
-        p1,p2=pcm(tecm, ch.mi)
+        p1, p2 = pcm(tecm, ch.mi)
         #实验室系
-        p1,p2=plab(para.p, ch.mi)
+        p1, p2 = plab(para.p, ch.mi)
 
         #入射流
         #flux factor for cross section
@@ -24,26 +24,26 @@ using Test
         #fermion, aevrage on initial particele 
         fac = fac * 2.0 * ch.mi[2] * 2.0 * ch.mf[2] / 2.0
 
-       
-        k12=k1+k2
+
+        k12 = k1 + k2
         s12 = cdot(k12, k12)
-        m=3.
-        A = 1/ (s12 - m ^2 + im * m * 0.1)
-    
+        m = 3.0
+        A = 1 / (s12 - m^2 + im * m * 0.1)
+
         total = abs2(A) * fac
-    
+
         return total
     end
     function main()
-    ch = (mi=[1., 1.], mf=[1., 1., 1.],
-        namei=["p^i_{1}", "p^i_{2}"], namef=["p^f_{1}", "p^f_{2}", "p^f_{3}"],
-        amp=amp) #初末态粒子质量
+        ch = (mi=[1.0, 1.0], mf=[1.0, 1.0, 1.0],
+            namei=["p^i_{1}", "p^i_{2}"], namef=["p^f_{1}", "p^f_{2}", "p^f_{3}"],
+            amp=amp) #初末态粒子质量
 
-    p= 10.0    
-    res=Xsection(plab2pcm(p,ch.mi), ch,nevtot=Int64(1e7),para=(p=p, l=1.0),ProgressBars=true)
-    @show p, res.cs0
-    plotD(res,ch,axes=[1, 3])
-    end 
+        p = 10.0
+        res = Xsection(plab2pcm(p, ch.mi), ch, nevtot=Int64(1e7), para=(p=p, l=1.0), ProgressBars=true)
+        @show p, res.cs0
+        plotD(res, ch, axes=[1, 3])
+    end
 
     main()
 

@@ -530,9 +530,8 @@ function Nsum2(bin, kf)::Int64
 end
 
 function Xsection(tecm, ch; nevtot=Int64(1e6), Nbin=100, para=(l = 1.0), ProgressBars=false)
-    laxes=[[2,3],[3,1],[1,2]]
     Nf = length(ch.mf)
-    min, max = binrange(tecm, ch,laxes)
+    min, max = binrange(tecm, ch)
     bin = (Nbin=Nbin, min=min, max=max)
     axes = [[binx(ix, bin, iaxes) for ix in 1:Nbin] for iaxes in 1:3]
 
