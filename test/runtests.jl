@@ -16,7 +16,7 @@ using Test
         # Incoming particle momentum
         # Center-of-mass frame: p1 = [p 0.0 0.0 E1]
         p1, p2 = pcm(tecm, ch.mi)
-# Laboratory frame
+        # Laboratory frame
         p1, p2 = plab(para.p, ch.mi)
 
         #flux
@@ -38,7 +38,7 @@ using Test
     function main()
         ch = (mi=[1.0, 1.0], mf=[1.0, 1.0, 1.0],
             namei=["p^i_{1}", "p^i_{2}"], namef=["p^f_{1}", "p^f_{2}", "p^f_{3}"],
-            amp=amp) 
+            amp=amp)
 
         p = 10.0
         res = Xsection(plab2pcm(p, ch.mi), ch, nevtot=Int64(1e7), para=(p=p, l=1.0), ProgressBars=true)
