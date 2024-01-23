@@ -557,7 +557,6 @@ function Xsection(tecm, ch; nevtot=Int64(1e6), Nbin=100, para=(l = 1.0), Progres
         kf, wt = GENEV(tecm, ch.mf)
         amp0 = ch.amp(tecm,kf, ch, para)
         wt = wt * amp0
-
         Nsum = Nsum3(bin, kf)
         for i in 1:Nf
             zsumt[i, Nsum[i]] += wt
