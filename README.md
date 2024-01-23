@@ -10,7 +10,7 @@ This package is used to plot the Dalitz plot with a given amplitude.
 Julia 1.6+ https://julialang.org/downloads/
 
 ## Installation
-ThreebodyProblem.jl is on the General Registry. That means you can download it and start using it quickly in the Julia repl
+DalitzPlot.jl is on the General Registry. That means you can download it and start using it quickly in the Julia repl
 ```julia
 Pkg.add("DalitzPlot")
 using DalitzPlot
