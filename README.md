@@ -34,12 +34,8 @@ function amp(tecm, kf, ch, para)
     # Laboratory frame
     p1, p2 = plab(para.p, ch.mi)
 
-    #flux
     #flux factor for cross section
     fac = 1 / (4 * para.p * ch.mi[2] * (2 * pi)^5)
-    #fermion, aevrage on initial particele 
-    fac = fac * 2.0 * ch.mi[2] * 2.0 * ch.mf[2] / 2.0
-
 
     k12 = k1 + k2
     s12 = cdot(k12, k12)
