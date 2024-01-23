@@ -565,9 +565,9 @@ function Xsection(tecm, ch; nevtot=Int64(1e6), Nbin=100, para=(l = 1.0), Progres
         end
         zsum += wt
     end
-    cs0 = zsum / nevtot * 0.389379e-3
-    cs1 = zsumt / nevtot * 0.389379e-3
-    cs2 = zsumd / nevtot * 0.389379e-3
+    cs0 = zsum / nevtot 
+    cs1 = zsumt / nevtot 
+    cs2 = zsumd / nevtot 
     res = (cs0=cs0, cs1=cs1, cs2=cs2, axes=axes)
     return res
 end

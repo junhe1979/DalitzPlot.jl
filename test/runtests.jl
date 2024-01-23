@@ -31,7 +31,7 @@ using Test
         m = 3.0
         A = 1 / (s12 - m^2 + im * m * 0.1)
 
-        total = abs2(A) * fac
+        total = abs2(A) * fac* 0.389379e-3
 
         return total
     end
