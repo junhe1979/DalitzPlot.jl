@@ -7,7 +7,7 @@ using Test
 
     function amp(tecm, kf, ch, para)
 
-        #产生的kf为质心系动量，
+        #generate kf为质心系动量，
         #质心系
         #k1,k2,k3=getkf(kf)       
         #质心系->实验室系

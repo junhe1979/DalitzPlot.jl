@@ -39,7 +39,7 @@ Plot Dalitz Plot.
 plotD(res, ch, axes=[1, 3])
 ```
 
-![ex1.png](test/DP.png)
+![ex1.png](test/example.png)
 
 
 
