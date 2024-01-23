@@ -39,7 +39,6 @@ res = Xsection(plab2pcm(p, ch.mi), ch, nevtot=Int64(1e7), para=(p=p, l=1.0), Pro
 plotD(res, ch, axes=[1, 3])
 
 ```
-From the Julia repl run
 
 
 
