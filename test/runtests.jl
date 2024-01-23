@@ -1,5 +1,6 @@
-include("../src/DalitzPlot.jl")
-using .DalitzPlot
+#include("../src/DalitzPlot.jl")
+#using .DalitzPlot
+using DalitzPlot
 using Test
 
 @testset "DalitzPlot.jl" begin
