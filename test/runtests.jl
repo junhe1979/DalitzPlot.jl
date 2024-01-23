@@ -7,19 +7,19 @@ using Test
 
     function amp(tecm, kf, ch, para)
 
-        #generate kf为质心系动量，
-        #质心系
+        # Generate kf as the center-of-mass momentum,
+        # Center-of-mass frame
         #k1,k2,k3=getkf(kf)       
-        #质心系->实验室系
+        #Center-of-mass frame to laboratory frame
         k1, k2, k3 = getkf(para.p, kf, ch)
 
-        #入射粒子动量
-        #质心系  p1=[p 0.0 0.0 E1]
+        # Incoming particle momentum
+        # Center-of-mass frame: p1 = [p 0.0 0.0 E1]
         p1, p2 = pcm(tecm, ch.mi)
-        #实验室系
+# Laboratory frame
         p1, p2 = plab(para.p, ch.mi)
 
-        #入射流
+        #flux
         #flux factor for cross section
         fac = 1 / (4 * para.p * ch.mi[2] * (2 * pi)^5)
         #fermion, aevrage on initial particele 
@@ -38,7 +38,7 @@ using Test
     function main()
         ch = (mi=[1.0, 1.0], mf=[1.0, 1.0, 1.0],
             namei=["p^i_{1}", "p^i_{2}"], namef=["p^f_{1}", "p^f_{2}", "p^f_{3}"],
-            amp=amp) #初末态粒子质量
+            amp=amp) 
 
         p = 10.0
         res = Xsection(plab2pcm(p, ch.mi), ch, nevtot=Int64(1e7), para=(p=p, l=1.0), ProgressBars=true)
