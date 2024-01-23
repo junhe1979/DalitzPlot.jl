@@ -7,15 +7,14 @@ using Test
 
     function amp(tecm, kf, ch, para)
 
-        # Generate kf as the center-of-mass momentum,
-        # Center-of-mass frame
+        # get kf as momenta in the center-of-mass ,
         #k1,k2,k3=getkf(kf)       
-        #Center-of-mass frame to laboratory frame
+        #get kf as momenta in laboratory frame
         k1, k2, k3 = getkf(para.p, kf, ch)
 
         # Incoming particle momentum
         # Center-of-mass frame: p1 = [p 0.0 0.0 E1]
-        p1, p2 = pcm(tecm, ch.mi)
+        #p1, p2 = pcm(tecm, ch.mi)
         # Laboratory frame
         p1, p2 = plab(para.p, ch.mi)
 

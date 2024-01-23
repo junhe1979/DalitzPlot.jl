@@ -22,18 +22,18 @@ Define more complicated amplitudes for a 2->3 process. The "tecm" is the total e
 
 ```julia
 function amp(tecm, kf, ch, para)
-    # Generate kf as the center-of-mass momentum,
-    # Center-of-mass frame
+    # get kf as momenta in the center-of-mass ,
     #k1,k2,k3=getkf(kf)       
-    #Center-of-mass frame to laboratory frame
+    #get kf as momenta in laboratory frame
     k1, k2, k3 = getkf(para.p, kf, ch)
 
     # Incoming particle momentum
     # Center-of-mass frame: p1 = [p 0.0 0.0 E1]
-    p1, p2 = pcm(tecm, ch.mi)
+    #p1, p2 = pcm(tecm, ch.mi)
     # Laboratory frame
     p1, p2 = plab(para.p, ch.mi)
 
+    #flux
     #flux factor for cross section
     fac = 1 / (4 * para.p * ch.mi[2] * (2 * pi)^5)
 
