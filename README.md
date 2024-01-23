@@ -1,12 +1,10 @@
 # DalitzPlot
 
-
-This package is used to plot the Dalitz plot with a given amplitude.
-
-## Requirements
-Julia 1.6+ https://julialang.org/downloads/
+This Julia package, designed for plotting Dalitz plots, allows users to visualize particle three-body decays with a specified amplitude. The package offers flexibility in amplitude settings, enabling users to customize the plot according to their specific requirements. 
 
 ## Installation
+
+To install the package, use the standard Julia package manager procedure:
 
 ```julia
 Pkg.add("DalitzPlot")
