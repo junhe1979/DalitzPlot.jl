@@ -49,7 +49,11 @@ function amp(tecm, kf, ch, para)
     total = abs2(A) * fac
 
     return total
+<<<<<<< HEAD
 end
+=======
+    end
+>>>>>>> 9f4e8b5 (update README.md)
 ```
 Provide the mass of initial and final particles. The name of the particles can be also provided for PlotD.
 ```julia
@@ -72,4 +76,9 @@ plotD(res, ch, axes=[1, 3])
 ```
 
 ![ex1.png](test/DP.png)
+<<<<<<< HEAD
+=======
+
+
+>>>>>>> 9f4e8b5 (update README.md)
 
