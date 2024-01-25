@@ -1,12 +1,12 @@
-#include("../src/DalitzPlot.jl")
-#using .DalitzPlot
-using DalitzPlot
+include("../src/DalitzPlot.jl")
+using .DalitzPlot
+#using DalitzPlot
 using Test
 
 @testset "DalitzPlot.jl" begin
 
     function amp(tecm, kf, ch, para)
-
+        return 1
         # get kf as momenta in the center-of-mass ,
         #k1,k2,k3=getkf(kf)       
         #get kf as momenta in laboratory frame
