@@ -32,9 +32,7 @@ using Test
 
         return total
     end
-    function amp2(tecm, kf, ch, para)
-        return 1.
-    end
+
     function main()
         ch = (mi=[1.0, 1.0], mf=[1.0, 1.0, 1.0],
             namei=["p^i_{1}", "p^i_{2}"], namef=["p^f_{1}", "p^f_{2}", "p^f_{3}"],
