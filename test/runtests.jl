@@ -28,7 +28,7 @@ using Test
         m = 3.0
         A = 1 / (s12 - m^2 + im * m * 0.1)
 
-        total = abs2(A) * fac* 0.389379e-3
+        total = abs2(A) * fac * 0.389379e-3
 
         return total
     end
@@ -39,9 +39,9 @@ using Test
             amp=amp)
 
         p = 10.0
-        res = Xsection(plab2pcm(p, ch.mi), ch, nevtot=Int64(1e7), Nbin=400,para=(p=p, l=1.0), ProgressBars=true)
+        res = Xsection(plab2pcm(p, ch.mi), axes=[23, 21], ch, nevtot=Int64(1e7), Nbin=500, para=(p=p, l=1.0), ProgressBars=true)
         @show p, res.cs0
-        plotD(res, ch, axes=[1, 3])
+
 
     end
 

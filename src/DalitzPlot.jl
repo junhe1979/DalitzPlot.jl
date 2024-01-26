@@ -9,18 +9,20 @@ include("AuxiliaryFunction.jl")
 using .GEN, .QFT, .AuxiliaryFunction
 
 
-function Xsection(tecm, ch; nevtot=Int64(1e6), Nbin=100, para=(l = 1.0), ProgressBars=false)
+function Xsection(tecm, ch; axes=[23, 21], nevtot=Int64(1e6), Nbin=100, para=(l = 1.0), ProgressBars=false,plot=true)
     Nf = length(ch.mf)
-    axes=[]
-    
+    axesV = []
+
     if Nf > 2
-        min, max = binrange(tecm, ch)
+        laxes = [[div(axes[1], 10), mod(axes[1], 10)], [div(axes[2], 10), mod(axes[2], 10)]]
+
+        min, max = binrange(laxes, tecm, ch)
         bin = (Nbin=Nbin, min=min, max=max)
-        axes = [[binx(ix, bin, iaxes) for ix in 1:Nbin] for iaxes in 1:3]
+        axesV = [[binx(ix, bin, iaxes) for ix in 1:Nbin+1] for iaxes in eachindex(laxes)]
     end
     zsum = 0e0
-    zsumt = zeros(Float64, 3, Nbin + 1)
-    zsumd = zeros(Float64, 3, 3, Nbin + 1, Nbin + 1)
+    zsumt = zeros(Float64, 2, Nbin + 1)
+    zsumd = zeros(Float64, Nbin + 1, Nbin + 1)
     if ProgressBars == true
         if nprocs() > 1
             ne = 1:nevtot
@@ -40,13 +42,11 @@ function Xsection(tecm, ch; nevtot=Int64(1e6), Nbin=100, para=(l = 1.0), Progres
         amp0 = ch.amp(tecm, kf, ch, para)
         wt = wt * amp0
         if Nf > 2
-            Nsum = Nsum3(bin, kf)
-            for i in 1:Nf
+            Nsum = Nsum3(laxes, bin, kf)
+            for i in 1:2
                 zsumt[i, Nsum[i]] += wt
-                for j in 1:Nf
-                    zsumd[i, j, Nsum[i], Nsum[j]] += wt
-                end
             end
+            zsumd[Nsum[1], Nsum[2]] += wt
         end
         zsum += wt
     end
@@ -54,44 +54,48 @@ function Xsection(tecm, ch; nevtot=Int64(1e6), Nbin=100, para=(l = 1.0), Progres
     cs0 = zsum / nevtot
     cs1 = zsumt / nevtot
     cs2 = zsumd / nevtot
-    res = (cs0=cs0, cs1=cs1, cs2=cs2, axes=axes)
+    res = (cs0=cs0, cs1=cs1, cs2=cs2, axes=axesV)
+    if plot==true
+        plotD(res, ch, axes=axes)
+    end
     return res
 end
 
-function plotD(res, ch; axes=[1, 2], cg=cgrad([:white, :green, :blue, :red], [0, 0.01, 0.1, 0.5, 1.0]))
-
-    Laxes = [ch.namef[2] * ch.namef[3], ch.namef[1] * ch.namef[3], ch.namef[1] * ch.namef[2]]
-    cs0 = res[1]
+function plotD(res, ch; axes=[23, 21], cg=cgrad([:white, :green, :blue, :red], [0, 0.01, 0.1, 0.5, 1.0]))
+    laxes = [[div(axes[1], 10), mod(axes[1], 10)], [div(axes[2], 10), mod(axes[2], 10)]]
+    Laxes = [ch.namef[laxes[1][1]] * ch.namef[laxes[1][2]], ch.namef[laxes[2][1]] * ch.namef[laxes[2][2]]]
     cs1 = res[2]
     cs2 = res[3]
     axesV = res[4]
+
     Nbin = length(axesV[1])
-    x1 = [axesV[axes[1]][i] for i in 1:Nbin]
-    y1 = [cs1[axes[1], i]  for i in 1:Nbin]
+    x1 = axesV[1]
+    y1 = cs1[1, :]
     xlims = (minimum(x1), maximum(x1))
     ylims = (minimum(y1), maximum(y1))
-    dx=(maximum(x1)-minimum(x1))/Nbin 
-    ylims = (minimum(y1)/dx, maximum(y1)/dx)
-    @show dx
-    p1 = Plots.plot(x1, y1/dx, xlims=xlims, ylims=ylims, xticks=:auto, ylabel=latexstring("d\\sigma/m^2_{" * Laxes[axes[1]] * "} (\\textrm{ barn/GeV^2})"), framestyle=:box, xmirror=true, legend=:none, linetype=:steppre)
+    dx = (maximum(x1) - minimum(x1)) / Nbin
+    ylims = (minimum(y1) / dx, maximum(y1) / dx)
+
+    p1 = Plots.plot(x1, y1 / dx, xlims=xlims, ylims=ylims, xticks=:auto, ylabel=latexstring("d\\sigma/m^2_{" * Laxes[1] * "} (\\textrm{ barn/GeV^2})"), framestyle=:box, xmirror=true, legend=:none, linetype=:steppre)
 
 
-    y2 = [axesV[axes[2]][i] for i in 1:Nbin]
-    x2 = [cs1[axes[2], i]  for i in 1:Nbin]
+    y2 = axesV[2]
+    x2 = cs1[2, :]
+
     xlims = (minimum(x2), maximum(x2))
     ylims = (minimum(y2), maximum(y2))
-    dy=(maximum(y2)-minimum(y2))/Nbin 
-    xlims = (minimum(x2)/dy, maximum(x2)/dy)
-    p2 = Plots.plot(x2/dy, y2, xlims=xlims, ylims=ylims, xlabel=latexstring("d\\sigma/m^2_{" * Laxes[axes[2]] * "} (\\textrm{ barn/GeV^2})"), framestyle=:box, ymirror=true, legend=:none, linetype=:steppre)
+    dy = (maximum(y2) - minimum(y2)) / Nbin
+    xlims = (minimum(x2) / dy, maximum(x2) / dy)
+    p2 = Plots.plot(x2 / dy, y2, xlims=xlims, ylims=ylims, xlabel=latexstring("d\\sigma/m^2_{" * Laxes[2] * "} (\\textrm{ barn/GeV^2})"), framestyle=:box, ymirror=true, legend=:none, linetype=:steppre)
 
-    x = [axesV[axes[1]][ix] for ix in 1:Nbin]
-    y = [axesV[axes[2]][iy] for iy in 1:Nbin]
+    x = axesV[1]
+    y = axesV[2]
     xlims = (minimum(x), maximum(x))
     ylims = (minimum(y), maximum(y))
-    dx=(maximum(x)-minimum(x))/Nbin 
-    dy=(maximum(y)-minimum(y))/Nbin 
-    z= [cs2[axes[1], axes[2], ix, iy]/(dx*dy)  for iy in 1:Nbin, ix in 1:Nbin]
-    p3 = Plots.heatmap(x, y, z, xlims=xlims, ylims=ylims, c=cg, xlabel=latexstring(Laxes[axes[1]]), ylabel=latexstring(Laxes[axes[2]]), framestyle=:box, cb=:none)
+    dx = (maximum(x) - minimum(x)) / Nbin
+    dy = (maximum(y) - minimum(y)) / Nbin
+    z = [cs2[ix, iy] / (dx * dy) for iy in 1:Nbin, ix in 1:Nbin]
+    p3 = Plots.heatmap(x, y, z, xlims=xlims, ylims=ylims, c=cg, xlabel=latexstring(Laxes[1]), ylabel=latexstring(Laxes[2]), framestyle=:box, cb=:none)
 
 
     l = @layout [a _

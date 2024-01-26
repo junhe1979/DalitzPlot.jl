@@ -96,7 +96,7 @@ The function `plab2pcm` transforms the momentum of the incoming particle from th
 ```julia
 res = Xsection(plab2pcm(p, ch.mi), ch, nevtot=Int64(1e7), Nbin=100, para=(p=p, l=1.0), ProgressBars=true)
 ```
-The results of the calculations are stored in the variable `res` as a NamedTuple. Specifically, `res.cs0` corresponds to the total cross section, `res.cs1` represents the invariant mass spectrum, and `res.cs2` captures the data for the Dalitz plot.
+The results of the calculations are stored in the variable `res` as a NamedTuple. Specifically, `res.cs0` corresponds to the total cross section, `res.cs1` represents the invariant mass spectrum, and `res.cs2` captures the data for the Dalitz plot. 
 
 ## Plot Dalitz Plot.
 ```julia
