@@ -1,6 +1,6 @@
 
 module DalitzPlot
-export GENEV, Xsection, Xsection2, plotD, III, GA, GS, epsilon, Uc, Ubc, LCV, cdot, plab2pcm, getkf, plab, pcm
+export GENEV, Xsection, plotD, III, GA, GS, epsilon, Uc, Ubc, LCV, cdot, plab2pcm, getkf, plab, pcm
 using StaticArrays, ProgressBars, Distributed, Plots, LaTeXStrings, Colors, Compose, DelimitedFiles
 
 include("GEN.jl")
