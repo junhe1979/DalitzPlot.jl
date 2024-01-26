@@ -12,6 +12,7 @@ using .GEN, .QFT, .AuxiliaryFunction
 function Xsection(tecm, ch; nevtot=Int64(1e6), Nbin=100, para=(l = 1.0), ProgressBars=false)
     Nf = length(ch.mf)
     axes=[]
+    
     if Nf > 2
         min, max = binrange(tecm, ch)
         bin = (Nbin=Nbin, min=min, max=max)
@@ -49,6 +50,7 @@ function Xsection(tecm, ch; nevtot=Int64(1e6), Nbin=100, para=(l = 1.0), Progres
         end
         zsum += wt
     end
+
     cs0 = zsum / nevtot
     cs1 = zsumt / nevtot
     cs2 = zsumd / nevtot
@@ -65,23 +67,30 @@ function plotD(res, ch; axes=[1, 2], cg=cgrad([:white, :green, :blue, :red], [0,
     axesV = res[4]
     Nbin = length(axesV[1])
     x1 = [axesV[axes[1]][i] for i in 1:Nbin]
-    y1 = [cs1[axes[1], i] / cs0 for i in 1:Nbin]
+    y1 = [cs1[axes[1], i]  for i in 1:Nbin]
     xlims = (minimum(x1), maximum(x1))
     ylims = (minimum(y1), maximum(y1))
-    p1 = Plots.plot(x1, y1, xlims=xlims, ylims=ylims, xticks=:auto, ylabel=latexstring("d\\sigma/m^2_{" * Laxes[axes[1]] * "} (\\textrm{ barn/GeV^2})"), framestyle=:box, xmirror=true, legend=:none, linetype=:steppre)
+    dx=(maximum(x1)-minimum(x1))/Nbin 
+    ylims = (minimum(y1)/dx, maximum(y1)/dx)
+    @show dx
+    p1 = Plots.plot(x1, y1/dx, xlims=xlims, ylims=ylims, xticks=:auto, ylabel=latexstring("d\\sigma/m^2_{" * Laxes[axes[1]] * "} (\\textrm{ barn/GeV^2})"), framestyle=:box, xmirror=true, legend=:none, linetype=:steppre)
 
 
     y2 = [axesV[axes[2]][i] for i in 1:Nbin]
-    x2 = [cs1[axes[2], i] / cs0 for i in 1:Nbin]
+    x2 = [cs1[axes[2], i]  for i in 1:Nbin]
     xlims = (minimum(x2), maximum(x2))
     ylims = (minimum(y2), maximum(y2))
-    p2 = Plots.plot(x2, y2, xlims=xlims, ylims=ylims, xlabel=latexstring("d\\sigma/m^2_{" * Laxes[axes[2]] * "} (\\textrm{ barn/GeV^2})"), framestyle=:box, ymirror=true, legend=:none, linetype=:steppre)
+    dy=(maximum(y2)-minimum(y2))/Nbin 
+    xlims = (minimum(x2)/dy, maximum(x2)/dy)
+    p2 = Plots.plot(x2/dy, y2, xlims=xlims, ylims=ylims, xlabel=latexstring("d\\sigma/m^2_{" * Laxes[axes[2]] * "} (\\textrm{ barn/GeV^2})"), framestyle=:box, ymirror=true, legend=:none, linetype=:steppre)
 
     x = [axesV[axes[1]][ix] for ix in 1:Nbin]
     y = [axesV[axes[2]][iy] for iy in 1:Nbin]
     xlims = (minimum(x), maximum(x))
     ylims = (minimum(y), maximum(y))
-    z = [cs2[axes[1], axes[2], ix, iy] / cs0 for iy in 1:Nbin, ix in 1:Nbin]
+    dx=(maximum(x)-minimum(x))/Nbin 
+    dy=(maximum(y)-minimum(y))/Nbin 
+    z= [cs2[axes[1], axes[2], ix, iy]/(dx*dy)  for iy in 1:Nbin, ix in 1:Nbin]
     p3 = Plots.heatmap(x, y, z, xlims=xlims, ylims=ylims, c=cg, xlabel=latexstring(Laxes[axes[1]]), ylabel=latexstring(Laxes[axes[2]]), framestyle=:box, cb=:none)
 
 

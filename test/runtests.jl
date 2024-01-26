@@ -1,6 +1,6 @@
-#include("../src/DalitzPlot.jl")
-#using .DalitzPlot
-using DalitzPlot
+include("../src/DalitzPlot.jl")
+using .DalitzPlot
+#using DalitzPlot
 using Test
 
 @testset "DalitzPlot.jl" begin
@@ -20,7 +20,7 @@ using Test
 
         #flux
         #flux factor for cross section
-        fac = 1 / (4 * para.p * ch.mi[2] * (2 * pi)^5)
+        fac = 1e8 / (4 * para.p * ch.mi[2] * (2 * pi)^5)
 
 
         k12 = k1 + k2
@@ -39,7 +39,7 @@ using Test
             amp=amp)
 
         p = 10.0
-        res = Xsection(plab2pcm(p, ch.mi), ch, nevtot=Int64(1e7), para=(p=p, l=1.0), ProgressBars=true)
+        res = Xsection(plab2pcm(p, ch.mi), ch, nevtot=Int64(1e7), Nbin=400,para=(p=p, l=1.0), ProgressBars=true)
         @show p, res.cs0
         plotD(res, ch, axes=[1, 3])
 
