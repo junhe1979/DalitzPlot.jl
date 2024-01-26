@@ -54,19 +54,23 @@ function Xsection(tecm, ch; axes=[23, 21], nevtot=Int64(1e6), Nbin=100, para=(l 
     cs0 = zsum / nevtot
     cs1 = zsumt / nevtot
     cs2 = zsumd / nevtot
-    res = (cs0=cs0, cs1=cs1, cs2=cs2, axes=axesV)
+    res = (cs0=cs0, cs1=cs1, cs2=cs2, axesV=axesV, axes=axes,ch=ch)
     if plot==true
-        plotD(res, ch, axes=axes)
+        plotD(res)
     end
     return res
 end
 
-function plotD(res, ch; axes=[23, 21], cg=cgrad([:white, :green, :blue, :red], [0, 0.01, 0.1, 0.5, 1.0]))
-    laxes = [[div(axes[1], 10), mod(axes[1], 10)], [div(axes[2], 10), mod(axes[2], 10)]]
-    Laxes = [ch.namef[laxes[1][1]] * ch.namef[laxes[1][2]], ch.namef[laxes[2][1]] * ch.namef[laxes[2][2]]]
+function plotD(res; cg=cgrad([:white, :green, :blue, :red], [0, 0.01, 0.1, 0.5, 1.0]))
     cs1 = res[2]
     cs2 = res[3]
     axesV = res[4]
+    axes=res[5]
+    ch=res[6]
+
+    laxes = [[div(axes[1], 10), mod(axes[1], 10)], [div(axes[2], 10), mod(axes[2], 10)]]
+    Laxes = [ch.namef[laxes[1][1]] * ch.namef[laxes[1][2]], ch.namef[laxes[2][1]] * ch.namef[laxes[2][2]]]
+
 
     Nbin = length(axesV[1])
     x1 = axesV[1]
