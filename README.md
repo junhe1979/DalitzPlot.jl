@@ -25,6 +25,13 @@ Pkg.add("DalitzPlot")
 using DalitzPlot
 ```
 
+or 
+
+```julia
+pkg> add "https://github.com/junhe1979/DalitzPlot.jl"
+using DalitzPlot
+```
+
 ## Provide amplitudes with factors 
 
 The user should provide amplitudes with factors  $(2\pi)^{4-3n}F|{\cal M}|^2\frac{1}{S}$ in the function (with name `amp` here)
