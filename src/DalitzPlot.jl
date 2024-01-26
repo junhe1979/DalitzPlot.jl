@@ -9,7 +9,7 @@ include("AuxiliaryFunction.jl")
 using .GEN, .QFT, .AuxiliaryFunction
 
 
-function Xsection(tecm, ch; axes=[23, 21], nevtot=Int64(1e6), Nbin=100, para=(l = 1.0), ProgressBars=false,plot=true)
+function Xsection(tecm, ch; axes=[23, 21], nevtot=Int64(1e6), Nbin=100, para=(l = 1.0), ProgressBars=false)
     Nf = length(ch.mf)
     axesV = []
 
@@ -55,9 +55,6 @@ function Xsection(tecm, ch; axes=[23, 21], nevtot=Int64(1e6), Nbin=100, para=(l 
     cs1 = zsumt / nevtot
     cs2 = zsumd / nevtot
     res = (cs0=cs0, cs1=cs1, cs2=cs2, axesV=axesV, axes=axes,ch=ch)
-    if plot==true
-        plotD(res)
-    end
     return res
 end
 
