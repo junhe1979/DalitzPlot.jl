@@ -84,6 +84,7 @@ ch = (mi=[1.0, 1.0], mf=[1.0, 1.0, 1.0],namei=["p^i_{1}", "p^i_{2}"], namef=["p^
 ## Provide the momentum. 
 
 Here the `p` is the momentum in Laboratory frame. It needs be transferred into the total energy in the center-of-mass frame as below. 
+```
 p = 10.0
 ```
 ## Calculate:  
