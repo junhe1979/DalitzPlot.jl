@@ -6,7 +6,7 @@ using Test
 @testset "DalitzPlot.jl" begin
 
     function amp(tecm, kf, ch, para)
-        return 1
+
         # get kf as momenta in the center-of-mass ,
         #k1,k2,k3=getkf(kf)       
         #get kf as momenta in laboratory frame
@@ -32,6 +32,9 @@ using Test
 
         return total
     end
+    function amp2(tecm, kf, ch, para)
+        return 1.
+    end
     function main()
         ch = (mi=[1.0, 1.0], mf=[1.0, 1.0, 1.0],
             namei=["p^i_{1}", "p^i_{2}"], namef=["p^f_{1}", "p^f_{2}", "p^f_{3}"],
@@ -41,6 +44,7 @@ using Test
         res = Xsection(plab2pcm(p, ch.mi), ch, nevtot=Int64(1e7), para=(p=p, l=1.0), ProgressBars=true)
         @show p, res.cs0
         plotD(res, ch, axes=[1, 3])
+
     end
 
     main()

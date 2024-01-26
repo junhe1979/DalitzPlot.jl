@@ -26,11 +26,15 @@ end
 #bin
 function Nsum3(bin::NamedTuple, kf::MMatrix{5,18,Float64,90})
     Nsum = zeros(Int64, 3)
-    k23 = SVector{5,Float64}(kf[1:5, 2] + kf[1:5, 3])
+    kf1=SVector{5,Float64}(kf[1:5, 1])
+    kf2=SVector{5,Float64}(kf[1:5, 2])
+    kf3=SVector{5,Float64}(kf[1:5, 3])
+
+    k23 = kf2 + kf3
     k1 = cdot(k23, k23)
-    k13 = SVector{5,Float64}(kf[1:5, 1] + kf[1:5, 3])
+    k13 = kf1 + kf3
     k2 = cdot(k13, k13)
-    k12 = SVector{5,Float64}(kf[1:5, 1] + kf[1:5, 2])
+    k12 = kf1 + kf2
     k3 = cdot(k12, k12)
 
     Nsum[1] = convert(Int64, cld((k1 - bin.min[1]) * bin.Nbin, (bin.max[1] - bin.min[1])))
@@ -38,14 +42,6 @@ function Nsum3(bin::NamedTuple, kf::MMatrix{5,18,Float64,90})
     Nsum[3] = convert(Int64, cld((k3 - bin.min[3]) * bin.Nbin, (bin.max[3] - bin.min[3])))
     return Nsum
 end
-#momentum
-function Nsum2(bin, kf)::Int64
-    k1sq = sqrt(kf[1, 1]^2 + kf[1, 2]^2 + kf[1, 3]^2)
-    Nsum = convert(Int64, cld((k1sq - bin.min[1]) * bin.Nbin, (bin.max[1] - bin.min[1])))
-    return Nsum
-end
-
-
 
 #############################################################################
 #Transfer

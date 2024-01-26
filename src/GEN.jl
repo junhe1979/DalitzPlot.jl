@@ -113,7 +113,7 @@ function GENEV(tecm::Float64, EM::Vector{Float64})
     TWOPI = 6.2831853073
     WTMAX = 0.0
     WTMAXQ = 0.0
-    KGENEV = 0
+    KGENEV = 2
 
     if tecm - ETC != 0
         if INIT <= 0
@@ -206,5 +206,7 @@ function GENEV(tecm::Float64, EM::Vector{Float64})
 
     return PCM, WT
 end
+
+
 
 end
