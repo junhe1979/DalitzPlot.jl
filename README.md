@@ -2,7 +2,7 @@
 
 This Julia package is specifically crafted for creating Dalitz plots, providing users with the capability to visualize the three-body decays of particles by specifying amplitudes. With this package, users enjoy a high degree of flexibility in adjusting amplitude settings, allowing them to tailor the plots to meet their specific needs.
 
-Please note that this package is designed for theoretical calculations of Dalitz plots and is not intended for the analysis of experimental data.
+Please note that this package is designed for theoretical calculations of Dalitz plots and is not intended for the analysis of experimental data. 
 
 The cross section, denoted by $d\sigma$, can be expressed in terms of amplitudes, ${\cal M}$, as follows:
 
