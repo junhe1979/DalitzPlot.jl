@@ -46,7 +46,7 @@ using DalitzPlot
 
 These commands will install the "DalitzPlot" package and allow you to use it in your Julia environment.
 
-## Define amplitudes with factors for the calculation.
+## Define amplitudes with factors for the calculation
 
 Users are required to supply amplitudes with factors $(2\pi)^{4-3n}F|{\cal M}|^2\frac{1}{S}$ within the function, named `amp` here.
 
@@ -130,7 +130,7 @@ res = Xsection(plab2pcm(p_lab, ch.mi), ch, axes=[23, 21], nevtot=Int64(1e7), Nbi
 ```
 The results are stored in the variable `res` as a `NamedTuple`. Specifically, `res.cs0` corresponds to the total cross section, `res.cs1` represents the invariant mass spectrum, and `res.cs2` captures the data for the Dalitz plot.
 
-## Plot Dalitz Plot.
+## Plot Dalitz Plot
 ```julia
 plotD(res)
 ```
