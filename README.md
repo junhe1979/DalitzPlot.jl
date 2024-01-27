@@ -94,7 +94,7 @@ function amp(tecm, kf, ch, para)
     return total
 
 ```
-## Define the mass of initial and final particles 
+## Define the masses of initial and final particles 
 
 The mass of initial and final particles is specified in a NamedTuple (named `ch` here) with fields `mi` and `mf`. 
 Particle names can also be provided for PlotD as `namei` and `namef`.
