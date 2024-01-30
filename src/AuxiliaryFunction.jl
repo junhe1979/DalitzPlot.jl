@@ -30,8 +30,7 @@ function Nsum3(laxes, bin::NamedTuple, kf::MMatrix{5,18,Float64,90})
 
         k12 = kf1 + kf2
         k12s = cdot(k12, k12)
-
-        Nsum[iaxes] = convert(Int64, cld((k12s - bin.min[1]) * bin.Nbin, (bin.max[1] - bin.min[1])))
+        Nsum[iaxes] = convert(Int64, cld((k12s - bin.min[iaxes]) * bin.Nbin, (bin.max[iaxes] - bin.min[iaxes])))
     end
     return Nsum
 end

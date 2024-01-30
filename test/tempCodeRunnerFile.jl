@@ -1,1 +1,0 @@
-        res = Xsection(plab2pcm(p, ch.mi), ch, axes=[23, 21], nevtot=Int64(1e7), Nbin=500, para=(p=p, l=1.0), ProgressBars=true)
