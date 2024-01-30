@@ -86,8 +86,8 @@ function amp(tecm, kf, ch, para)
 
     k12 = k1 + k2
     s12 = cdot(k12, k12)
-    m = 3.0
-    A = 1e8 / (s12 - m^2 + im * m * 0.1)
+    m = 3.2
+    A = 1e9 / (s12 - m^2 + im * m * 0.1)
 
     total = abs2(A) * fac* 0.389379e-3
 
@@ -106,7 +106,7 @@ Example usage:
 ch = (mi=[mass_i_1, mass_i_2], mf=[mass_f_1, mass_f_2, mass_f_3], namei=["p^i_{1}", "p^i_{2}"], namef=["p^f_{1}", "p^f_{2}", "p^f_{3}"], amp=amp)
 ```
 
-Make sure to replace `mass_i_1`, `mass_i_2`, `mass_f_1`, `mass_f_2`, and `mass_f_3` with the actual masses of the particles (1.1, 1.2,1.1, 1.2, 5.3 here).
+Make sure to replace `mass_i_1`, `mass_i_2`, `mass_f_1`, `mass_f_2`, and `mass_f_3` with the actual masses of the particles (1.0, 1.0, 1.0, 2.0, 3.0 here).
 
 ## Define the momentum or total energy
 
@@ -114,7 +114,7 @@ Momentum in the Laboratory frame and transfer it to the total energy in the cent
 
 Example usage:
 ```julia
-p_lab = 30.0
+p_lab = 20.0
 tecm = pcm(p_lab, ch.mi)
 ```
 
