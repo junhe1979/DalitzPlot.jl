@@ -106,7 +106,7 @@ Example usage:
 ch = (mi=[mass_i_1, mass_i_2], mf=[mass_f_1, mass_f_2, mass_f_3], namei=["p^i_{1}", "p^i_{2}"], namef=["p^f_{1}", "p^f_{2}", "p^f_{3}"], amp=amp)
 ```
 
-Make sure to replace `mass_i_1`, `mass_i_2`, `mass_f_1`, `mass_f_2`, and `mass_f_3` with the actual masses of the particles.
+Make sure to replace `mass_i_1`, `mass_i_2`, `mass_f_1`, `mass_f_2`, and `mass_f_3` with the actual masses of the particles (1.1, 1.2,1.1, 1.2, 5.3 here).
 
 ## Define the momentum or total energy
 
@@ -114,7 +114,7 @@ Momentum in the Laboratory frame and transfer it to the total energy in the cent
 
 Example usage:
 ```julia
-p_lab = 10.0
+p_lab = 30.0
 tecm = pcm(p_lab, ch.mi)
 ```
 
