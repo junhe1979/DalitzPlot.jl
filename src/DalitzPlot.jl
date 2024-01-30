@@ -18,11 +18,11 @@ function Xsection(tecm, ch; axes=[23, 21], nevtot=Int64(1e6), Nbin=100, para=(l 
 
         min, max = binrange(laxes, tecm, ch)
         bin = (Nbin=Nbin, min=min, max=max)
-        axesV = [[binx(ix, bin, iaxes) for ix in 1:Nbin+1] for iaxes in eachindex(laxes)]
+        axesV = [[binx(ix, bin, iaxes) for ix in 1:Nbin] for iaxes in eachindex(laxes)]
     end
     zsum = 0e0
-    zsumt = zeros(Float64, 2, Nbin + 1)
-    zsumd = zeros(Float64, Nbin + 1, Nbin + 1)
+    zsumt = zeros(Float64, 2, Nbin)
+    zsumd = zeros(Float64, Nbin , Nbin)
     if ProgressBars == true
         if nprocs() > 1
             ne = 1:nevtot

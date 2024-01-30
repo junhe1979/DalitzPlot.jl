@@ -34,12 +34,12 @@ using Test
     end
 
     function main()
-        ch = (mi=[1.0, 1.0], mf=[1.0, 1.0, 1.5],
+        ch = (mi=[1.1, 1.2], mf=[1.1, 1.2, 5.3],
             namei=["p^i_{1}", "p^i_{2}"], namef=["p^f_{1}", "p^f_{2}", "p^f_{3}"],
             amp=amp)
 
-        p = 10.0
-        res = Xsection(plab2pcm(p, ch.mi), ch, axes=[23, 21], nevtot=Int64(1e6), Nbin=500, para=(p=p, l=1.0), ProgressBars=true)
+        p = 30.0
+        res = Xsection(plab2pcm(p, ch.mi), ch, axes=[23, 21], nevtot=Int64(1e7), Nbin=1000, para=(p=p, l=1.0), ProgressBars=true)
         @show p, res.cs0
         plotD(res)
 

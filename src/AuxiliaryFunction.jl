@@ -15,8 +15,8 @@ function binx(i::Int64, bin, iaxis::Int64)::Float64
 end
 
 function binrange(laxes, tecm, ch)
-    min = Float64[(ch.mf[axes0[1]] + ch.mf[axes0[2]])^2 * 0.99 for axes0 in laxes]
-    max = Float64[(tecm - sum(ch.mf) + ch.mf[axes0[1]] + ch.mf[axes0[2]])^2 * 1.01 for axes0 in laxes]
+    min = Float64[(ch.mf[axes0[1]] + ch.mf[axes0[2]])^2  for axes0 in laxes]
+    max = Float64[(tecm - sum(ch.mf) + ch.mf[axes0[1]] + ch.mf[axes0[2]])^2  for axes0 in laxes]
     return min, max
 end
 
