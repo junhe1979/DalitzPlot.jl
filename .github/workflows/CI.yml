@@ -21,8 +21,8 @@ jobs:
 
     - name: Install dependencies
       run: julia -e 'using Pkg; Pkg.instantiate()'
-      working-directory: DalitzPlot  # 设置为你的项目路径
+      working-directory: ./  # 设置为项目根目录
 
     - name: Run tests
       run: julia -e 'using Pkg; Pkg.test()'
-      working-directory: DalitzPlot  # 设置为你的项目路径
+      working-directory: ./  # 设置为项目根目录
