@@ -1,5 +1,5 @@
 include("../src/DalitzPlot.jl")
-using .DalitzPlot, .DalitzPlot.qBSE, DalitzPlot.QFT
+using .DalitzPlot, .DalitzPlot.Xs
 #using DalitzPlot
 using Test
 @testset "DalitzPlot Tests" begin
@@ -9,13 +9,13 @@ using Test
         # get kf as momenta in the center-of-mass ,
         #k1,k2,k3=getkf(kf)       
         #get kf as momenta in laboratory frame
-        k1, k2, k3 = getkf(para.p, kf, ch)
+        k1, k2, k3 = Xs.getkf(para.p, kf, ch)
 
         # Incoming particle momentum
         # Center-of-mass frame: p1 = [p 0.0 0.0 E1]
         #p1, p2 = pcm(tecm, ch.mi)
         # Laboratory frame
-        p1, p2 = plab(para.p, ch.mi)
+        p1, p2 = Xs.plab(para.p, ch.mi)
 
         #flux
         #flux factor for cross section
@@ -23,7 +23,7 @@ using Test
 
 
         k12 = k1 + k2
-        s12 = QFT.cdot(k12, k12)
+        s12 = k12*k12
         m = 3.2
         A = 1 / (s12 - m^2 + im * m * 0.1)
 
@@ -38,9 +38,9 @@ using Test
             amp=amp)
 
         p = 20.0
-        res = Xsection(plab2pcm(p, ch.mi), ch, axes=[23, 21], nevtot=Int64(1e7), Nbin=1000, para=(p=p, l=1.0), ProgressBars=true)
-        @show plab2pcm(p, ch.mi), res.cs0
-        plotD(res)
+        res = Xs.Xsection(Xs.plab2pcm(p, ch.mi), ch, axes=[23, 21], nevtot=Int64(1e7), Nbin=1000, para=(p=p, l=1.0), ProgressBars=true)
+        @show Xs.plab2pcm(p, ch.mi), res.cs0
+        Xs.plotD(res)
 
     end
 

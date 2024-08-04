@@ -29,6 +29,8 @@ Pkg.add(url="https://github.com/junhe1979/DalitzPlot.jl")
 ```
 These commands will install the "DalitzPlot" package and allow you to use it in your Julia environment.
 
+## Usage
+
 After installation, the package can be used as:
 ```julia
 using DalitzPlot
@@ -40,7 +42,7 @@ using DalitzPlot.QFT
 using DalitzPlot.qBSE
 ```
 
-# cross section
+# Cross section
 
 The cross section, denoted by $d\sigma$, can be expressed in terms of amplitudes, ${\mathcal M}$, as follows:
 
@@ -152,3 +154,7 @@ plotD(res)
 ```
 
 ![ex1.png](test/DP.png)
+
+# GEV Package
+
+Here, $dR = (2\pi)^{3n-4} d\Phi = \prod_{i}\frac{d^3k_i}{2E_i}\delta^4(\sum_{i}k_i-P)$ represents the Lorentz-invariant phase space for $n$ particles, and it is generated using the Monte-Carlo method described in Ref. [F. James, CERN 68-12].

@@ -361,36 +361,26 @@ function LCV(a, b, c)::SVector{5,ComplexF64}
     return V
 end
 
-function cdot(Q::SVector{5,Float64}, W::SVector{5,Float64})::Float64
-    temp = Q[4] * W[4] - Q[1] * W[1] - Q[2] * W[2] - Q[3] * W[3]
-    return temp
-end
-
-function cdot(Q::SVector{5,Float64}, W::SVector{5,ComplexF64})::ComplexF64
-    temp = Q[4] * W[4] - Q[1] * W[1] - Q[2] * W[2] - Q[3] * W[3]
-    return temp
-end
-
-function cdot(Q::SVector{5,ComplexF64}, W::SVector{5,Float64})::ComplexF64
-    temp = Q[4] * W[4] - Q[1] * W[1] - Q[2] * W[2] - Q[3] * W[3]
-    return temp
-end
-function cdot(Q::SVector{5,ComplexF64}, W::SVector{5,ComplexF64})::ComplexF64
-    temp = Q[4] * W[4] - Q[1] * W[1] - Q[2] * W[2] - Q[3] * W[3]
-    return temp
-end
-
-function cdot(Q::Vector{Float64}, W::Vector{Float64})::Float64
-    temp = Q[4] * W[4] - Q[1] * W[1] - Q[2] * W[2] - Q[3] * W[3]
-    return temp
-end
-
-function cdot(Q::Vector{ComplexF64}, W::Vector{ComplexF64})::ComplexF64
-    temp = Q[4] * W[4] - Q[1] * W[1] - Q[2] * W[2] - Q[3] * W[3]
-    return temp
-end
-
 import Base: *
+
+function *(Q::SVector{5,Float64}, W::SVector{5,Float64})::Float64
+    temp = Q[4] * W[4] - Q[1] * W[1] - Q[2] * W[2] - Q[3] * W[3]
+    return temp
+end
+
+function *(Q::SVector{5,Float64}, W::SVector{5,ComplexF64})::ComplexF64
+    temp = Q[4] * W[4] - Q[1] * W[1] - Q[2] * W[2] - Q[3] * W[3]
+    return temp
+end
+
+function *(Q::SVector{5,ComplexF64}, W::SVector{5,Float64})::ComplexF64
+    temp = Q[4] * W[4] - Q[1] * W[1] - Q[2] * W[2] - Q[3] * W[3]
+    return temp
+end
+function *(Q::SVector{5,ComplexF64}, W::SVector{5,ComplexF64})::ComplexF64
+    temp = Q[4] * W[4] - Q[1] * W[1] - Q[2] * W[2] - Q[3] * W[3]
+    return temp
+end
 
 function *(A::MVector{4,ComplexF64}, B::SMatrix{4,4,ComplexF64,16})::MVector{4,ComplexF64}
     temp = @MVector zeros(Complex{Float64}, 4)  # 使用Complex{Float64}来指定元素的类型

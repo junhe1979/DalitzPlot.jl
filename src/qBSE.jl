@@ -167,16 +167,16 @@ function fPropFF(k, ex, L, LLi, LLf, lregu, lFFex,qt) #慢
         mf2 = real(k.f2[5])
 
         if mi1 <= mi2
-            FFre += -(mi1^2 - QFT.cdot(k.i1, k.i1))^2 / LLi^4
+            FFre += -(mi1^2 - k.i1*k.i1)^2 / LLi^4
         end
         if mi1 > mi2
-            FFre += -(mi2^2 - QFT.cdot(k.i2, k.i2))^2 / LLi^4
+            FFre += -(mi2^2 - k.i2*k.i2)^2 / LLi^4
         end
         if mf1 <= mf2
-            FFre += -(mf1^2 - QFT.cdot(k.f1, k.f1))^2 / LLf^4
+            FFre += -(mf1^2 - k.f1*k.f1)^2 / LLf^4
         end
         if mf1 > mf2
-            FFre += -(mf2^2 - QFT.cdot(k.f2, k.f2))^2 / LLf^4
+            FFre += -(mf2^2 - k.f2*k.f2)^2 / LLf^4
         end
     end
     return fProp * FFex * exp(FFre)
@@ -219,7 +219,7 @@ function fKernel(kf, ki, iNih1, iNih2, Ec, qn, lregu, lFFex, CB, IA, IH, fV)::Co
         ki2 = @SVector [0.0 + 0im, 0.0 + 0im, ki + 0im, ki20 + 0im, mi2 + 0im]
         kf2 = @SVector [kf * sqrt1_x2 + 0im, 0.0 + 0im, kf * x + 0im, kf20 + 0im, mf2 + 0im]
         qd = kf2 - ki2
-        qd2 = QFT.cdot(qd, qd)
+        qd2 = qd*qd
         k = MomentaType(ki1, kf1, ki2, kf2, qd, qd2)
 
         lJJ = qn.lJJ / qn.lJJ_h
