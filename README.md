@@ -2,9 +2,45 @@
 
 # DalitzPlot
 
-This Julia package is specifically crafted for creating Dalitz plots, providing users with the capability to visualize the three-body decays of particles by specifying amplitudes. With this package, users enjoy a high degree of flexibility in adjusting amplitude settings, allowing them to tailor the plots to meet their specific needs.
+This Julia package is designed for high-energy physics applications, originally in visualizing and analyzing particle decays. It consists of the following subpackages:
 
-Please note that this package is designed for theoretical calculations of Dalitz plots and is not intended for the analysis of experimental data.
+- Main package: Provides tools for creating Dalitz plots, which are essential for visualizing three-body - decays of particles. Users can specify amplitudes to generate these plots.
+- GEV: Stands for General Event Generation. This subpackage is used for generating events, allowing users to simulate particle interactions and decays.
+- QFT: Short for Quantum Field Theory. This subpackage includes functions for calculating spinor or polarized vectors with momentum and spin, gamma matrices, and other related calculations.
+- qBSE: Refers to the Quasipotential Bethe-Salpeter Equation. This subpackage provides tools for solving the Bethe-Salpeter equation, which is used in the study of bound states in quantum field theory.
+
+Note: This package is designed for phenomenological studies on the theoretical side. For experimental data analysis, please refer to other tools.
+
+## Installation
+
+To install the "DalitzPlot" package, you can follow the standard Julia package manager procedure. Open Julia and use the following commands:
+
+Using the Julia REPL
+```julia
+Pkg.add("DalitzPlot")
+```
+
+Alternatively, if you want to install it directly from the GitHub repository:
+
+Using the Julia REPL:
+```julia
+import Pkg
+Pkg.add(url="https://github.com/junhe1979/DalitzPlot.jl")
+```
+These commands will install the "DalitzPlot" package and allow you to use it in your Julia environment.
+
+After installation, the package can be used as:
+```julia
+using DalitzPlot
+```
+To use the subpackages:
+```julia
+using DalitzPlot.GEV
+using DalitzPlot.QFT
+using DalitzPlot.qBSE
+```
+
+# cross section
 
 The cross section, denoted by $d\sigma$, can be expressed in terms of amplitudes, ${\mathcal M}$, as follows:
 
@@ -20,35 +56,6 @@ For decay width, the flux factor is modified to $F = \frac{1}{2E}$.
 
 ---
 
-## Installation
-
-To install the "DalitzPlot" package, you can follow the standard Julia package manager procedure. Open Julia and use the following commands:
-
-Using the Julia REPL
-
-```julia
-Pkg.add("DalitzPlot")
-using DalitzPlot
-```
-
-Alternatively, if you want to install it directly from the GitHub repository:
-
-Using the Julia REPL:
-
-```julia
-import Pkg
-Pkg.add(url="https://github.com/junhe1979/DalitzPlot.jl")
-using DalitzPlot
-```
-
-Or, in the Julia package manager (Pkg) prompt:
-
-```julia
-pkg> add "https://github.com/junhe1979/DalitzPlot.jl"
-using DalitzPlot
-```
-
-These commands will install the "DalitzPlot" package and allow you to use it in your Julia environment.
 
 ## Define amplitudes with factors for the calculation
 
