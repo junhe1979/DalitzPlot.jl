@@ -3,7 +3,7 @@ using LinearAlgebra, Printf, Plots, PythonCall
 using DalitzPlot, .DalitzPlot.qBSE, DalitzPlot.QFT
 #using DalitzPlot
 using Test
-@testset "DalitzPlot.jl" begin
+@testset "DalitzPlot Tests" begin
 
     function amp(tecm, kf, ch, para)
 
