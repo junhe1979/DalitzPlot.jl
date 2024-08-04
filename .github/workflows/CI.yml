@@ -35,7 +35,9 @@ jobs:
 
     - name: Run AutoMerge
       run: julia -e '
-        using RegistryCI;
+        using Pkg
+        using RegistryCI
+        using Dates
         RegistryCI.AutoMerge.run(
             env = ENV,
             cicfg = RegistryCI.AutoMerge.GitHubActions(),
