@@ -1,6 +1,5 @@
-#include("../src/DalitzPlot.jl")
-using Printf, Plots, PythonCall
-using DalitzPlot, .DalitzPlot.qBSE, DalitzPlot.QFT
+include("../src/DalitzPlot.jl")
+using .DalitzPlot, .DalitzPlot.qBSE, DalitzPlot.QFT
 #using DalitzPlot
 using Test
 @testset "DalitzPlot Tests" begin
