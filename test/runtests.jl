@@ -1,5 +1,5 @@
 #include("../src/DalitzPlot.jl")
-using LinearAlgebra, Printf, Plots, PythonCall
+using Printf, Plots, PythonCall
 using DalitzPlot, .DalitzPlot.qBSE, DalitzPlot.QFT
 #using DalitzPlot
 using Test
