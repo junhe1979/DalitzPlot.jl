@@ -1,7 +1,7 @@
 
 module QFT
 
-export III, GA, GS, epsilon, Uc, Ubc, LCV, cdot
+#export III, GA, GS, epsilon, Uc, Ubc, LCV
 using StaticArrays
 
 #############################################################################
@@ -40,6 +40,24 @@ const GA = [SMatrix{4,4,ComplexF64}([
 
 function GS(k::SVector{5,ComplexF64})::SMatrix{4,4,ComplexF64}
     tmp = @MArray zeros(ComplexF64, 4, 4)
+    tmp[1, 1] = k[4]
+    tmp[1, 3] = -k[3]
+    tmp[1, 4] = -k[1] + im * k[2]
+    tmp[2, 2] = k[4]
+    tmp[2, 3] = -k[1] - im * k[2]
+    tmp[2, 4] = k[3]
+    tmp[3, 1] = k[3]
+    tmp[3, 2] = k[1] - im * k[2]
+    tmp[3, 3] = -k[4]
+    tmp[4, 1] = k[1] + im * k[2]
+    tmp[4, 2] = -k[3]
+    tmp[4, 4] = -k[4]
+    return tmp
+    #return GA[4] * k[4] - GA[1] * k[1] - GA[2] * k[2] - GA[3] * k[3]
+end
+
+function GS(k::Vector{ComplexF64})::Matrix{ComplexF64}
+    tmp =  zeros(ComplexF64, 4, 4)
     tmp[1, 1] = k[4]
     tmp[1, 3] = -k[3]
     tmp[1, 4] = -k[1] + im * k[2]
@@ -176,6 +194,60 @@ function Uc(k::SVector{5,Float64}, l::Int64)::MVector{4,ComplexF64}
 
     return U
 end
+function Uc(k::SVector{5,ComplexF64}, l::Int64)::MVector{4,ComplexF64}
+    zkx = real(k[1])
+    zky = real(k[2])
+    zkz = real(k[3])
+    zk0 = k[4]
+    zm = real(k[5])
+    zkk::Float64 = sqrt(zkx^2 + zky^2 + zkz^2)
+    zk0m::ComplexF64 = zk0 + zm
+    zfac::ComplexF64 = sqrt(2.0 * zm * zk0m)
+
+    if zkk < 1e-30
+        ct = 1.0
+        st = 0.0
+        cp = 1.0
+        sp = 0.0
+        xexpp = 1.0
+        ct2 = 1.0 / zfac
+        st2 = 0.0
+    elseif abs(zkx) < 1e-30 && abs(zky) < 1e-30
+        ct = zkz / zkk
+        st = sqrt(1.0 - ct^2)
+        ct2 = sqrt((1.0 + ct) / 2.0) / zfac
+        st2 = sqrt((1.0 - ct) / 2.0) / zfac
+        cp = 1.0
+        sp = 0.0
+        xexpp = 1.0
+    else
+        ct = zkz / zkk
+        st = sqrt(1.0 - ct^2)
+        ct2 = sqrt((1.0 + ct) / 2.0) / zfac
+        st2 = sqrt((1.0 - ct) / 2.0) / zfac
+        cp = zkx / zkk / st
+        sp = zky / zkk / st
+        xexpp = cp + im * sp
+    end
+
+    U = @MVector zeros(ComplexF64, 4)
+
+    if l == 1
+        U[1] = zk0m * ct2 / xexpp
+        U[2] = zk0m * st2
+        U[3] = zkk * ct2 / xexpp
+        U[4] = zkk * st2
+    elseif l == -1
+        U[1] = -zk0m * st2
+        U[2] = zk0m * ct2 * xexpp
+        U[3] = zkk * st2
+        U[4] = -zkk * ct2 * xexpp
+    else
+        println("wrong helicity for U")
+    end
+
+    return U
+end
 
 function Ubc(k::SVector{5,Float64}, l::Int64)::MVector{4,ComplexF64}
     zkx, zky, zkz, zk0, zm = k
@@ -226,6 +298,59 @@ function Ubc(k::SVector{5,Float64}, l::Int64)::MVector{4,ComplexF64}
     end
     return U
 end
+function Ubc(k::SVector{5,ComplexF64}, l::Int64)::MVector{4,ComplexF64}
+    zkx = real(k[1])
+    zky = real(k[2])
+    zkz = real(k[3])
+    zk0 = k[4]
+    zm = real(k[5])
+    zkk::Float64 = sqrt(zkx^2 + zky^2 + zkz^2)
+    zk0m::ComplexF64 = zk0 + zm
+    zfac::ComplexF64 = sqrt(2.0 * zm * zk0m)
+
+    if zkk < 1e-30
+        ct = 1.0
+        st = 0.0
+        cp = 1.0
+        sp = 0.0
+        xexpp = 1.0
+        ct2 = 1.0 / zfac
+        st2 = 0.0
+    elseif abs(zkx) < 1e-30 && abs(zky) < 1e-30
+        ct = zkz / zkk
+        st = sqrt(1.0 - ct^2)
+        ct2 = sqrt((1.0 + ct) / 2.0) / zfac
+        st2 = sqrt((1.0 - ct) / 2.0) / zfac
+        cp = 1.0
+        sp = 0.0
+        xexpp = 1.0
+    else
+        ct = zkz / zkk
+        st = sqrt(1.0 - ct^2)
+        ct2 = sqrt((1.0 + ct) / 2.0) / zfac
+        st2 = sqrt((1.0 - ct) / 2.0) / zfac
+        cp = zkx / zkk / st
+        sp = zky / zkk / st
+        xexpp = cp + im * sp
+    end
+
+    U = @MVector zeros(ComplexF64, 4)
+
+    if l == 1
+        U[1] = zk0m * ct2 * xexpp
+        U[2] = zk0m * st2
+        U[3] = -zkk * ct2 * xexpp
+        U[4] = -zkk * st2
+    elseif l == -1
+        U[1] = -zk0m * st2
+        U[2] = zk0m * ct2 / xexpp
+        U[3] = -zkk * st2
+        U[4] = zkk * ct2 / xexpp
+    else
+        println("wrong helicity for Ub")
+    end
+    return U
+end
 
 function LCV(a, b, c)::SVector{5,ComplexF64}
     V = @MArray zeros(ComplexF64, 5)
@@ -250,13 +375,23 @@ function cdot(Q::SVector{5,ComplexF64}, W::SVector{5,Float64})::ComplexF64
     temp = Q[4] * W[4] - Q[1] * W[1] - Q[2] * W[2] - Q[3] * W[3]
     return temp
 end
-
 function cdot(Q::SVector{5,ComplexF64}, W::SVector{5,ComplexF64})::ComplexF64
     temp = Q[4] * W[4] - Q[1] * W[1] - Q[2] * W[2] - Q[3] * W[3]
     return temp
 end
 
+function cdot(Q::Vector{Float64}, W::Vector{Float64})::Float64
+    temp = Q[4] * W[4] - Q[1] * W[1] - Q[2] * W[2] - Q[3] * W[3]
+    return temp
+end
+
+function cdot(Q::Vector{ComplexF64}, W::Vector{ComplexF64})::ComplexF64
+    temp = Q[4] * W[4] - Q[1] * W[1] - Q[2] * W[2] - Q[3] * W[3]
+    return temp
+end
+
 import Base: *
+
 function *(A::MVector{4,ComplexF64}, B::SMatrix{4,4,ComplexF64,16})::MVector{4,ComplexF64}
     temp = @MVector zeros(Complex{Float64}, 4)  # 使用Complex{Float64}来指定元素的类型
     @inbounds for i in 1:4

@@ -1,0 +1,197 @@
+{
+    "arch": "x86_64",
+    "build": "hc80595b_2",
+    "build_number": 2,
+    "build_string": "hc80595b_2",
+    "channel": "https://conda.anaconda.org/conda-forge/osx-64",
+    "constrains": [],
+    "depends": [
+        "__osx >=10.13",
+        "gmp >=6.3.0,<7.0a0"
+    ],
+    "extracted_package_dir": "/Users/junhe/.julia/scratchspaces/0b3b1443-0f03-428d-bdfb-f27f9c1191ea/root/pkgs/mpfr-4.2.1-hc80595b_2",
+    "files": [
+        "include/mpf2mpfr.h",
+        "include/mpfr.h",
+        "lib/libmpfr.6.dylib",
+        "lib/libmpfr.dylib",
+        "lib/pkgconfig/mpfr.pc",
+        "share/doc/mpfr/AUTHORS",
+        "share/doc/mpfr/BUGS",
+        "share/doc/mpfr/COPYING",
+        "share/doc/mpfr/COPYING.LESSER",
+        "share/doc/mpfr/FAQ.html",
+        "share/doc/mpfr/NEWS",
+        "share/doc/mpfr/TODO",
+        "share/doc/mpfr/examples/ReadMe",
+        "share/doc/mpfr/examples/can_round.c",
+        "share/doc/mpfr/examples/divworst.c",
+        "share/doc/mpfr/examples/rndo-add.c",
+        "share/doc/mpfr/examples/sample.c",
+        "share/doc/mpfr/examples/threads.c",
+        "share/doc/mpfr/examples/version.c",
+        "share/info/mpfr.info"
+    ],
+    "fn": "mpfr-4.2.1-hc80595b_2.conda",
+    "license": "LGPL-3.0-only",
+    "link": {
+        "source": "/Users/junhe/.julia/scratchspaces/0b3b1443-0f03-428d-bdfb-f27f9c1191ea/root/pkgs/mpfr-4.2.1-hc80595b_2",
+        "type": 1
+    },
+    "md5": "fc9b5179824146b67ad5a0b053b253ff",
+    "name": "mpfr",
+    "package_tarball_full_path": "/Users/junhe/.julia/scratchspaces/0b3b1443-0f03-428d-bdfb-f27f9c1191ea/root/pkgs/mpfr-4.2.1-hc80595b_2.tar.bz2",
+    "paths_data": {
+        "paths": [
+            {
+                "_path": "include/mpf2mpfr.h",
+                "path_type": "hardlink",
+                "sha256": "d5e6787f7db42d39f9ddfcbaa95ffba0b600f9095fbf9a9164237adeeaf7c993",
+                "sha256_in_prefix": "d5e6787f7db42d39f9ddfcbaa95ffba0b600f9095fbf9a9164237adeeaf7c993",
+                "size_in_bytes": 6645
+            },
+            {
+                "_path": "include/mpfr.h",
+                "path_type": "hardlink",
+                "sha256": "0f1bf63d924c33f3f73d3fc68b049d9f01523a021f89fa4d8910e35122151e33",
+                "sha256_in_prefix": "0f1bf63d924c33f3f73d3fc68b049d9f01523a021f89fa4d8910e35122151e33",
+                "size_in_bytes": 57443
+            },
+            {
+                "_path": "lib/libmpfr.6.dylib",
+                "path_type": "hardlink",
+                "sha256": "638c18818538e65efae74fcdf845e69130b3e4677587be7bf5a3f9c5ae1c69ba",
+                "sha256_in_prefix": "638c18818538e65efae74fcdf845e69130b3e4677587be7bf5a3f9c5ae1c69ba",
+                "size_in_bytes": 472424
+            },
+            {
+                "_path": "lib/libmpfr.dylib",
+                "path_type": "softlink",
+                "sha256_in_prefix": "638c18818538e65efae74fcdf845e69130b3e4677587be7bf5a3f9c5ae1c69ba",
+                "size_in_bytes": 472424
+            },
+            {
+                "_path": "lib/pkgconfig/mpfr.pc",
+                "path_type": "hardlink",
+                "sha256": "6a2013762c360285cdf064cfa26b87f3ed36905ac7298772359a835654e84eb5",
+                "sha256_in_prefix": "ab60e40e5264298aca26de66d677a6174f2e61cdbd96c73b22fb4114d8be54c6",
+                "size_in_bytes": 523
+            },
+            {
+                "_path": "share/doc/mpfr/AUTHORS",
+                "path_type": "hardlink",
+                "sha256": "dc8a7d86b688287ea3f6f20b3d7aa1f6f757253c1b9dc100d7e5dc5eb7b0058d",
+                "sha256_in_prefix": "dc8a7d86b688287ea3f6f20b3d7aa1f6f757253c1b9dc100d7e5dc5eb7b0058d",
+                "size_in_bytes": 1375
+            },
+            {
+                "_path": "share/doc/mpfr/BUGS",
+                "path_type": "hardlink",
+                "sha256": "c43aeda5399692924203f7ec03b02443004de0cb439b6e339cfe914e421c3e0b",
+                "sha256_in_prefix": "c43aeda5399692924203f7ec03b02443004de0cb439b6e339cfe914e421c3e0b",
+                "size_in_bytes": 3558
+            },
+            {
+                "_path": "share/doc/mpfr/COPYING",
+                "path_type": "hardlink",
+                "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986",
+                "sha256_in_prefix": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986",
+                "size_in_bytes": 35149
+            },
+            {
+                "_path": "share/doc/mpfr/COPYING.LESSER",
+                "path_type": "hardlink",
+                "sha256": "e3a994d82e644b03a792a930f574002658412f62407f5fee083f2555c5f23118",
+                "sha256_in_prefix": "e3a994d82e644b03a792a930f574002658412f62407f5fee083f2555c5f23118",
+                "size_in_bytes": 7652
+            },
+            {
+                "_path": "share/doc/mpfr/FAQ.html",
+                "path_type": "hardlink",
+                "sha256": "9965ebec95c86359b341060ba8658f6cdd28e663822f5ecc4ef22db4ff4f77c5",
+                "sha256_in_prefix": "9965ebec95c86359b341060ba8658f6cdd28e663822f5ecc4ef22db4ff4f77c5",
+                "size_in_bytes": 18411
+            },
+            {
+                "_path": "share/doc/mpfr/NEWS",
+                "path_type": "hardlink",
+                "sha256": "f5e403c774f356db6729d5fd9e9594b64247d23fb31c196f39afafa8e547371f",
+                "sha256_in_prefix": "f5e403c774f356db6729d5fd9e9594b64247d23fb31c196f39afafa8e547371f",
+                "size_in_bytes": 26519
+            },
+            {
+                "_path": "share/doc/mpfr/TODO",
+                "path_type": "hardlink",
+                "sha256": "53d6b72d32873959047cac115e3d305e5a3252b9fa14cd99c44665175f6b6661",
+                "sha256_in_prefix": "53d6b72d32873959047cac115e3d305e5a3252b9fa14cd99c44665175f6b6661",
+                "size_in_bytes": 39365
+            },
+            {
+                "_path": "share/doc/mpfr/examples/ReadMe",
+                "path_type": "hardlink",
+                "sha256": "4b503f2cd881013af415ae498ab1ac88a2c4cb5ed766fa6f5e227113145c53d0",
+                "sha256_in_prefix": "4b503f2cd881013af415ae498ab1ac88a2c4cb5ed766fa6f5e227113145c53d0",
+                "size_in_bytes": 41
+            },
+            {
+                "_path": "share/doc/mpfr/examples/can_round.c",
+                "path_type": "hardlink",
+                "sha256": "9eb47ae66bcf86e080f3a818f65d67f3fbd3435b726e7410d81b3cf141564278",
+                "sha256_in_prefix": "9eb47ae66bcf86e080f3a818f65d67f3fbd3435b726e7410d81b3cf141564278",
+                "size_in_bytes": 2101
+            },
+            {
+                "_path": "share/doc/mpfr/examples/divworst.c",
+                "path_type": "hardlink",
+                "sha256": "c3a82447295774cafa4ed2edeea50e08a8755f0571f4daf530471c5c640128e3",
+                "sha256_in_prefix": "c3a82447295774cafa4ed2edeea50e08a8755f0571f4daf530471c5c640128e3",
+                "size_in_bytes": 3044
+            },
+            {
+                "_path": "share/doc/mpfr/examples/rndo-add.c",
+                "path_type": "hardlink",
+                "sha256": "61d8eaede53e6914e09f136f5ffda09f4c2c9e75e3d3fba233b72de53c7129c0",
+                "sha256_in_prefix": "61d8eaede53e6914e09f136f5ffda09f4c2c9e75e3d3fba233b72de53c7129c0",
+                "size_in_bytes": 2665
+            },
+            {
+                "_path": "share/doc/mpfr/examples/sample.c",
+                "path_type": "hardlink",
+                "sha256": "8e6140d6addf8d0619afaff7f08932c29edd9aa88e6281e3da50bb6bf606be61",
+                "sha256_in_prefix": "8e6140d6addf8d0619afaff7f08932c29edd9aa88e6281e3da50bb6bf606be61",
+                "size_in_bytes": 1681
+            },
+            {
+                "_path": "share/doc/mpfr/examples/threads.c",
+                "path_type": "hardlink",
+                "sha256": "1cce92f7b4c08bf50ff6cbe3ad602e047fbe7a78077494a0ff1baa8193f9df4e",
+                "sha256_in_prefix": "1cce92f7b4c08bf50ff6cbe3ad602e047fbe7a78077494a0ff1baa8193f9df4e",
+                "size_in_bytes": 2430
+            },
+            {
+                "_path": "share/doc/mpfr/examples/version.c",
+                "path_type": "hardlink",
+                "sha256": "24d8c7547f0ade4b3ffa4c256e40cf66417c9c0b83d0c9e6a31eebe039fc8833",
+                "sha256_in_prefix": "24d8c7547f0ade4b3ffa4c256e40cf66417c9c0b83d0c9e6a31eebe039fc8833",
+                "size_in_bytes": 7465
+            },
+            {
+                "_path": "share/info/mpfr.info",
+                "path_type": "hardlink",
+                "sha256": "218459d9232f328bd3e8572bbc2415040a626c67c42ea29aeb3de672ecc57580",
+                "sha256_in_prefix": "218459d9232f328bd3e8572bbc2415040a626c67c42ea29aeb3de672ecc57580",
+                "size_in_bytes": 284508
+            }
+        ],
+        "paths_version": 1
+    },
+    "platform": "osx",
+    "requested_spec": "",
+    "sha256": "24e27ad9a71f51d2858c72e7526a7aebec1a28524003fa79a9a5d682f0d5d125",
+    "size": 373188,
+    "subdir": "osx-64",
+    "timestamp": 1722132769513,
+    "track_features": "",
+    "url": "https://conda.anaconda.org/conda-forge/osx-64/mpfr-4.2.1-hc80595b_2.conda",
+    "version": "4.2.1"
+}

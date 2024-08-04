@@ -1,0 +1,10 @@
+prefix=/Users/junhe/Desktop/work/0/jl/DalitzPlot.jl/.CondaPkg/env
+exec_prefix=/Users/junhe/Desktop/work/0/jl/DalitzPlot.jl/.CondaPkg/env
+libdir=/Users/junhe/Desktop/work/0/jl/DalitzPlot.jl/.CondaPkg/env/lib
+includedir=/Users/junhe/Desktop/work/0/jl/DalitzPlot.jl/.CondaPkg/env/include
+
+Name: libturbojpeg
+Description: A SIMD-accelerated JPEG codec that provides the TurboJPEG API
+Version: 3.0.0
+Libs: -L${libdir} -lturbojpeg
+Cflags: -I${includedir}

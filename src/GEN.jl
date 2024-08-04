@@ -4,12 +4,6 @@ module GEN
 export GENEV
 using StaticArrays
 
-#############################################################################
-# GEN
-#############################################################################
-export GENEV, Xsection, Xsection2, plotD, III, GA, GS, epsilon, Uc, Ubc, LCV, cdot,plab2pcm,getkf,plab,pcm
-using StaticArrays, ProgressBars,  Distributed, Plots, LaTeXStrings, Colors, Compose, DelimitedFiles
-
 function cut(a::Int32)::Int64
     binary_string = bitstring(a * 69069)
     binary_str = binary_string[end-31:end]

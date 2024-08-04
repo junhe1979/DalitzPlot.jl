@@ -1,0 +1,57 @@
+{
+    "arch": "x86_64",
+    "build": "openmp_h8869122_1",
+    "build_number": 1,
+    "build_string": "openmp_h8869122_1",
+    "channel": "https://conda.anaconda.org/conda-forge/osx-64",
+    "constrains": [
+        "openblas >=0.3.27,<0.3.28.0a0"
+    ],
+    "depends": [
+        "__osx >=10.13",
+        "libgfortran 5.*",
+        "libgfortran5 >=12.3.0",
+        "llvm-openmp >=16.0.6"
+    ],
+    "extracted_package_dir": "/Users/junhe/.julia/scratchspaces/0b3b1443-0f03-428d-bdfb-f27f9c1191ea/root/pkgs/libopenblas-0.3.27-openmp_h8869122_1",
+    "files": [
+        "lib/libopenblas.0.dylib",
+        "lib/libopenblasp-r0.3.27.dylib"
+    ],
+    "fn": "libopenblas-0.3.27-openmp_h8869122_1.conda",
+    "license": "BSD-3-Clause",
+    "link": {
+        "source": "/Users/junhe/.julia/scratchspaces/0b3b1443-0f03-428d-bdfb-f27f9c1191ea/root/pkgs/libopenblas-0.3.27-openmp_h8869122_1",
+        "type": 1
+    },
+    "md5": "c0798ad76ddd730dade6ff4dff66e0b5",
+    "name": "libopenblas",
+    "package_tarball_full_path": "/Users/junhe/.julia/scratchspaces/0b3b1443-0f03-428d-bdfb-f27f9c1191ea/root/pkgs/libopenblas-0.3.27-openmp_h8869122_1.tar.bz2",
+    "paths_data": {
+        "paths": [
+            {
+                "_path": "lib/libopenblas.0.dylib",
+                "path_type": "softlink",
+                "sha256_in_prefix": "28894ae33aea5701c03fec98c11d5c50673ee35a90beba7dd213e10fc419fed4",
+                "size_in_bytes": 69042432
+            },
+            {
+                "_path": "lib/libopenblasp-r0.3.27.dylib",
+                "path_type": "hardlink",
+                "sha256": "28894ae33aea5701c03fec98c11d5c50673ee35a90beba7dd213e10fc419fed4",
+                "sha256_in_prefix": "28894ae33aea5701c03fec98c11d5c50673ee35a90beba7dd213e10fc419fed4",
+                "size_in_bytes": 69042432
+            }
+        ],
+        "paths_version": 1
+    },
+    "platform": "osx",
+    "requested_spec": "",
+    "sha256": "83b0b9d3d09889b3648a81d2c18a2d78c405b03b115107941f0496a8b358ce6d",
+    "size": 6047513,
+    "subdir": "osx-64",
+    "timestamp": 1720426759731,
+    "track_features": "",
+    "url": "https://conda.anaconda.org/conda-forge/osx-64/libopenblas-0.3.27-openmp_h8869122_1.conda",
+    "version": "0.3.27"
+}
