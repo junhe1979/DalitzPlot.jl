@@ -34,4 +34,32 @@ jobs:
       run: julia -e 'using Pkg; Pkg.update()'
 
     - name: Run AutoMerge
-      run: julia -e 'using RegistryCI; RegistryCI.AutoMerge.run()'
+      run: julia -e '
+        using RegistryCI;
+        RegistryCI.AutoMerge.run(
+            env = ENV,
+            cicfg = RegistryCI.AutoMerge.GitHubActions(),
+            merge_new_packages = true,
+            merge_new_versions = true,
+            new_package_waiting_period = Dates.Day(3),
+            new_jll_package_waiting_period = Dates.Minute(0),
+            new_version_waiting_period = Dates.Minute(0),
+            new_jll_version_waiting_period = Dates.Minute(0),
+            registry = "General",
+            tagbot_enabled = false,
+            authorized_authors = [],
+            authorized_authors_special_jll_exceptions = [],
+            additional_statuses = [],
+            additional_check_runs = [],
+            error_exit_if_automerge_not_applicable = true,
+            master_branch = "main",
+            master_branch_is_default_branch = true,
+            suggest_onepointzero = false,
+            point_to_slack = false,
+            registry_deps = [],
+            api_url = "https://api.github.com",
+            check_license = true,
+            public_registries = ["General"],
+            read_only = false,
+            environment_variables_to_pass = []
+        )'
