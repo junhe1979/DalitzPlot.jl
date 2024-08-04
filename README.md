@@ -5,13 +5,14 @@
 - [DalitzPlot](#dalitzplot)
   * [Installation](#installation)
   * [Usage](#usage)
-- [Cross section](#cross-section)
+- [Xs Package: for cross section and Dalitz plot](#xs-package-for-cross-section-and-dalitz-plot)
   * [Define amplitudes with factors for the calculation](#define-amplitudes-with-factors-for-the-calculation)
   * [Define the masses of initial and final particles](#define-the-masses-of-initial-and-final-particles)
   * [Define the momentum or total energy](#define-the-momentum-or-total-energy)
   * [Calculate](#calculate)
   * [Plot Dalitz Plot](#plot-dalitz-plot)
-- [GEV Package](#gev-package)
+- [GEN Package: for Generating Events](#gen-package-for-generating-events)
+- [QFT Package: for Numerical Calculation of Feynman Rules](#qft-package-for-numerical-calculation-of-feynman-rules)
 
 <!-- tocstop -->
 
@@ -19,10 +20,10 @@
 
 This Julia package is designed for high-energy physics applications, originally in visualizing and analyzing particle decays. It consists of the following subpackages:
 
-- Xs: Provides tools for calculation cross section and creating Dalitz plots, which are essential for visualizing three-body - decays of particles. Users can specify amplitudes to generate these plots.
-- GEN: Stands for General Event Generation. This subpackage is used for generating events, allowing users to simulate particle interactions and decays.
-- QFT: Short for Quantum Field Theory. This subpackage includes functions for calculating spinor or polarized vectors with momentum and spin, gamma matrices, and other related calculations.
-- qBSE: Refers to the Quasipotential Bethe-Salpeter Equation. This subpackage provides tools for solving the Bethe-Salpeter equation, which is used in the study of bound states in quantum field theory.
+- `Xs`: Provides tools for calculation cross section and creating Dalitz plots, which are essential for visualizing three-body - decays of particles. Users can specify amplitudes to generate these plots.
+- `GEN`: Stands for General Event Generation. This subpackage is used for generating events, allowing users to simulate particle interactions and decays.
+- `QFT`: Short for Quantum Field Theory. This subpackage includes functions for calculating spinor or polarized vectors with momentum and spin, gamma matrices, and other related calculations.
+- `qBSE`: Refers to the Quasipotential Bethe-Salpeter Equation. This subpackage provides tools for solving the Bethe-Salpeter equation, which is used in the study of bound states in quantum field theory.
 
 Note: This package is designed for phenomenological studies on the theoretical side. For experimental data analysis, please refer to other tools.
 
@@ -58,7 +59,7 @@ using DalitzPlot.QFT
 using DalitzPlot.qBSE
 ```
 
-# Cross section
+# Xs Package: for cross section and Dalitz plot
 
 The cross section, denoted by $d\sigma$, can be expressed in terms of amplitudes, ${\mathcal M}$, as follows:
 
@@ -71,8 +72,6 @@ Additionally, if a boson or zero-mass spinor particle is replaced with a non-zer
 The total symmetry factor $S$ is given by $\prod_i m_i!$ if there are $m_i$ identical particles.
 
 For decay width, the flux factor is modified to $F = \frac{1}{2E}$.
-
----
 
 
 ## Define amplitudes with factors for the calculation
@@ -171,8 +170,27 @@ plotD(res)
 
 ![ex1.png](test/DP.png)
 
-# GEV Package
+# GEN Package: for Generating Events 
 
-GEN package is used for genenrating events for cross section and Dalitz plot. The Lorentz-invariant phase space adopted here is $dR = (2\pi)^{3n-4} d\Phi = \prod_{i}\frac{d^3k_i}{2E_i}\delta^4(\sum_{i}k_i-P)$  for $n$ particles, and it is generated using the Monte-Carlo method described in Ref. [F. James, CERN 68-12].
+The GEN package is used for generating events for cross-section calculations and Dalitz plots. The Lorentz-invariant phase space used here is defined as: 
 
-The 
+$dR = (2\pi)^{3n-4} d\Phi = \prod_{i}\frac{d^3k_i}{2E_i}\delta^4(\sum_{i}k_i-P)$  
+
+for $n$ particles. The events are generated using the Monte-Carlo method described in Ref. [F. James, CERN 68-12].
+
+The primary function provided by this package is `GENEV`, which can be used as follows:
+```julia
+PCM, WT=GENEV(tecm,EM)
+```
+
+
+- Input:  total momentum in center of mass frame `tecm`, and the mass of particles `EM`.
+  * `tecm`: a `Float64` value representing the total momentum in the center of mass frame.
+  * `EM`: a `Vector{Float64}` containing the masses of the particles.
+- Output: the momenta of the particles `PCM`, and a weight `WT`.
+  * `PCM`: a StaticArrays `@MArray zeros(Float64, 5, 18)` storing the momenta of the particles. Note that at most 18 particles can be considered.
+  * `WT`:  `Float64` value representing the weight for this event.
+
+# QFT Package: for Numerical Calculation of Feynman Rules
+
+[链接文本](test.md)
