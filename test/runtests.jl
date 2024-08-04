@@ -21,7 +21,6 @@ using Test
         #flux factor for cross section
         fac = 1e9 / (4 * para.p * ch.mi[2] * (2 * pi)^5)
 
-
         k12 = k1 + k2
         s12 = k12*k12
         m = 3.2

@@ -1,11 +1,26 @@
-[toc]
+# Outline
+
+<!-- toc -->
+
+- [DalitzPlot](#dalitzplot)
+  * [Installation](#installation)
+  * [Usage](#usage)
+- [Cross section](#cross-section)
+  * [Define amplitudes with factors for the calculation](#define-amplitudes-with-factors-for-the-calculation)
+  * [Define the masses of initial and final particles](#define-the-masses-of-initial-and-final-particles)
+  * [Define the momentum or total energy](#define-the-momentum-or-total-energy)
+  * [Calculate](#calculate)
+  * [Plot Dalitz Plot](#plot-dalitz-plot)
+- [GEV Package](#gev-package)
+
+<!-- tocstop -->
 
 # DalitzPlot
 
 This Julia package is designed for high-energy physics applications, originally in visualizing and analyzing particle decays. It consists of the following subpackages:
 
-- Main package: Provides tools for creating Dalitz plots, which are essential for visualizing three-body - decays of particles. Users can specify amplitudes to generate these plots.
-- GEV: Stands for General Event Generation. This subpackage is used for generating events, allowing users to simulate particle interactions and decays.
+- Xs: Provides tools for calculation cross section and creating Dalitz plots, which are essential for visualizing three-body - decays of particles. Users can specify amplitudes to generate these plots.
+- GEN: Stands for General Event Generation. This subpackage is used for generating events, allowing users to simulate particle interactions and decays.
 - QFT: Short for Quantum Field Theory. This subpackage includes functions for calculating spinor or polarized vectors with momentum and spin, gamma matrices, and other related calculations.
 - qBSE: Refers to the Quasipotential Bethe-Salpeter Equation. This subpackage provides tools for solving the Bethe-Salpeter equation, which is used in the study of bound states in quantum field theory.
 
@@ -37,6 +52,7 @@ using DalitzPlot
 ```
 To use the subpackages:
 ```julia
+using DalitzPlot.Xs
 using DalitzPlot.GEV
 using DalitzPlot.QFT
 using DalitzPlot.qBSE
@@ -157,4 +173,6 @@ plotD(res)
 
 # GEV Package
 
-Here, $dR = (2\pi)^{3n-4} d\Phi = \prod_{i}\frac{d^3k_i}{2E_i}\delta^4(\sum_{i}k_i-P)$ represents the Lorentz-invariant phase space for $n$ particles, and it is generated using the Monte-Carlo method described in Ref. [F. James, CERN 68-12].
+GEN package is used for genenrating events for cross section and Dalitz plot. The Lorentz-invariant phase space adopted here is $dR = (2\pi)^{3n-4} d\Phi = \prod_{i}\frac{d^3k_i}{2E_i}\delta^4(\sum_{i}k_i-P)$  for $n$ particles, and it is generated using the Monte-Carlo method described in Ref. [F. James, CERN 68-12].
+
+The 
