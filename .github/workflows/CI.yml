@@ -33,5 +33,3 @@ jobs:
     - name: Check compatibility bounds
       run: julia -e 'using Pkg; Pkg.update()'
 
-    - name: Run AutoMerge
-      run: julia -e 'using Pkg; using RegistryCI; RegistryCI.AutoMerge.run()'
