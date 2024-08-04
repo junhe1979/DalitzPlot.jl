@@ -24,7 +24,7 @@ using Test
 
 
         k12 = k1 + k2
-        s12 = cdot(k12, k12)
+        s12 = QFT.cdot(k12, k12)
         m = 3.2
         A = 1 / (s12 - m^2 + im * m * 0.1)
 
