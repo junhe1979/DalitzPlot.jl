@@ -4,7 +4,7 @@ module qBSE
 using FastGaussQuadrature, StaticArrays, WignerD
 using Base.Threads
 using StaticArrays
-using  ..QFT
+using ..QFT
 # store the information of a channel. The kv and wv are stored here for convenience. 
 mutable struct ChannelBasisType{VI<:Vector{Int64},I<:Int64,VF<:Vector{Float64},F<:Float64,VS<:Vector{String}} #CB
     p::VI #particles of channel
@@ -16,10 +16,11 @@ mutable struct ChannelBasisType{VI<:Vector{Int64},I<:Int64,VF<:Vector{Float64},F
     wv::VF #weights of discreting
 end
 # store the information of a interaction
-mutable struct InteractionType{I<:Int64,MI<:Matrix{Int64},MF<:Matrix{Float64}} #IA
+mutable struct InteractionType{I<:Int64,MI<:Matrix{Int64},MF<:Matrix{Float64},VM<:Vector{Matrix{Float64}}} #IA
     Nex::I  #total number of exchanges
     ex::MI  #exchange
     CC::MF  #flavor factors
+    D::VM   #WignerD
 end
 # store the information of an independent helicity for matrix
 mutable struct IndependentHelicityType{I<:Int64,V<:Vector{Int64},C<:Complex{Float64}} #IH
@@ -31,12 +32,12 @@ mutable struct IndependentHelicityType{I<:Int64,V<:Vector{Int64},C<:Complex{Floa
     kon::C # onshell momentum
 end
 struct QuantumNumberType{I<:Int64}
-    lII::I
-    lII_h::I
-    lJJ::I
-    lJJ_h::I
-    lPP::I
-    lCC::I
+    I::I
+    I_h::I
+    J::I
+    J_h::I
+    P::I
+    C::I
 end
 mutable struct MomentaType{SV<:SVector{5,ComplexF64},C<:ComplexF64} #k
     i1::SV
@@ -130,7 +131,7 @@ end
 const p = ParticlesType[]
 #*******************************************************************************************
 
-function fPropFF(k, ex, L, LLi, LLf, lregu, lFFex,qt) #慢
+function fPropFF(k, ex, L, LLi, LLf, lregu, lFFex, qt) #慢
 
     m = p[ex].m
     if lFFex >= 10
@@ -145,7 +146,7 @@ function fPropFF(k, ex, L, LLi, LLf, lregu, lFFex,qt) #慢
     FFre = 0.0 + 0im
 
     if ex != 1
-        qd2=k.qd2
+        qd2 = k.qd2
         fProp *= (1.0 + 0im) / (qd2 - ComplexF64(m^2))
         if lFFex == 1
             FFex *= ((L^2 - m^2) / (L^2 - k.qd2))^2
@@ -167,16 +168,16 @@ function fPropFF(k, ex, L, LLi, LLf, lregu, lFFex,qt) #慢
         mf2 = real(k.f2[5])
 
         if mi1 <= mi2
-            FFre += -(mi1^2 - k.i1*k.i1)^2 / LLi^4
+            FFre += -(mi1^2 - k.i1 * k.i1)^2 / LLi^4
         end
         if mi1 > mi2
-            FFre += -(mi2^2 - k.i2*k.i2)^2 / LLi^4
+            FFre += -(mi2^2 - k.i2 * k.i2)^2 / LLi^4
         end
         if mf1 <= mf2
-            FFre += -(mf1^2 - k.f1*k.f1)^2 / LLf^4
+            FFre += -(mf1^2 - k.f1 * k.f1)^2 / LLf^4
         end
         if mf1 > mf2
-            FFre += -(mf2^2 - k.f2*k.f2)^2 / LLf^4
+            FFre += -(mf2^2 - k.f2 * k.f2)^2 / LLf^4
         end
     end
     return fProp * FFex * exp(FFre)
@@ -206,11 +207,16 @@ function fKernel(kf, ki, iNih1, iNih2, Ec, qn, lregu, lFFex, CB, IA, IH, fV)::Co
         IH[iNih1].hel[2], IH[iNih1].hel_lh[2]
     )
 
-    eta = p[CB[ichi].p[1]].P * p[CB[ichi].p[2]].P * qn.lPP *
-          (-1)^(qn.lJJ / qn.lJJ_h - p[CB[ichi].p[1]].J / p[CB[ichi].p[1]].Jh - p[CB[ichi].p[2]].J / p[CB[ichi].p[2]].Jh)
+    eta = p[CB[ichi].p[1]].P * p[CB[ichi].p[2]].P * qn.P *
+          (-1)^(qn.J / qn.J_h - p[CB[ichi].p[1]].J / p[CB[ichi].p[1]].Jh - p[CB[ichi].p[2]].J / p[CB[ichi].p[2]].Jh)
 
+    lJJ = qn.J / qn.J_h
+    l21i = -l.i2 / l.i2_h + l.i1 / l.i1_h
+    l21f = l.f2 / l.f2_h - l.f1 / l.f1_h
     Ker0 = 0 + 0im
     d50 = 2.0 / 50.0  # 常数预计算
+    lf = Int64(lJJ + l21f) + 1
+
     for i in 1:50
         x = -1.0 + d50 * (i - 0.5)
         sqrt1_x2 = sqrt(1 - x^2)
@@ -219,22 +225,12 @@ function fKernel(kf, ki, iNih1, iNih2, Ec, qn, lregu, lFFex, CB, IA, IH, fV)::Co
         ki2 = @SVector [0.0 + 0im, 0.0 + 0im, ki + 0im, ki20 + 0im, mi2 + 0im]
         kf2 = @SVector [kf * sqrt1_x2 + 0im, 0.0 + 0im, kf * x + 0im, kf20 + 0im, mf2 + 0im]
         qd = kf2 - ki2
-        qd2 = qd*qd
+        qd2 = qd * qd
         k = MomentaType(ki1, kf1, ki2, kf2, qd, qd2)
-
-        lJJ = qn.lJJ / qn.lJJ_h
-        l21i = -l.i2 / l.i2_h + l.i1 / l.i1_h
-        l21f = l.f2 / l.f2_h - l.f1 / l.f1_h
-        acx = acos(x)
-        DJ = [
-            WignerD.wignerdjmn(lJJ, l21i, l21f, acx),
-            WignerD.wignerdjmn(lJJ, -l21i, l21f, acx)
-        ]
-
         ker = 0 + 0im
         for ilV in -1:2:1
-            dj_idx = div(ilV + 1, 2) + 1
-            ker += fV(k, l, ilV, CB[ichi].cutoff, CB[ichf].cutoff, lregu, lFFex, qt) * IA[ichi, ichf].CC[1, 1] * DJ[dj_idx]
+            ker += fV(k, l, ilV, CB[ichi].cutoff, CB[ichf].cutoff, lregu, lFFex, qt) * 
+                IA[ichi, ichf].CC[1, 1] * IA[ichi, ichf].D[i][Int64(lJJ - ilV * l21i)+1, lf]
             if ilV == -1
                 ker *= eta
             end
@@ -253,12 +249,10 @@ function fKernel(kf, ki, iNih1, iNih2, Ec, qn, lregu, lFFex, CB, IA, IH, fV)::Co
 end
 #*******************************************************************************************
 function fProp(iNih, ii, rp, Ec, Np, CB, IH)
-    Er = real(Ec)
     fprop = Complex{Float64}(0, 0)
     ich = IH[iNih].ich
     mi1 = p[CB[ich].p[1]].m
     mi2 = p[CB[ich].p[2]].m
-    rL2 = CB[ich].cutoff
     mi2p2 = 1.0
     if IH[iNih].hel_lh[1] == 2
         mi2p2 *= 2.0 * mi1
@@ -268,17 +262,12 @@ function fProp(iNih, ii, rp, Ec, Np, CB, IH)
     end
 
     if mi1 <= mi2
-        E2 = real(sqrt(rp^2 + mi2^2))
-        k12 = ((Ec) - E2)^2 - rp^2
         if ii <= Np
             cE1 = sqrt(rp^2 + mi1^2)
             cE2 = sqrt(rp^2 + mi2^2)
             fprop = mi2p2 * rp^2 * CB[ich].wv[ii] / (2 * pi^2) / (2 * cE2 * ((Ec - cE2)^2 - cE1^2))
         end
     else
-        E1 = real(sqrt(rp^2 + mi1^2))
-        k22 = ((Ec) - E1)^2 - rp^2
-        ff = exp(-(mi2^2 - k22)^2 / rL2^4)^2
         if ii <= Np
             cE2 = sqrt(rp^2 + mi2^2)
             cE1 = sqrt(rp^2 + mi1^2)
@@ -300,8 +289,10 @@ function fProp(iNih, ii, rp, Ec, Np, CB, IH)
     end
     return fprop
 end
-function srAB(Ec, qn, lregu, lFFex, lRm, Np, Nih, CB, IH, IA,fV)
+function srAB(Ec, qn, lregu, lFFex, CB, IH,IA, fV; lRm=1)
     # Determine the dimension of the work matrix. At energies larger than the threshold, the dimension increases by 1
+    Np=length(CB[1].kv)
+    Nih=length(IH)
     Nt, IH = WORKSPACE(Ec, lRm, Np, Nih, CB, IH)
     Vc = zeros(Complex{Float64}, Nt, Nt)
     Gc = zeros(Complex{Float64}, Nt, Nt)
@@ -313,7 +304,7 @@ function srAB(Ec, qn, lregu, lFFex, lRm, Np, Nih, CB, IH, IA,fV)
                 for i2 in 1:(Np+IH[iNih2].Nmo)
                     ki = (i2 <= Np) ? CB[IH[iNih2].ich].kv[i2] : IH[iNih2].kon
                     if i1 + IH[iNih1].Nm0 <= i2 + IH[iNih2].Nm0
-                        Vc[i1+IH[iNih1].Nm0, i2+IH[iNih2].Nm0] = fKernel(kf, ki, iNih1, iNih2, Ec, qn, lregu, lFFex, CB, IA, IH,fV)::ComplexF64
+                        Vc[i1+IH[iNih1].Nm0, i2+IH[iNih2].Nm0] = fKernel(kf, ki, iNih1, iNih2, Ec, qn, lregu, lFFex, CB, IA, IH, fV)::ComplexF64
                     end
                     if i1 == i2 && iNih1 == iNih2
                         Gc[i1+IH[iNih1].Nm0, i2+IH[iNih2].Nm0] = fProp(iNih1, i1, kf, Ec, Np, CB, IH)
@@ -372,10 +363,13 @@ function WORKSPACE(Ec, lRm, Np, Nih, CB, IH)
     return Nt, IH
 end
 #*******************************************************************************************
-function Independent_amp(channels, CC, lJJ, Np)
+function Independent_amp(channels, CC, qn; Np=10,Nx=50)
     CB = ChannelBasisType[]
     IH = IndependentHelicityType[]
     Nih, Nc = 1, 1
+    kv, wv = gausslaguerre(Np)
+    wv = wv .* exp.(kv)
+    wD=[wignerd(qn.J / qn.J_h, acos(-1.0 + 2. /Nx * (i - 0.5))) for i in 1:Nx]
     for channel in channels
         p1 = pkey[channel[1]]
         p2 = pkey[channel[2]]
@@ -389,13 +383,8 @@ function Independent_amp(channels, CC, lJJ, Np)
             Float64[],
             Float64[]
         )
-
-
-
-        CB0.kv, CB0.wv = gausslaguerre(Np)
-        CB0.wv = CB0.wv .* exp.(CB0.kv)
-        #CB0.kv = [2.0496633800321580e-002, 0.10637754206664184, 0.25725070911685544, 0.47691569315652682, 0.78977094890173449, 1.2661898317497706, 2.0968065118988930, 3.8872580463677919, 9.4004780129091756, 48.788435306583473]
-        #CB0.wv = [5.2385549033825828e-002, 0.11870709308644416, 0.18345726134358431, 0.25958276865541480, 0.37687641122072230, 0.60422211564747619, 1.1412809934307626, 2.7721814583372204, 10.490025610274076, 124.69392072758504]
+        CB0.kv = kv
+        CB0.wv = wv
         Nih0 = Nih
         IH0 = IndependentHelicityType[]
         IH00 = IndependentHelicityType(0, Int64[], Int64[], 0, 0, 0.0 + 0.0 * im)
@@ -405,7 +394,7 @@ function Independent_amp(channels, CC, lJJ, Np)
                 if p[p1].Jh == 1 && p[p2].Jh == 2 || p[p1].Jh == 2 && p[p2].Jh == 1
                     Jh = 2.0
                 end
-                if abs(float(i1) / float(p[p1].Jh) - float(i2) / float(p[p2].Jh)) <= float(lJJ) + 0.01
+                if abs(float(i1) / float(p[p1].Jh) - float(i2) / float(p[p2].Jh)) <= float(qn.J) + 0.01
                     lind = 1
                     for i3 in 1:Nih-Nih0 #Nih0:(Nih-1)
                         if IH0[i3].hel[1] == -i1 && IH0[i3].hel[2] == -i2
@@ -444,7 +433,7 @@ function Independent_amp(channels, CC, lJJ, Np)
             chnamef[1] = CB[i2].name[3]
             chname = "$(chnamei[1])-->$(chnamef[1])"
 
-            IA0 = InteractionType(0, zeros(Int64, 5, 2), zeros(Float64, 5, 2))
+            IA0 = InteractionType(0, zeros(Int64, 5, 2), zeros(Float64, 5, 2),wD)
 
             IA0.Nex = CC[chname][1]
             IA0.ex = Matrix{Int64}(undef, IA0.Nex, 2)

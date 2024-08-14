@@ -6,7 +6,7 @@
 #*******************************************************************************************
 using LinearAlgebra, Printf,Plots, PythonCall
 using DalitzPlot
-using .DalitzPlot.qBSE, .DalitzPlot.QFT
+using DalitzPlot.qBSE, DalitzPlot.QFT
 qBSE.particles!(qBSE.p, "data/particlesjl.txt")
 #*******************************************************************************************
 function Output(Nih, Vc, Gc, II, Ec, Pole, IH)

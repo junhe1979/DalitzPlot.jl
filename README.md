@@ -32,6 +32,7 @@ Note: This package is designed for phenomenological studies on the theoretical s
 To install the "DalitzPlot" package, you can follow the standard Julia package manager procedure. Open Julia and use the following commands:
 
 Using the Julia REPL
+
 ```julia
 Pkg.add("DalitzPlot")
 ```
@@ -39,19 +40,24 @@ Pkg.add("DalitzPlot")
 Alternatively, if you want to install it directly from the GitHub repository:
 
 Using the Julia REPL:
+
 ```julia
 import Pkg
 Pkg.add(url="https://github.com/junhe1979/DalitzPlot.jl")
 ```
+
 These commands will install the "DalitzPlot" package and allow you to use it in your Julia environment.
 
 ## Usage
 
 After installation, the package can be used as:
+
 ```julia
 using DalitzPlot
 ```
+
 To use the subpackages:
+
 ```julia
 using DalitzPlot.Xs
 using DalitzPlot.GEV
@@ -72,7 +78,6 @@ Additionally, if a boson or zero-mass spinor particle is replaced with a non-zer
 The total symmetry factor $S$ is given by $\prod_i m_i!$ if there are $m_i$ identical particles.
 
 For decay width, the flux factor is modified to $F = \frac{1}{2E}$.
-
 
 ## Define amplitudes with factors for the calculation
 
@@ -98,7 +103,7 @@ Users are expected to customize the amplitudes within this function according to
 ```julia
 function amp(tecm, kf, ch, para)
     # get kf as momenta in the center-of-mass ,
-    #k1,k2,k3=getkf(kf)     
+    #k1,k2,k3=getkf(kf)   
     #get kf as momenta in laboratory frame
     k1, k2, k3 = getkf(para.p, kf, ch)
 
@@ -170,19 +175,19 @@ plotD(res)
 
 ![ex1.png](test/DP.png)
 
-# GEN Package: for Generating Events 
+# GEN Package: for Generating Events
 
-The GEN package is used for generating events for cross-section calculations and Dalitz plots. The Lorentz-invariant phase space used here is defined as: 
+The GEN package is used for generating events for cross-section calculations and Dalitz plots. The Lorentz-invariant phase space used here is defined as:
 
-$dR = (2\pi)^{3n-4} d\Phi = \prod_{i}\frac{d^3k_i}{2E_i}\delta^4(\sum_{i}k_i-P)$  
+$dR = (2\pi)^{3n-4} d\Phi = \prod_{i}\frac{d^3k_i}{2E_i}\delta^4(\sum_{i}k_i-P)$
 
 for $n$ particles. The events are generated using the Monte-Carlo method described in Ref. [F. James, CERN 68-12].
 
 The primary function provided by this package is `GENEV`, which can be used as follows:
+
 ```julia
 PCM, WT=GENEV(tecm,EM)
 ```
-
 
 - Input:  total momentum in center of mass frame `tecm`, and the mass of particles `EM`.
   * `tecm`: a `Float64` value representing the total momentum in the center of mass frame.
@@ -192,4 +197,3 @@ PCM, WT=GENEV(tecm,EM)
   * `WT`:  `Float64` value representing the weight for this event.
 
 # QFT Package: for Numerical Calculation of Feynman Rules
-
