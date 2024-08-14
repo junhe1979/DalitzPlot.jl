@@ -47,20 +47,6 @@ mutable struct MomentaType{SV<:SVector{5,ComplexF64},C<:ComplexF64} #k
     qd::SV
     qd2::C
 end
-
-
-struct RangeType{F<:Float64,I<:Int64}
-    ERmin::F
-    ERmax::F
-    NER::I
-    EIt::F
-    NEI::I
-end
-mutable struct PoleType{F<:Float64}
-    Ampmin::F
-    Ampminx::F
-    Ampminy::F
-end
 mutable struct HelicitiesType{I<:Int64} #l
     i1::I
     i1_h::I
@@ -130,7 +116,6 @@ function particles!(particles::Vector{ParticlesType}, filename::String)
 end
 const p = ParticlesType[]
 #*******************************************************************************************
-
 function fPropFF(k, ex, L, LLi, LLf, lregu, lFFex, qt) #慢
 
     m = p[ex].m
@@ -229,8 +214,8 @@ function fKernel(kf, ki, iNih1, iNih2, Ec, qn, lregu, lFFex, CB, IA, IH, fV)::Co
         k = MomentaType(ki1, kf1, ki2, kf2, qd, qd2)
         ker = 0 + 0im
         for ilV in -1:2:1
-            ker += fV(k, l, ilV, CB[ichi].cutoff, CB[ichf].cutoff, lregu, lFFex, qt) * 
-                IA[ichi, ichf].CC[1, 1] * IA[ichi, ichf].D[i][Int64(lJJ - ilV * l21i)+1, lf]
+            ker += fV(k, l, ilV, CB[ichi].cutoff, CB[ichf].cutoff, lregu, lFFex, qt) *
+                   IA[ichi, ichf].CC[1, 1] * IA[ichi, ichf].D[i][Int64(lJJ - ilV * l21i)+1, lf]
             if ilV == -1
                 ker *= eta
             end
@@ -289,10 +274,10 @@ function fProp(iNih, ii, rp, Ec, Np, CB, IH)
     end
     return fprop
 end
-function srAB(Ec, qn, lregu, lFFex, CB, IH,IA, fV; lRm=1)
+function srAB(Ec, qn, lregu, lFFex, CB, IH, IA, fV; lRm=1)
     # Determine the dimension of the work matrix. At energies larger than the threshold, the dimension increases by 1
-    Np=length(CB[1].kv)
-    Nih=length(IH)
+    Np = length(CB[1].kv)
+    Nih = length(IH)
     Nt, IH = WORKSPACE(Ec, lRm, Np, Nih, CB, IH)
     Vc = zeros(Complex{Float64}, Nt, Nt)
     Gc = zeros(Complex{Float64}, Nt, Nt)
@@ -363,13 +348,13 @@ function WORKSPACE(Ec, lRm, Np, Nih, CB, IH)
     return Nt, IH
 end
 #*******************************************************************************************
-function Independent_amp(channels, CC, qn; Np=10,Nx=50)
+function Independent_amp(channels, CC, qn; Np=10, Nx=50)
     CB = ChannelBasisType[]
     IH = IndependentHelicityType[]
     Nih, Nc = 1, 1
     kv, wv = gausslaguerre(Np)
     wv = wv .* exp.(kv)
-    wD=[wignerd(qn.J / qn.J_h, acos(-1.0 + 2. /Nx * (i - 0.5))) for i in 1:Nx]
+    wD = [wignerd(qn.J / qn.J_h, acos(-1.0 + 2.0 / Nx * (i - 0.5))) for i in 1:Nx]
     for channel in channels
         p1 = pkey[channel[1]]
         p2 = pkey[channel[2]]
@@ -433,7 +418,7 @@ function Independent_amp(channels, CC, qn; Np=10,Nx=50)
             chnamef[1] = CB[i2].name[3]
             chname = "$(chnamei[1])-->$(chnamef[1])"
 
-            IA0 = InteractionType(0, zeros(Int64, 5, 2), zeros(Float64, 5, 2),wD)
+            IA0 = InteractionType(0, zeros(Int64, 5, 2), zeros(Float64, 5, 2), wD)
 
             IA0.Nex = CC[chname][1]
             IA0.ex = Matrix{Int64}(undef, IA0.Nex, 2)
@@ -445,6 +430,6 @@ function Independent_amp(channels, CC, qn; Np=10,Nx=50)
         end
     end
 
-    return Nih, Nc, CB, IH, IA
+    return CB, IH, IA
 end
 end
