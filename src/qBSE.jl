@@ -31,21 +31,14 @@ mutable struct IndependentHelicityType{I<:Int64,V<:Vector{Int64},C<:Complex{Floa
     Nm0::I #the total number of dimensions before this independent helicities
     kon::C # onshell momentum
 end
-struct QuantumNumberType{I<:Int64}
-    I::I
-    I_h::I
-    J::I
-    J_h::I
-    P::I
-    C::I
-end
-mutable struct MomentaType{SV<:SVector{5,ComplexF64},C<:ComplexF64} #k
+mutable struct MomentaType{SV<:SVector{5,ComplexF64},C<:ComplexF64,F<:Float64} #k
     i1::SV
     f1::SV
     i2::SV
     f2::SV
     qd::SV
     qd2::C
+    qt::F
 end
 mutable struct HelicitiesType{I<:Int64} #l
     i1::I
@@ -116,7 +109,7 @@ function particles!(particles::Vector{ParticlesType}, filename::String)
 end
 const p = ParticlesType[]
 #*******************************************************************************************
-function fPropFF(k, ex, L, LLi, LLf, lregu, lFFex, qt) #慢
+function fPropFF(k, ex, L, LLi, LLf;lregu=1, lFFex=0,  qt=1.) #慢
 
     m = p[ex].m
     if lFFex >= 10
@@ -167,7 +160,7 @@ function fPropFF(k, ex, L, LLi, LLf, lregu, lFFex, qt) #慢
     end
     return fProp * FFex * exp(FFre)
 end
-function fKernel(kf, ki, iNih1, iNih2, Ec, qn, lregu, lFFex, CB, IA, IH, fV)::ComplexF64
+function fKernel(kf, ki, iNih1, iNih2, Ec, qn, CB, IA, IH, fV)::ComplexF64
     ichi = IH[iNih2].ich
     ichf = IH[iNih1].ich
 
@@ -211,11 +204,10 @@ function fKernel(kf, ki, iNih1, iNih2, Ec, qn, lregu, lFFex, CB, IA, IH, fV)::Co
         kf2 = @SVector [kf * sqrt1_x2 + 0im, 0.0 + 0im, kf * x + 0im, kf20 + 0im, mf2 + 0im]
         qd = kf2 - ki2
         qd2 = qd * qd
-        k = MomentaType(ki1, kf1, ki2, kf2, qd, qd2)
+        k = MomentaType(ki1, kf1, ki2, kf2, qd, qd2,qt)
         ker = 0 + 0im
         for ilV in -1:2:1
-            ker += fV(k, l, ilV, CB[ichi].cutoff, CB[ichf].cutoff, lregu, lFFex, qt) *
-                   IA[ichi, ichf].CC[1, 1] * IA[ichi, ichf].D[i][Int64(lJJ - ilV * l21i)+1, lf]
+            ker += fV(k, l, ilV, CB,IA,ichi, ichf) * IA[ichi, ichf].D[i][Int64(lJJ - ilV * l21i)+1, lf]
             if ilV == -1
                 ker *= eta
             end
@@ -274,7 +266,7 @@ function fProp(iNih, ii, rp, Ec, Np, CB, IH)
     end
     return fprop
 end
-function srAB(Ec, qn, lregu, lFFex, CB, IH, IA, fV; lRm=1)
+function srAB(Ec, qn, CB, IH, IA, fV; lRm=1)
     # Determine the dimension of the work matrix. At energies larger than the threshold, the dimension increases by 1
     Np = length(CB[1].kv)
     Nih = length(IH)
@@ -289,7 +281,7 @@ function srAB(Ec, qn, lregu, lFFex, CB, IH, IA, fV; lRm=1)
                 for i2 in 1:(Np+IH[iNih2].Nmo)
                     ki = (i2 <= Np) ? CB[IH[iNih2].ich].kv[i2] : IH[iNih2].kon
                     if i1 + IH[iNih1].Nm0 <= i2 + IH[iNih2].Nm0
-                        Vc[i1+IH[iNih1].Nm0, i2+IH[iNih2].Nm0] = fKernel(kf, ki, iNih1, iNih2, Ec, qn, lregu, lFFex, CB, IA, IH, fV)::ComplexF64
+                        Vc[i1+IH[iNih1].Nm0, i2+IH[iNih2].Nm0] = fKernel(kf, ki, iNih1, iNih2, Ec, qn, CB, IA, IH, fV)::ComplexF64
                     end
                     if i1 == i2 && iNih1 == iNih2
                         Gc[i1+IH[iNih1].Nm0, i2+IH[iNih2].Nm0] = fProp(iNih1, i1, kf, Ec, Np, CB, IH)
