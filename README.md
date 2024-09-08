@@ -199,7 +199,7 @@ The GEN package is used for generating events for cross-section calculations and
 
 $dR = (2\pi)^{3n-4} d\Phi = \prod_{i}\frac{d^3k_i}{2E_i}\delta^4(\sum_{i}k_i-P)$
 
-for $n$ particles. The events are generated using the Monte-Carlo method described in Ref. [F. James, CERN 68-12].
+for $n$ particles. The events are generated using the Monte-Carlo method described in Ref. [F. James, CERN 68-12]. 
 
 The primary function provided by this package is `GENEV`, which can be used as follows:
 
