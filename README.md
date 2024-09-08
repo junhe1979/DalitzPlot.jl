@@ -13,7 +13,7 @@
   - [Calculate](#calculate)
   - [Plot Dalitz Plot](#plot-dalitz-plot)
 - [GEN Package: for Generating Events](#gen-package-for-generating-events)
-- [QFT Package: for Numerical Calculation of Feynman Rules](#qft-package-for-numerical-calculation-of-feynman-rules)
+- [FR Package: for Numerical Calculation of Feynman Rules](#qft-package-for-numerical-calculation-of-feynman-rules)
 - [Basic conventions.](#basic-conventions)
   - [Dirac Gamma matrices.](#dirac-gamma-matrices)
   - [Functions for particles with different spins](#functions-for-particles-with-different-spins)
@@ -31,7 +31,7 @@ This Julia package is designed for high-energy physics applications, originally 
 
 - `Xs`: Provides tools for calculation cross section and creating Dalitz plots, which are essential for visualizing three-body - decays of particles. Users can specify amplitudes to generate these plots.
 - `GEN`: Stands for General Event Generation. This subpackage is used for generating events, allowing users to simulate particle interactions and decays.
-- `QFT`: Focuses on Feynman rules. This subpackage includes functions for calculating spinor or polarized vectors with momentum and spin, gamma matrices, and other related calculations.
+- FR: Focuses on Feynman rules. This subpackage includes functions for calculating spinor or polarized vectors with momentum and spin, gamma matrices, and other related calculations.
 - `qBSE`: Refers to the Quasipotential Bethe-Salpeter Equation. This subpackage provides tools for solving the Bethe-Salpeter equation, which is used in the study of bound states in quantum field theory. This is a specific theoretical model, and those not interested can disregard it. For those interested, please refer to `doc/qBSE.md`.
 
 Note: This package is designed for phenomenological studies on the theoretical side. For experimental data analysis, please refer to other tools.
@@ -70,7 +70,7 @@ To use the subpackages:
 ```julia
 using DalitzPlot.Xs
 using DalitzPlot.GEN
-using DalitzPlot.QFT
+using DalitzPlot.FR
 using DalitzPlot.qBSE
 ```
 
@@ -214,7 +214,7 @@ PCM, WT=GEN.GENEV(tecm,EM)
   * `PCM`: a StaticArrays `@MArray zeros(Float64, 5, 18)` storing the momenta of the particles. Note that at most 18 particles can be considered.
   * `WT`:  `Float64` value representing the weight for this event.
 
-# QFT Package: for Numerical Calculation of Feynman Rules
+# FR Package: for Numerical Calculation of Feynman Rules
 
 # Basic conventions.
 

@@ -1,7 +1,7 @@
 #############################################################################
-# QFT #
+# FR #
 #############################################################################
-module QFT
+module FR
 #export III, GA, GS, epsilon, Uc, Ubc, LCV
 using StaticArrays
 const g = SMatrix{5,5,Float64}([

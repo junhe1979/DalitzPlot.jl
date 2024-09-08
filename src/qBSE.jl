@@ -4,7 +4,7 @@ module qBSE
 using FastGaussQuadrature, StaticArrays, WignerD
 using Base.Threads
 using StaticArrays
-using ..QFT
+using ..FR
 # store the information of a channel. The kv and wv are stored here for convenience. 
 struct ChannelBasisType #CB
     p::Vector{Int64} #particles of channel

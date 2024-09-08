@@ -1,6 +1,6 @@
 #include("../src/DalitzPlot.jl")
 #using .DalitzPlot, .DalitzPlot.Xs, .DalitzPlot.plot
-using DalitzPlot, DalitzPlot.Xs, DalitzPlot.plot, DalitzPlot.QFT
+using DalitzPlot, DalitzPlot.Xs, DalitzPlot.plot, DalitzPlot.FR
 #using DalitzPlot
 using Test, ProgressBars
 @testset "DalitzPlot Tests" begin
