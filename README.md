@@ -105,20 +105,20 @@ function amp(tecm, kf, ch, para)
     # get kf as momenta in the center-of-mass ,
     #k1,k2,k3=getkf(kf)   
     #get kf as momenta in laboratory frame
-    k1, k2, k3 = getkf(para.p, kf, ch)
+    k1, k2, k3 = Xs.getkf(para.p, kf, ch)
 
     # Incoming particle momentum
     # Center-of-mass frame: p1 = [p 0.0 0.0 E1]
     #p1, p2 = pcm(tecm, ch.mi)
     # Laboratory frame
-    p1, p2 = plab(para.p, ch.mi)
+    p1, p2 = Xs.plab(para.p, ch.mi)
 
     #flux
     #flux factor for cross section in Laboratory frame
     fac = 1 / (4 * para.p * ch.mi[2] * (2 * pi)^5)
 
     k12 = k1 + k2
-    s12 = cdot(k12, k12)
+    s12 = k12*k12
     m = 3.2
     A = 1e9 / (s12 - m^2 + im * m * 0.1)
 
@@ -150,7 +150,7 @@ Example usage:
 
 ```julia
 p_lab = 20.0
-tecm = pcm(p_lab, ch.mi)
+tecm = Xs.pcm(p_lab, ch.mi)
 ```
 
 ## Calculate
@@ -162,7 +162,7 @@ The function `Xsection` takes the momentum of the incoming particle in the Labor
 Example usage:
 
 ```julia
-res = Xsection(plab2pcm(p_lab, ch.mi), ch, axes=[23, 21], nevtot=Int64(1e7), Nbin=500, para=(p=p_lab, l=1.0), ProgressBars=true)
+res = Xs.Xsection(plab2pcm(p_lab, ch.mi), ch, axes=[23, 21], nevtot=Int64(1e7), Nbin=500, para=(p=p_lab, l=1.0), ProgressBars=true)
 ```
 
 The results are stored in the variable `res` as a `NamedTuple`. Specifically, `res.cs0` corresponds to the total cross section, `res.cs1` represents the invariant mass spectrum, and `res.cs2` captures the data for the Dalitz plot.
