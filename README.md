@@ -124,14 +124,15 @@ function amp(tecm, kf, ch, para)
 
     #flux
     #flux factor for cross section in Laboratory frame
-    fac = 1 / (4 * para.p * ch.mi[2] * (2 * pi)^5)
+  
+    fac = 1e9 / (4 * para.p * ch.mi[2] * (2 * pi)^5)
 
     k12 = k1 + k2
     s12 = k12*k12
     m = 3.2
-    A = 1e9 / (s12 - m^2 + im * m * 0.1)
+    A = 1 / (s12 - m^2 + im * m * 0.1)
 
-    total = abs2(A) * fac* 0.389379e-3
+  total = abs2(A) * fac * 0.389379e-3
 
     return total
 end
@@ -186,7 +187,9 @@ The results are stored in the variable `res` as a `NamedTuple`. Specifically, `r
 
 ## Plot Dalitz Plot
 
-  `DalitzPlot.plot.plotD(res)`
+```julia
+DalitzPlot.plot.plotD(res)
+```
 
 <img src="test/DP.png" alt="描述文字" width="500" height="500">
 
