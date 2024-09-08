@@ -60,7 +60,7 @@ To use the subpackages:
 
 ```julia
 using DalitzPlot.Xs
-using DalitzPlot.GEV
+using DalitzPlot.GEN
 using DalitzPlot.QFT
 using DalitzPlot.qBSE
 ```
