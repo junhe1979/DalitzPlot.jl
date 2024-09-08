@@ -18,12 +18,12 @@
 
 # DalitzPlot
 
-This Julia package is designed for high-energy physics applications, originally in visualizing and analyzing particle decays. It consists of the following subpackages:
+This Julia package is designed for high-energy physics applications, originally in visualizing and analyzing particle decays. It consists of the following subpackages (after v0.1.8, the package was divided into several subpackages):
 
 - `Xs`: Provides tools for calculation cross section and creating Dalitz plots, which are essential for visualizing three-body - decays of particles. Users can specify amplitudes to generate these plots.
 - `GEN`: Stands for General Event Generation. This subpackage is used for generating events, allowing users to simulate particle interactions and decays.
 - `QFT`: Short for Quantum Field Theory. This subpackage includes functions for calculating spinor or polarized vectors with momentum and spin, gamma matrices, and other related calculations.
-- `qBSE`: Refers to the Quasipotential Bethe-Salpeter Equation. This subpackage provides tools for solving the Bethe-Salpeter equation, which is used in the study of bound states in quantum field theory.
+- `qBSE`: Refers to the Quasipotential Bethe-Salpeter Equation. This subpackage provides tools for solving the Bethe-Salpeter equation, which is used in the study of bound states in quantum field theory. This is a specific theoretical model, and those not interested can disregard it. For those interested, please refer to `doc/qBSE.md`.
 
 Note: This package is designed for phenomenological studies on the theoretical side. For experimental data analysis, please refer to other tools.
 
@@ -162,16 +162,21 @@ The function `Xsection` takes the momentum of the incoming particle in the Labor
 Example usage:
 
 ```julia
-res = Xs.Xsection(plab2pcm(p_lab, ch.mi), ch, axes=[23, 21], nevtot=Int64(1e7), Nbin=500, para=(p=p_lab, l=1.0), ProgressBars=true)
+using ProgressBars
+function progress_callback(pb)
+   ProgressBars.update(pb)  # 更新进度条
+end
+nevtot=Int64(1e7)
+pb = ProgressBar(1:nevtot)  # 创建进度条，范围从1到n
+callback = i -> progress_callback(pb)  # 创建回调函数，传入进度条对象
+res = Xs.Xsection(Xs.plab2pcm(p_lab, ch.mi), ch, callback,axes=[23, 21], nevtot=Int64(1e7), Nbin=500, para=(p=p_lab, l=1.0))
 ```
 
 The results are stored in the variable `res` as a `NamedTuple`. Specifically, `res.cs0` corresponds to the total cross section, `res.cs1` represents the invariant mass spectrum, and `res.cs2` captures the data for the Dalitz plot.
 
 ## Plot Dalitz Plot
 
-```julia
-plotD(res)
-```
+  `DalitzPlot.plot.plotD(res)`
 
 <img src="test/DP.png" alt="描述文字" width="500" height="500">
 
