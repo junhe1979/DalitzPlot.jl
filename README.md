@@ -19,10 +19,8 @@
     - [Spinor for $S=1/2$](#spinor-for-s12)
     - [Polarized vector for $S=1$](#polarized-vector-for-s1)
     - [Rarita-Schwinger Spinor for $S=3/2$](#rarita-schwinger-spinor-for-s32)
-  - [Levi-Civita tensor](#levi-civita-tensor)
-    - [\*](#)
-
-
+    - [Levi-Civita tensor](#levi-civita-tensor)
+  - [Additional defintions to \*](#additional-defintions-to-)
 
 <!-- tocstop -->
 
@@ -265,7 +263,7 @@ A function `GS` is provided for calculate $\gamma \cdot k$ as `function GS(k::SV
 
 `function U3(k, l::Int64; bar=false, V=false)::SVector{5,SVector{4, ComplexF64}}`
 
-## Levi-Civita tensor
+### Levi-Civita tensor
 
 `function LC(a::SVector, b::SVector, c::SVector)`: $\epsilon_{\mu\nu\rho\lambda}a^\mu b^\nu c^\rho$.
 
@@ -273,7 +271,7 @@ A function `GS` is provided for calculate $\gamma \cdot k$ as `function GS(k::SV
 
 `function LC(a::SVector, b::SVector, c::SVector, d::SVector)`: $\epsilon_{\mu\nu\rho\lambda}a^\mu b^\nu c^\rho d^\lambda$.
 
-### *
+## Additional defintions to *
 
 More methods are added for multiplying of polarized vector, spinor, and gamma matrices.
 
