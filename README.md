@@ -134,6 +134,7 @@ function amp(tecm, kf, ch, para)
     total = abs2(A) * fac* 0.389379e-3
 
     return total
+end
 ```
 
 ## Define the masses of initial and final particles
