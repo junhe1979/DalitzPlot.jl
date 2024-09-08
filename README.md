@@ -186,7 +186,7 @@ for $n$ particles. The events are generated using the Monte-Carlo method describ
 The primary function provided by this package is `GENEV`, which can be used as follows:
 
 ```julia
-PCM, WT=GENEV(tecm,EM)
+PCM, WT=GEN.GENEV(tecm,EM)
 ```
 
 - Input:  total momentum in center of mass frame `tecm`, and the mass of particles `EM`.
