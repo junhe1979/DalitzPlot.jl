@@ -1,18 +1,28 @@
 # Outline
 
 <!-- toc -->
-
+- [Outline](#outline)
 - [DalitzPlot](#dalitzplot)
-  * [Installation](#installation)
-  * [Usage](#usage)
+  - [Installation](#installation)
+  - [Usage](#usage)
 - [Xs Package: for cross section and Dalitz plot](#xs-package-for-cross-section-and-dalitz-plot)
-  * [Define amplitudes with factors for the calculation](#define-amplitudes-with-factors-for-the-calculation)
-  * [Define the masses of initial and final particles](#define-the-masses-of-initial-and-final-particles)
-  * [Define the momentum or total energy](#define-the-momentum-or-total-energy)
-  * [Calculate](#calculate)
-  * [Plot Dalitz Plot](#plot-dalitz-plot)
+  - [Define amplitudes with factors for the calculation](#define-amplitudes-with-factors-for-the-calculation)
+  - [Define the masses of initial and final particles](#define-the-masses-of-initial-and-final-particles)
+  - [Define the momentum or total energy](#define-the-momentum-or-total-energy)
+  - [Calculate](#calculate)
+  - [Plot Dalitz Plot](#plot-dalitz-plot)
 - [GEN Package: for Generating Events](#gen-package-for-generating-events)
 - [QFT Package: for Numerical Calculation of Feynman Rules](#qft-package-for-numerical-calculation-of-feynman-rules)
+- [Basic conventions.](#basic-conventions)
+  - [Dirac Gamma matrices.](#dirac-gamma-matrices)
+  - [Functions for particles with different spins](#functions-for-particles-with-different-spins)
+    - [Spinor for $S=1/2$](#spinor-for-s12)
+    - [Polarized vector for $S=1$](#polarized-vector-for-s1)
+    - [Rarita-Schwinger Spinor for $S=3/2$](#rarita-schwinger-spinor-for-s32)
+  - [Levi-Civita tensor](#levi-civita-tensor)
+    - [\*](#)
+
+
 
 <!-- tocstop -->
 
