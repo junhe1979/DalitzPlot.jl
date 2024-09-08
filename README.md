@@ -173,7 +173,7 @@ The results are stored in the variable `res` as a `NamedTuple`. Specifically, `r
 plotD(res)
 ```
 
-![ex1.png](test/DP.png)
+<img src="test/DP.png" alt="描述文字" width="500" height="500">
 
 # GEN Package: for Generating Events
 
@@ -197,3 +197,83 @@ PCM, WT=GENEV(tecm,EM)
   * `WT`:  `Float64` value representing the weight for this event.
 
 # QFT Package: for Numerical Calculation of Feynman Rules
+
+# Basic conventions.
+
+Since arrays in Julia are 1-indexed, a covariant 4-vector is represented as an `SVector{5, Type}(v1, v2, v3, v0, v5)`. The first three elements correspond to a 3-vector, the fourth element represents the time component (or the 0th component), and the fifth element represents mass in the case of momentum, but it is typically meaningless in most other contexts. The addition of the fifth element serves to distinguish it from the four-dimensional Dirac gamma matrices. Since the index of array in Julia is from 1, a covariant 4-vector is denoted as a `SVector{5, Type}(v1,v2,v3,v0,v5)` The first three elements are for 3-vector, the fourth one is for the zero. The fifth one is the mass for a momentum, and meaningless for most other cases. Add the fifth elements is to distinguish from the four-dimension Dirac gamma matrices
+For example, a momentum is `SVector{5, Type}(kx,ky,kz,k0,m)`.
+
+Minkowski metric is chosen as $g^{\mu\nu}=diag(1,-1,-1,-1)$. In the code, we still adopt above convention as
+
+`g= SMatrix{5,5,Float64}([-1.0 0.0 0.0 0.0 0.0;0.0 -1.0 0.0 0.0 0.0;0.0 0.0 -1.0 0.0 0.0;0.0 0.0 0.0 1.0 0.0;0.0 0.0 0.0 0.0 0.0])`.
+
+For example, $g^{00}$ is accessed as `g[4,4]`.
+
+## Dirac Gamma matrices.
+
+We adopt the Dirac representation for the gamma matrices:
+
+$$
+\gamma_1=\left(\begin{array}{cccc}0&0& 0&1\\0&0&1&0\\0&-1&0&0\\-1&0&0&0\end{array}\right),
+\gamma_2=\left(\begin{array}{cccc}0&0& 0&-i\\0&0&i&0\\0&i&0&0\\-i&0&0&0\end{array}\right),
+\gamma_3=\left(\begin{array}{cccc}0&0& 1&0\\0&0&0&-1\\-1&0&0&0\\0&1&0&0\end{array}\right),
+$$
+
+$$
+\gamma_0=\left(\begin{array}{cccc}1&0& 0&0\\0&1&0&0\\0&0&-1&0\\0&0&0&-1\end{array}\right),
+\gamma_5=\left(\begin{array}{cccc}0&0& 1&0\\0&0&0&1\\1&0&0&0\\0&1&0&0\end{array}\right),
+I=\left(\begin{array}{cccc}1&0& 0&0\\0&1&0&0\\0&0&1&0\\0&0&0&1\end{array}\right),
+$$
+
+The Dirac gamma matrices are represented by the array GA=$[\gamma_1,\gamma_2,\gamma_3,\gamma_0,\gamma_5]$, with each gamma matrix defined as `SMatrix{4,4,ComplexF64}`.
+
+For example, $\gamma_2$ can be accessed as `GA[2]` and has the type `SMatrix{4,4,ComplexF64}`. The unit matrix is accessed as `I`
+
+A function `GS` is provided for calculate $\gamma \cdot k$ as `function GS(k::SVector{5, Type})::SMatrix{4,4,ComplexF64}`
+
+## Functions for particles with different spins
+
+`l::Int64` in the followings is for the spin of the particle.
+`bar=true` means that output is $\bar{u}$ or $\bar{u}^\mu$.
+`V=true` means that output is for antifermion $v$.
+`star=true` is for the polarized vector with a complex conjugation.
+
+### Spinor for $S=1/2$
+
+`function U(k, l::Int64; bar=false, V=false)::SVector{4,ComplexF64}`
+
+### Polarized vector for $S=1$
+
+`function eps(k, l::Int64; star=false)::SVector{5,ComplexF64}`
+
+### Rarita-Schwinger Spinor for $S=3/2$
+
+`function U3(k, l::Int64; bar=false, V=false)::SVector{5,SVector{4, ComplexF64}}`
+
+## Levi-Civita tensor
+
+`function LC(a::SVector, b::SVector, c::SVector)`: $\epsilon_{\mu\nu\rho\lambda}a^\mu b^\nu c^\rho$.
+
+`function LC(i0::Int64, i1::Int64, i2::Int64, i3::Int64)`: $\epsilon_{i_0 i_1 i_2 i_3}$
+
+`function LC(a::SVector, b::SVector, c::SVector, d::SVector)`: $\epsilon_{\mu\nu\rho\lambda}a^\mu b^\nu c^\rho d^\lambda$.
+
+### *
+
+More methods are added for multiplying of polarized vector, spinor, and gamma matrices.
+
+$Q\cdot W$, the dot product of two four-vectors $Q$ and $W$  (for momentum, polarized vector):
+
+`function *(Q::SVector{5,Float64}, W::SVector{5,Float64})::Float64`,
+
+`function *(Q::SVector{5,Float64}, W::SVector{5,ComplexF64})::ComplexF64`,
+
+`function *(Q::SVector{5,ComplexF64}, W::SVector{5,Float64})::ComplexF64`,
+
+`function *(Q::SVector{5,ComplexF64}, W::SVector{5,ComplexF64})::ComplexF64`.
+
+$AM$, A row vector $A$ multiplied by a matrix $M$ (for spinor and gamma matrices)：
+`function *(A::SVector{4, ComplexF64}, M::SMatrix{4, 4, ComplexF64, 16})`
+
+$AB$, A row vector $A$ multiplied by a column vector $B$ (for spinor and gamma matrices)：
+`function *(A::SVector{4, ComplexF64}, B::SVector{4, ComplexF64})`

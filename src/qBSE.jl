@@ -6,85 +6,62 @@ using Base.Threads
 using StaticArrays
 using ..QFT
 # store the information of a channel. The kv and wv are stored here for convenience. 
-mutable struct ChannelBasisType{VI<:Vector{Int64},I<:Int64,VF<:Vector{Float64},F<:Float64,VS<:Vector{String}} #CB
-    p::VI #particles of channel
-    cutoff::F #cutoff of channel
-    name::VS  #name of channel
-    name0::VS #name of channel (without charge)
-    Nhel::I #total number of helicity amplitudes of a channel
-    kv::VF #momenta of discreting
-    wv::VF #weights of discreting
+struct ChannelBasisType #CB
+    p::Vector{Int64} #particles of channel
+    m::Vector{Float64} #particles of channel
+    J::Vector{Int64} #particles of channel
+    Jh::Vector{Int64} #particles of channel
+    P::Vector{Int64} #particles of channel
+    cutoff::Float64 #cutoff of channel
+    name::Vector{String}  #name of channel
+    name0::Vector{String} #name of channel (without charge)
+    Nhel::Int64 #total number of helicity amplitudes of a channel
+    kv::Vector{Float64} #momenta of discreting
+    wv::Vector{Float64} #weights of discreting
 end
 # store the information of a interaction
-mutable struct InteractionType{I<:Int64,MI<:Matrix{Int64},MF<:Matrix{Float64},VM<:Vector{Matrix{Float64}}} #IA
-    Nex::I  #total number of exchanges
-    ex::MI  #exchange
-    CC::MF  #flavor factors
-    D::VM   #WignerD
+struct InterActionType #IA
+    Project::String
+    Nex::Int64  #total number of exchanges
+    name_ex::Vector{String}  #exchange
+    key_ex::Vector{Int64}
+    J_ex::Vector{Int64}
+    Jh_ex::Vector{Int64}
+    P_ex::Vector{Int64}
+    m_ex::Vector{Float64}  #exchange
+    dc::Vector{Int64}  #direct or cross
+    CC::Vector{Float64}  #flavor factors
+    D::Vector{Matrix{Float64}}   #WignerD
 end
 # store the information of an independent helicity for matrix
-mutable struct IndependentHelicityType{I<:Int64,V<:Vector{Int64},C<:Complex{Float64}} #IH
-    ich::I # which channel this independent helicity belongs to 
-    hel::V # helicities
-    hel_lh::V # fermion or boson
-    Nmo::I # +1 or not for onshell W>sum m. Np+Nmo is the total dimensions of a independent helicities
-    Nm0::I #the total number of dimensions before this independent helicities
-    kon::C # onshell momentum
+mutable struct IndependentHelicityType #IH
+    ich::Int64 # which channel this independent helicity belongs to 
+    hel::Vector{Int64} # helicities
+    helh::Vector{Int64} # fermion or boson
+    Nmo::Int64 # +1 or not for onshell W>sum m. Np+Nmo is the total dimensions of a independent helicities
+    Nm0::Int64 #the total number of dimensions before this independent helicities
+    kon::Complex{Float64} # onshell momentum
 end
-mutable struct MomentaType{SV<:SVector{5,ComplexF64},C<:ComplexF64,F<:Float64} #k
-    i1::SV
-    f1::SV
-    i2::SV
-    f2::SV
-    qd::SV
-    qd2::C
-    qt::F
+mutable struct MomentaType #momenta
+    i1::SVector{5,ComplexF64} # initial 1
+    f1::SVector{5,ComplexF64}
+    i2::SVector{5,ComplexF64}
+    f2::SVector{5,ComplexF64}
+    q::SVector{5,ComplexF64} #exchange
+    q2::Complex{Float64} # q^2
+    qt::Complex{Float64} #
 end
-mutable struct HelicitiesType{I<:Int64} #l
-    i1::I
-    i1_h::I
-    f1::I
-    f1_h::I
-    i2::I
-    i2_h::I
-    f2::I
-    f2_h::I
+mutable struct HelicitiesType #l
+    i1::Int64
+    i1h::Int64
+    f1::Int64
+    f1h::Int64
+    i2::Int64
+    i2h::Int64
+    f2::Int64
+    f2h::Int64
 end
-const pkey = Dict(
-    "test1" => 55, "test2" => 56, "test3" => 57, "test4" => 58, "V" => 70,
-    "pi" => 9, "pi_p" => 10, "pi_0" => 11, "pi_m" => 12,
-    "rho" => 34, "rho_p" => 35, "rho_0" => 36, "rho_m" => 37,
-    "K" => 1, "K_m" => 2, "K_p" => 3, "K_b0" => 4, "K_0" => 5,
-    "B" => 78, "B_m" => 79, "B_p" => 80, "B_b0" => 81, "B_0" => 82,
-    "D" => 22, "D_m" => 23, "D_p" => 24, "D_b0" => 25, "D_0" => 26,
-    "KA" => 59, "KA_m" => 60, "KA_p" => 61, "KA_b0" => 62, "KA_0" => 63,
-    "BA" => 83, "BA_m" => 84, "BA_p" => 85, "BA_b0" => 86, "BA_0" => 87,
-    "DA" => 27, "DA_m" => 28, "DA_p" => 29, "DA_b0" => 30, "DA_0" => 31,
-    "Ds" => 38, "Ds_m" => 39, "Ds_p" => 40,
-    "DsA" => 100, "DsA_m" => 101, "DsA_p" => 102,
-    "Ds0" => 52, "Ds0_p" => 53, "Ds0_m" => 54,
-    "Ds1p" => 97, "Ds1p_m" => 98, "Ds1p_p" => 99,
-    "D1p" => 50,
-    "eta" => 17, "etap" => 77, "phi" => 51, "omega" => 68, "sig" => 69,
-    "JPsi" => 32, "etac" => 33, "Upsilon" => 118,
-    "N" => 6, "N_p" => 7, "N_n" => 8,
-    "Delta" => 72, "Delta_pp" => 73, "Delta_p" => 74, "Delta_0" => 75, "Delta_m" => 76,
-    "Sigma" => 13, "Sigma_p" => 14, "Sigma_0" => 15, "Sigma_m" => 16,
-    "Sigmab" => 88, "Sigmab_p" => 89, "Sigmab_0" => 90, "Sigmab_m" => 91,
-    "Sigmac" => 41, "Sigmac_0" => 42, "Sigmac_p" => 43, "Sigmac_pp" => 44,
-    "SigmaA" => 64, "SigmaA_p" => 65, "SigmaA_0" => 66, "SigmaA_m" => 67,
-    "SigmabA" => 92, "SigmabA_p" => 93, "SigmabA_0" => 94, "SigmabA_m" => 95,
-    "SigmacA" => 45, "SigmacA_0" => 46, "SigmacA_p" => 47, "SigmacA_pp" => 48,
-    "Xi" => 19, "Xi_m" => 20, "Xi_0" => 21,
-    "XiA" => 114, "XiA_m" => 115, "XiA_0" => 116,
-    "Xic123n" => 103, "Xic123n_p" => 104, "Xic123n_0" => 105,
-    "Xic12p" => 106, "Xic12p_p" => 107, "Xic12p_0" => 108,
-    "Xic12pA" => 109, "Xic12pA_p" => 110, "Xic12pA_0" => 111,
-    "Omegac" => 112, "OmegacA" => 113, "Omegan" => 117,
-    "Lambda" => 18, "Lambdab" => 96, "Lambdac" => 49,
-    "Lambda_b" => 71
-)
-struct ParticlesType
+struct ParticlesType #store the information of particles
     name::String
     name0::String
     m::Float64
@@ -92,50 +69,47 @@ struct ParticlesType
     Jh::Int64
     P::Int64
 end
-function particles!(particles::Vector{ParticlesType}, filename::String)
+function particles!(particles::Vector{ParticlesType}, pkey::Dict{String,Int64}, filename::String) #read the information 
     open(filename, "r") do file
-        Npar = parse(Int, split(readline(file))[1])
-        for i in 1:Npar
-            line = split(readline(file))
-            name = line[2]
-            name0 = line[3]
-            m = parse(Float64, line[4])
-            J = parse(Int64, line[5])
-            Jh = parse(Int64, line[6])
-            P = parse(Int64, line[7])
-            push!(particles, ParticlesType(name, name0, m, J, Jh, P))
+        readline(file)
+        i = 1
+        for line in eachline(file)
+            parts = split(line)
+            particle = ParticlesType(parts[1], parts[2], parse(Float64, parts[3]),
+                parse(Int64, parts[4]), parse(Int64, parts[5]), parse(Int64, parts[6]))
+            push!(particles, particle)
+            pkey[parts[1]] = i
+            i += 1
         end
     end
 end
-const p = ParticlesType[]
+const p = ParticlesType[] #store of information of particles in this global vector
+const pkey = Dict{String,Int64}() #store the dictionary for key and the number of particles
 #*******************************************************************************************
-function fPropFF(k, ex, L, LLi, LLf;lregu=1, lFFex=0,  qt=1.) #慢
-
-    m = p[ex].m
+function fPropFF(k, ex, L, LLi, LLf; lregu=1, lFFex=0) #form factors
+    m = p[ex].m 
     if lFFex >= 10
-        L = m + 0.22 * L
+        L = m + 0.22 * L  
         LLi = m + 0.22 * LLi
         LLf = m + 0.22 * LLf
         lFFex -= 10
     end
 
-    fProp = 1.0 + 0im
-    FFex = 1.0 + 0im
-    FFre = 0.0 + 0im
-
-    if ex != 1
-        qd2 = k.qd2
-        fProp *= (1.0 + 0im) / (qd2 - ComplexF64(m^2))
+    fProp = 1.0 + 0im #propagator
+    FFex = 1.0 + 0im #form factor for exchanged particles
+    FFre = 0.0 + 0im #form factor for constituent particles
+    if p[ex].name != "V" #not contact interaction
+        fProp *= (1.0 + 0im) / (k.q2 - ComplexF64(m^2)) 
         if lFFex == 1
-            FFex *= ((L^2 - m^2) / (L^2 - k.qd2))^2
+            FFex *= ((L^2 - m^2) / (L^2 - k.q2))^2  #type 1
         elseif lFFex == 2
-            FFex *= (L^4 / ((m^2 - k.qd2)^2 + L^4))^2
+            FFex *= (L^4 / ((m^2 - k.q2)^2 + L^4))^2 #type 2
         elseif lFFex == 3
-            FFex *= exp(-(m^2 - k.qd2)^2 / L^4)
+            FFex *= exp(-(m^2 - k.q2)^2 / L^4)
         elseif lFFex == 4
-            FFex *= ((L^4 + (qt - m^2)^2 / 4) / ((k.qd2 - (qt + m^2) / 2)^2 + L^4))^2
+            FFex *= ((L^4 + (k.qt - m^2)^2 / 4) / ((k.q2 - (qt + m^2) / 2)^2 + L^4))^2
         elseif lFFex == 5
-            FFex *= exp(-(m^2 - k.qd2)^2 / L^4)^2
+            FFex *= exp(-(m^2 - k.q2)^2 / L^4)^2
         end
     end
 
@@ -144,9 +118,8 @@ function fPropFF(k, ex, L, LLi, LLf;lregu=1, lFFex=0,  qt=1.) #慢
         mf1 = real(k.f1[5])
         mi2 = real(k.i2[5])
         mf2 = real(k.f2[5])
-
         if mi1 <= mi2
-            FFre += -(mi1^2 - k.i1 * k.i1)^2 / LLi^4
+            FFre += -(mi1^2 - k.i1 * k.i1)^2 / LLi^4 
         end
         if mi1 > mi2
             FFre += -(mi2^2 - k.i2 * k.i2)^2 / LLi^4
@@ -159,42 +132,43 @@ function fPropFF(k, ex, L, LLi, LLf;lregu=1, lFFex=0,  qt=1.) #慢
         end
     end
     return fProp * FFex * exp(FFre)
+
 end
-function fKernel(kf, ki, iNih1, iNih2, Ec, qn, CB, IA, IH, fV)::ComplexF64
-    ichi = IH[iNih2].ich
+function fKernel(kf, ki, iNih1, iNih2, Ec, qn, CB, IA, IH, fV)::ComplexF64 # Calculating fKernel
+    ichi = IH[iNih2].ich # channel
     ichf = IH[iNih1].ich
 
-    if IA[ichi, ichf].Nex == 0
+    if IA[ichi, ichf].Nex == 0 # no exchange, returen 0
         return 0 + 0im
     end
 
-    mi1, mi2 = p[CB[ichi].p[1]].m, p[CB[ichi].p[2]].m
-    mf1, mf2 = p[CB[ichf].p[1]].m, p[CB[ichf].p[2]].m
+    mi1, mi2 = CB[ichi].m[1], CB[ichi].m[2]
+    mf1, mf2 = CB[ichf].m[1], CB[ichf].m[2]
 
     Ei1, Ei2 = sqrt(ki^2 + mi1^2), sqrt(ki^2 + mi2^2)
     Ef1, Ef2 = sqrt(kf^2 + mf1^2), sqrt(kf^2 + mf2^2)
 
-    ki10, ki20, qti = (mi1 + 1e-7 <= mi2) ? (Ec - Ei2, Ei2, mi2) : (Ec - Ei1, Ei1, Ec - mi1)
-    kf10, kf20, qtf = (mf1 + 1e-7 <= mf2) ? (Ec - Ef2, Ef2, mf2) : (Ec - Ef1, Ef1, Ec - mf1)
-    qt = (qti - qtf)^2
+    ki10, ki20, qti = (mi1 + 1e-7 <= mi2) ? (Ec - Ei2, Ei2, mi2) : (Ei1, Ec - Ei1, Ec - mi1)
+    kf10, kf20, qtf = (mf1 + 1e-7 <= mf2) ? (Ec - Ef2, Ef2, mf2) : (Ef1, Ec - Ef1, Ec - mf1)
+    # @show ki10, ki20, qti 
+    qt = (qti - qtf)^2 + 0im
 
-    l = HelicitiesType(
-        IH[iNih2].hel[1], IH[iNih2].hel_lh[1],
-        IH[iNih1].hel[1], IH[iNih1].hel_lh[1],
-        IH[iNih2].hel[2], IH[iNih2].hel_lh[2],
-        IH[iNih1].hel[2], IH[iNih1].hel_lh[2]
+    l = HelicitiesType(  #helicities
+        IH[iNih2].hel[1], IH[iNih2].helh[1],
+        IH[iNih1].hel[1], IH[iNih1].helh[1],
+        IH[iNih2].hel[2], IH[iNih2].helh[2],
+        IH[iNih1].hel[2], IH[iNih1].helh[2]
     )
 
-    eta = p[CB[ichi].p[1]].P * p[CB[ichi].p[2]].P * qn.P *
-          (-1)^(qn.J / qn.J_h - p[CB[ichi].p[1]].J / p[CB[ichi].p[1]].Jh - p[CB[ichi].p[2]].J / p[CB[ichi].p[2]].Jh)
+    eta = p[CB[ichi].p[1]].P * CB[ichi].P[2] * qn.P *
+          (-1)^(qn.J / qn.Jh - CB[ichi].J[1] / CB[ichi].Jh[1] - CB[ichi].J[2] / CB[ichi].Jh[2])
 
-    lJJ = qn.J / qn.J_h
-    l21i = -l.i2 / l.i2_h + l.i1 / l.i1_h
-    l21f = l.f2 / l.f2_h - l.f1 / l.f1_h
+    lJJ = qn.J / qn.Jh 
+    l21i = -l.i2 / l.i2h + l.i1 / l.i1h
+    l21f = l.f2 / l.f2h - l.f1 / l.f1h
+    lf = Int64(lJJ + l21f) + 1 
+    d50 = 2.0 / 50.0  
     Ker0 = 0 + 0im
-    d50 = 2.0 / 50.0  # 常数预计算
-    lf = Int64(lJJ + l21f) + 1
-
     for i in 1:50
         x = -1.0 + d50 * (i - 0.5)
         sqrt1_x2 = sqrt(1 - x^2)
@@ -202,21 +176,21 @@ function fKernel(kf, ki, iNih1, iNih2, Ec, qn, CB, IA, IH, fV)::ComplexF64
         kf1 = @SVector [-kf * sqrt1_x2 + 0im, 0.0 + 0im, -kf * x + 0im, kf10 + 0im, mf1 + 0im]
         ki2 = @SVector [0.0 + 0im, 0.0 + 0im, ki + 0im, ki20 + 0im, mi2 + 0im]
         kf2 = @SVector [kf * sqrt1_x2 + 0im, 0.0 + 0im, kf * x + 0im, kf20 + 0im, mf2 + 0im]
-        qd = kf2 - ki2
-        qd2 = qd * qd
-        k = MomentaType(ki1, kf1, ki2, kf2, qd, qd2,qt)
-        ker = 0 + 0im
-        for ilV in -1:2:1
-            ker += fV(k, l, ilV, CB,IA,ichi, ichf) * IA[ichi, ichf].D[i][Int64(lJJ - ilV * l21i)+1, lf]
-            if ilV == -1
-                ker *= eta
-            end
-        end
-        Ker0 += ker * d50
+        q = kf2 - ki2
+        q2 = q * q
+        k = MomentaType(ki1, kf1, ki2, kf2, q, q2, qt)
+
+        l.f1, l.i2 = -l.f1, -l.i2  #helicity to spin and the minus for fixed parity
+        Kerm1 = fV(k, l, CB, IA, ichi, ichf) * IA[ichi, ichf].D[i][Int64(lJJ + l21i)+1, lf] * eta
+        l.f1, l.i2 = -l.f1, -l.i2
+        l.i1, l.f1 = -l.i1, -l.f1
+        Kerp1 = fV(k, l, CB, IA, ichi, ichf) * IA[ichi, ichf].D[i][Int64(lJJ - l21i)+1, lf]
+        l.i1, l.f1 = -l.i1, -l.f1
+        Ker0 += (Kerp1 + Kerm1) * d50
     end
 
-    fKernel = Ker0 / 2.0
-    if l.f1 == 0 && l.f2 == 0
+    fKernel = Ker0 / 2.0 ## 2pi/4pi 
+    if l.f1 == 0 && l.f2 == 0  ## factors from fixed parity 
         fKernel /= sqrt(2.0)
     end
     if l.i1 == 0 && l.i2 == 0
@@ -228,16 +202,16 @@ end
 function fProp(iNih, ii, rp, Ec, Np, CB, IH)
     fprop = Complex{Float64}(0, 0)
     ich = IH[iNih].ich
-    mi1 = p[CB[ich].p[1]].m
-    mi2 = p[CB[ich].p[2]].m
+    mi1 = CB[ich].m[1]
+    mi2 = CB[ich].m[2]
     mi2p2 = 1.0
-    if IH[iNih].hel_lh[1] == 2
+    if IH[iNih].helh[1] == 2 
         mi2p2 *= 2.0 * mi1
     end
-    if IH[iNih].hel_lh[2] == 2
+    if IH[iNih].helh[2] == 2
         mi2p2 *= 2.0 * mi2
     end
-
+    # for off momenta
     if mi1 <= mi2
         if ii <= Np
             cE1 = sqrt(rp^2 + mi1^2)
@@ -251,7 +225,7 @@ function fProp(iNih, ii, rp, Ec, Np, CB, IH)
             fprop = mi2p2 * rp^2 * CB[ich].wv[ii] / (2 * pi^2) / (2 * cE1 * ((Ec - cE1)^2 - cE2^2))
         end
     end
-
+    # for onshell
     if ii == Np + 1
         konc = sqrt((Ec^2 - (mi1 + mi2)^2) * (Ec^2 - (mi2 - mi1)^2)) / (2 * Ec)
         konc2 = (Ec^2 - (mi1 + mi2)^2) * (Ec^2 - (mi2 - mi1)^2) / (4 * Ec^2)
@@ -311,7 +285,8 @@ function srAB(Ec, qn, CB, IH, IA, fV; lRm=1)
     return Vc, Gc, II
 end
 #*******************************************************************************************
-function WORKSPACE(Ec, lRm, Np, Nih, CB, IH)
+function WORKSPACE(Ec, lRm, Np, Nih, CB, IH) 
+    #produce the dimensions in a independent helicity amplitudes, especially for the onshell dimension.
     Ec += Complex{Float64}(0.0, 1e-15)
     Nt = 0
     for i1 in 1:Nih
@@ -323,7 +298,7 @@ function WORKSPACE(Ec, lRm, Np, Nih, CB, IH)
         mass1 = p[CB[IH[i1].ich].p[1]].m
         mass2 = p[CB[IH[i1].ich].p[2]].m
         Rm = false
-        if lRm == 1
+        if lRm == 1 #for first Reimann sheet
             Rm = real(Ec) > (mass1 + mass2)
         elseif lRm == 2
             Rm = true
@@ -340,38 +315,41 @@ function WORKSPACE(Ec, lRm, Np, Nih, CB, IH)
     return Nt, IH
 end
 #*******************************************************************************************
-function Independent_amp(channels, CC, qn; Np=10, Nx=50)
+function Independent_amp(Project, channels, CC, qn; Np=10, Nx=50)
+    #store the channel information, interaction information in CB,IH,IA
     CB = ChannelBasisType[]
     IH = IndependentHelicityType[]
     Nih, Nc = 1, 1
     kv, wv = gausslaguerre(Np)
     wv = wv .* exp.(kv)
-    wD = [wignerd(qn.J / qn.J_h, acos(-1.0 + 2.0 / Nx * (i - 0.5))) for i in 1:Nx]
+    #kv = [2.0496633800321580e-002, 0.10637754206664184, 0.25725070911685544,
+    #    0.47691569315652682, 0.78977094890173449, 1.2661898317497706, 2.0968065118988930,
+    #    3.8872580463677919, 9.4004780129091756, 48.788435306583473]
+    #wv = [5.2385549033825828e-002, 0.11870709308644416, 0.18345726134358431,
+    #    0.25958276865541480, 0.37687641122072230, 0.60422211564747619, 1.1412809934307626,
+    #    2.7721814583372204, 10.490025610274076, 124.69392072758504]
+
+    wD = [wignerd(qn.J / qn.Jh, acos(-1.0 + 2.0 / Nx * (i - 0.5))) for i in 1:Nx]
     for channel in channels
-        p1 = pkey[channel[1]]
-        p2 = pkey[channel[2]]
+        p1, p2 = pkey[channel[1]], pkey[channel[2]]
+        m1, m2 = p[p1].m, p[p2].m
+        J1, J2 = p[p1].J, p[p2].J
+        Jh1, Jh2 = p[p1].Jh, p[p2].Jh
+        P1, P2 = p[p1].P, p[p2].P
         Nhel = 0
-        CB0 = ChannelBasisType(
-            [p1, p2],
-            channel[3],
-            [p[p1].name, p[p2].name, "$(p[p1].name):$(p[p2].name)"],
-            [p[p1].name0, p[p2].name0, "$(p[p1].name0):$(p[p2].name0)"],
-            0,
-            Float64[],
-            Float64[]
-        )
-        CB0.kv = kv
-        CB0.wv = wv
+        #independent helicities
         Nih0 = Nih
         IH0 = IndependentHelicityType[]
         IH00 = IndependentHelicityType(0, Int64[], Int64[], 0, 0, 0.0 + 0.0 * im)
         for i1 in -p[p1].J:p[p1].Jh:p[p1].J
             for i2 in -p[p2].J:p[p2].Jh:p[p2].J
+
                 Jh = 1.0
                 if p[p1].Jh == 1 && p[p2].Jh == 2 || p[p1].Jh == 2 && p[p2].Jh == 1
                     Jh = 2.0
                 end
-                if abs(float(i1) / float(p[p1].Jh) - float(i2) / float(p[p2].Jh)) <= float(qn.J) + 0.01
+                if abs(float(i1) / float(p[p1].Jh) - float(i2) / float(p[p2].Jh)) <= float(qn.J) / float(qn.Jh) + 0.01
+
                     lind = 1
                     for i3 in 1:Nih-Nih0 #Nih0:(Nih-1)
                         if IH0[i3].hel[1] == -i1 && IH0[i3].hel[2] == -i2
@@ -381,42 +359,63 @@ function Independent_amp(channels, CC, qn; Np=10, Nx=50)
                     end
                     if lind == 1
                         IH00.hel = [i1, i2]
-                        IH00.hel_lh = [p[p1].Jh, p[p2].Jh]
+
+                        IH00.helh = [p[p1].Jh, p[p2].Jh]
                         IH00.ich = Nc
-                        push!(IH0, IH00)
+                        push!(IH0, deepcopy(IH00))
+
                         Nih += 1
                         Nhel += 1
                     end
                 end
             end
         end
-        CB0.Nhel = Nhel
         Nc += 1
-
-        push!(CB, CB0)
-        append!(IH, IH0)
+        #channel information
+        CB0 = ChannelBasisType(
+            [p1, p2],
+            [m1, m2],
+            [J1, J2],
+            [Jh1, Jh2],
+            [P1, P2],
+            channel[3],
+            [p[p1].name, p[p2].name, "$(p[p1].name):$(p[p2].name)"],
+            [p[p1].name0, p[p2].name0, "$(p[p1].name0):$(p[p2].name0)"],
+            Nhel,
+            kv,
+            wv
+        )
+        push!(CB, deepcopy(CB0))
+        append!(IH, deepcopy(IH0))
     end
 
     Nc -= 1
     Nih -= 1
 
-
+    # interaction information.
     chnamei = Vector{String}(undef, 1)
     chnamef = Vector{String}(undef, 1)
-    IA = Matrix{InteractionType}(undef, Nc, Nc)
+    IA = Matrix{InterActionType}(undef, Nc, Nc)
     for i1 in 1:Nc
         for i2 in 1:Nc
             chnamei[1] = CB[i1].name[3]
             chnamef[1] = CB[i2].name[3]
             chname = "$(chnamei[1])-->$(chnamef[1])"
 
-            IA0 = InteractionType(0, zeros(Int64, 5, 2), zeros(Float64, 5, 2), wD)
-
-            IA0.Nex = CC[chname][1]
-            IA0.ex = Matrix{Int64}(undef, IA0.Nex, 2)
-            IA0.ex[1, :] = CC[chname][2]
-            IA0.CC = Matrix{Int64}(undef, IA0.Nex, 2)
-            IA0.CC[1, 1] = CC[chname][3]
+            Nex = length(CC[chname])
+            IA0 = InterActionType(
+                Project,
+                Nex,
+                [CC[chname][i][1][1] for i in 1:Nex],  #name
+                [pkey[CC[chname][i][1][1]] for i in 1:Nex],  #key
+                [p[pkey[CC[chname][i][1][1]]].J for i in 1:Nex],  #J
+                [p[pkey[CC[chname][i][1][1]]].Jh for i in 1:Nex],  #Jh
+                [p[pkey[CC[chname][i][1][1]]].P for i in 1:Nex],  #P
+                [p[pkey[CC[chname][i][1][1]]].m for i in 1:Nex],  #m
+                [CC[chname][i][1][2] for i in 1:Nex],  #dc
+                [CC[chname][i][2] for i in 1:Nex],     #CC
+                wD  # Vector{Matrix{Float64}} for D
+            )
 
             IA[i1, i2] = IA0
         end
