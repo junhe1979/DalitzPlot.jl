@@ -32,7 +32,7 @@ This Julia package is designed for high-energy physics applications, originally 
 - `Xs`: Provides tools for calculation cross section and creating Dalitz plots, which are essential for visualizing three-body - decays of particles. Users can specify amplitudes to generate these plots.
 - `GEN`: Stands for General Event Generation. This subpackage is used for generating events, allowing users to simulate particle interactions and decays.
 - `QFT`: Focuses on Feynman rules. This subpackage includes functions for calculating spinor or polarized vectors with momentum and spin, gamma matrices, and other related calculations.
-- `qBSE`: Refers to the Quasipotential Bethe-Salpeter Equation. This subpackage provides tools for solving the Bethe-Salpeter equation, which is used in the study of bound states in quantum field theory. This is a specific theoreticsl model, and those not interested can disregard it. For those interested, please refer to `doc/qBSE.md`.
+- `qBSE`: Refers to the Quasipotential Bethe-Salpeter Equation. This subpackage provides tools for solving the Bethe-Salpeter equation, which is used in the study of bound states in quantum field theory. This is a specific theoretical model, and those not interested can disregard it. For those interested, please refer to `doc/qBSE.md`.
 
 Note: This package is designed for phenomenological studies on the theoretical side. For experimental data analysis, please refer to other tools.
 
