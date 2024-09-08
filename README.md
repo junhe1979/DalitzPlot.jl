@@ -32,7 +32,7 @@ This Julia package is designed for high-energy physics applications, originally 
 - `Xs`: Provides tools for calculation cross section and creating Dalitz plots, which are essential for visualizing three-body - decays of particles. Users can specify amplitudes to generate these plots.
 - `GEN`: Stands for General Event Generation. This subpackage is used for generating events, allowing users to simulate particle interactions and decays.
 - `FR`: Focuses on Feynman rules. This subpackage includes functions for calculating spinor or polarized vectors with momentum and spin, gamma matrices, and other related calculations.
-- `qBSE`: Refers to the Quasipotential Bethe-Salpeter Equation. This subpackage provides tools for solving the Bethe-Salpeter equation, which is used in the study of bound states in quantum field theory. This is a specific theoretical model, and those not interested can disregard it. For those interested, please refer to `doc/qBSE.md`.
+- `qBSE`: Refers to the Quasipotential Bethe-Salpeter Equation. This subpackage provides tools for solving the Bethe-Salpeter equation, which is used in the study of bound states in quantum field theory. This is a specific theoretical model, and those not interested can disregard it. For those interested, please refer to `doc/qBSE.md` and example in `test/BS.jl`.
 
 Note: This package is designed for phenomenological studies on the theoretical side. For experimental data analysis, please refer to other tools.
 
@@ -199,7 +199,7 @@ The GEN package is used for generating events for cross-section calculations and
 
 $dR = (2\pi)^{3n-4} d\Phi = \prod_{i}\frac{d^3k_i}{2E_i}\delta^4(\sum_{i}k_i-P)$
 
-for $n$ particles. The events are generated using the Monte-Carlo method described in Ref. [F. James, CERN 68-12]. 
+for $n$ particles. The events are generated using the Monte-Carlo method described in Ref. [F. James, CERN 68-12].
 
 The primary function provided by this package is `GENEV`, which can be used as follows:
 
