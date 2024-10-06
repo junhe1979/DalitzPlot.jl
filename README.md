@@ -13,7 +13,7 @@
   - [Calculate](#calculate)
   - [Plot Dalitz Plot](#plot-dalitz-plot)
 - [GEN Package: for Generating Events](#gen-package-for-generating-events)
-- [FR Package: for Numerical Calculation of Feynman Rules](#qft-package-for-numerical-calculation-of-feynman-rules)
+- [FR Package: for Numerical Calculation of Feynman Rules](#fr-package-for-numerical-calculation-of-feynman-rules)
 - [Basic conventions.](#basic-conventions)
   - [Dirac Gamma matrices.](#dirac-gamma-matrices)
   - [Functions for particles with different spins](#functions-for-particles-with-different-spins)
@@ -251,7 +251,7 @@ A function `GS` is provided for calculate $\gamma \cdot k$ as `function GS(k::SV
 
 ## Functions for particles with different spins
 
-`l::Int64` in the followings is for the spin of the particle.
+`l::Int64` in the followings is for the **helicity** of the particle.
 `bar=true` means that output is $\bar{u}$ or $\bar{u}^\mu$.
 `V=true` means that output is for antifermion $v$.
 `star=true` is for the polarized vector with a complex conjugation.
