@@ -112,6 +112,7 @@ end
                    SVector{4,ComplexF64}(zkk * st2, -zkk * ct2dexp, zk0m * st2, -zk0m * ct2dexp)
         end
     end
+    
 end
 @inline function eps(k, l::Int64; star=false)::SVector{5,ComplexF64}
     zk0, zm, zkk, expp, ct, st, cp, sp = kph(k)
@@ -121,7 +122,7 @@ end
 
     if !star
         if l == 1
-            eps = SVector((im * sp - ct * cp) * dexpdsqrt2, (-im * cp - ct * sp) * dexpdsqrt2, st * expdsqrt2 + 0.0im, 0.0im, 0.0im)
+            eps = SVector((im * sp - ct * cp) * dexpdsqrt2, (-im * cp - ct * sp) * dexpdsqrt2, st * dexpdsqrt2 + 0.0im, 0.0im, 0.0im)
         elseif l == 0
             eps = SVector(zk0 / zm * st * cp + 0.0im, zk0 / zm * st * sp + 0.0im, zk0 / zm * ct + 0.0im, zkk / zm + 0.0im, 0.0im)
 
@@ -431,10 +432,11 @@ function *(Q::SVector{5,ComplexF64}, W::SVector{5,ComplexF64})::ComplexF64
 end
 
 function *(A::SVector{4, ComplexF64}, M::SMatrix{4, 4, ComplexF64, 16})
-    return A'*M  
+    return transpose(A)*M  
 end
 function *(A::SVector{4, ComplexF64}, B::SVector{4, ComplexF64})
-    return A'*B  
+    return transpose(A)*B  
 end
+
 
 end

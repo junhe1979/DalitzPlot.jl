@@ -8,8 +8,8 @@
 using Distributed, ProgressBars #多进程并行包，进度条包
 addprocs(5; exeflags="--project") #设定进程数
 @everywhere using LinearAlgebra, StaticArrays, Printf #线性代数包，静态数组包，格式化输出包
-@everywhere include("../src/DalitzPlot.jl") #引入DalitzPlot包的路径
-@everywhere using .DalitzPlot, .DalitzPlot.qBSE, .DalitzPlot.FR
+#@everywhere include("../src/DalitzPlot.jl") #引入DalitzPlot包的路径
+@everywhere using DalitzPlot, DalitzPlot.qBSE, DalitzPlot.FR
 @everywhere qBSE.particles!(qBSE.p, qBSE.pkey,"data/particles.txt")  #引入粒子数据如质量量子数
 #*******************************************************************************************
 # 相互作用势。其中的例子为计算L1405和Zc3900。
@@ -22,8 +22,7 @@ addprocs(5; exeflags="--project") #设定进程数
         LLi, LLf = CB[ichi].cutoff, CB[ichf].cutoff #cutoff
         FF = qBSE.fPropFF(k, 70, (LLi + LLf) / 2.0, LLi, LLf, lregu=1, lFFex=0) #  求传播子和形状因子
         fV = -1.0 / 4.0 / (0.85 * 0.093)^2 * FF * (U2f * GSk1 * U2i) * IA[ichi, ichf].CC[1] #势
-
-    
+ 
 
     elseif IA[ichi, ichf].Project == "Zc3900"
         beta, gV, fpi, gsigma, gcc, lambda, g2 = 0.90, 5.8, 0.132, 0.7614, 0.59, 0.56, 1.1618 #物理参数

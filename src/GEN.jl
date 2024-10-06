@@ -197,7 +197,9 @@ function GENEV(tecm::Float64, EM::Vector{Float64})
             end
         end
     end
-
+    for i in 1:NT
+    PCM[5, i] = EM[i]
+    end 
     return PCM, WT
 end
 

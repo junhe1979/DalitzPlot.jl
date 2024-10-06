@@ -50,7 +50,7 @@ function getkf(p, kf::MMatrix{5,18,Float64,90}, ch::NamedTuple)
         PX = kf[1, i]
         kf[1, i] = GAM * PX + ETA * EI
         kf[4, i] = ETA * PX + GAM * EI
-        kf[5, i] = ch.mf[i] #注意GENEV产生的kf[5]是三动量的大小
+        #kf[5, i] = ch.mf[i] #注意GENEV产生的kf[5]是三动量的大小
     end
 
     k1 = SVector{5,Float64}(kf[:, 1])

@@ -211,7 +211,7 @@ PCM, WT=GEN.GENEV(tecm,EM)
   * `tecm`: a `Float64` value representing the total momentum in the center of mass frame.
   * `EM`: a `Vector{Float64}` containing the masses of the particles.
 - Output: the momenta of the particles `PCM`, and a weight `WT`.
-  * `PCM`: a StaticArrays `@MArray zeros(Float64, 5, 18)` storing the momenta of the particles. Note that at most 18 particles can be considered.
+  * `PCM`: a StaticArrays `@MArray (Float64, 5, 18)` storing the momenta of the particles. Note that at most 18 particles can be considered.
   * `WT`:  `Float64` value representing the weight for this event.
 
 # FR Package: for Numerical Calculation of Feynman Rules
