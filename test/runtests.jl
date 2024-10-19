@@ -42,9 +42,8 @@ using Test, ProgressBars
             ProgressBars.update(pb)  # 更新进度条
         end
         nevtot=Int64(1e7)
-        #pb = ProgressBar(1:nevtot)  # 创建进度条，范围从1到n
-        #callback = i -> progress_callback(pb)  # 创建回调函数，传入进度条对象
-        callback=i->i
+        pb = ProgressBar(1:nevtot)  # 创建进度条，范围从1到n
+        callback = i -> progress_callback(pb)  # 创建回调函数，传入进度条对象
         res = Xs.Xsection(Xs.plab2pcm(p, ch.mi), ch, callback, axes=[23, 21], nevtot=nevtot, Nbin=1000, para=(p=p, l=1.0))
         @show Xs.plab2pcm(p, ch.mi), res.cs0
         plot.plotD(res)
