@@ -72,9 +72,9 @@ end
     end
     ct = zkz / zkk
     st = sqrt(1.0 - ct^2)
-    cp, sp = abs(zkx) < 1e-30 && abs(zky) < 1e-30 ? (1.0, 0.0) : (zkx / zkk / st, zky / zkk / st)
+    cp, sp = abs(zkx) < 1e-30 && abs(zky) < 1e-30 || st < 1e-30 ? (1.0, 0.0) : (zkx / zkk / st, zky / zkk / st)
     expp = cp + im * sp
-    return zk0, zm, zkk, expp, ct, st, cp, sp
+    return ct, st, cp, sp, expp, zk0, zm, zkk
 end
 @inline function kph(k::SVector{5,Float64})
     zkx, zky, zkz, zk0, zm = k
@@ -85,12 +85,12 @@ end
     end
     ct = zkz / zkk
     st = sqrt(1.0 - ct^2)
-    cp, sp = abs(zkx) < 1e-30 && abs(zky) < 1e-30 ? (1.0, 0.0) : (zkx / zkk / st, zky / zkk / st)
+    cp, sp = abs(zkx) < 1e-30 && abs(zky) < 1e-30 || st < 1e-30 ? (1.0, 0.0) : (zkx / zkk / st, zky / zkk / st)
     expp = cp + im * sp
-    return zk0, zm, zkk, expp, ct, st, cp, sp
+    return ct, st, cp, sp, expp, zk0, zm, zkk
 end
 @inline function U(k, l::Int64; bar=false, V=false)::SVector{4,ComplexF64}
-    zk0, zm, zkk, expp, ct, st, cp, sp = kph(k)
+    ct, st, cp, sp, expp, zk0, zm, zkk = kph(k)
     zk0m = zk0 + zm
     zfac = sqrt(2.0 * zm * zk0m)
     ct2, st2 = sqrt((1.0 + ct) / 2.0) / zfac, sqrt((1.0 - ct) / 2.0) / zfac
@@ -112,10 +112,10 @@ end
                    SVector{4,ComplexF64}(zkk * st2, -zkk * ct2dexp, zk0m * st2, -zk0m * ct2dexp)
         end
     end
-    
+
 end
 @inline function eps(k, l::Int64; star=false)::SVector{5,ComplexF64}
-    zk0, zm, zkk, expp, ct, st, cp, sp = kph(k)
+    ct, st, cp, sp, expp, zk0, zm, zkk = kph(k)
     #eps = SVector{5,ComplexF64}(0.0, 0.0, 0.0, 0.0, 0.0)
     expdsqrt2 = expp * sqrt(2.0) / 2.0
     dexpdsqrt2 = 1.0 / expp * sqrt(2.0) / 2.0
@@ -142,8 +142,8 @@ end
 
     return eps
 end
-@inline function U3(k, l::Int64; bar=false, V=false)::SVector{5,SVector{4, ComplexF64}}
-    zk0, zm, zkk, expp, ct, st, cp, sp = kph(k)
+@inline function U3(k, l::Int64; bar=false, V=false)::SVector{5,SVector{4,ComplexF64}}
+    ct, st, cp, sp, expp, zk0, zm, zkk = kph(k)
     zk0m = zk0 + zm
     zfac = sqrt(2.0 * zm * zk0m)
     ct2, st2 = sqrt((1.0 + ct) / 2.0) / zfac, sqrt((1.0 - ct) / 2.0) / zfac
@@ -169,7 +169,7 @@ end
                 U3_1 = (sqrt2_3 * xe_01) * xu_1 + (sqrt1_3 * xe_11) * xu_m1
                 U3_2 = (sqrt2_3 * xe_02) * xu_1 + (sqrt1_3 * xe_12) * xu_m1
                 U3_3 = (sqrt2_3 * xe_03) * xu_1 + (sqrt1_3 * xe_13) * xu_m1
-                U3_4 = (sqrt2_3 * xe_04) * xu_1 
+                U3_4 = (sqrt2_3 * xe_04) * xu_1
             elseif l == -1
                 xu_m1 = SVector{4,ComplexF64}(-zk0m * st2, zk0m * ct2exp, zkk * st2, -zkk * ct2exp)
                 xu_1 = SVector{4,ComplexF64}(zk0m * ct2dexp, zk0m * st2, zkk * ct2dexp, zkk * st2)
@@ -183,7 +183,7 @@ end
                 U3_1 = (sqrt2_3 * xe_01) * xu_m1 + (sqrt1_3 * xe_m11) * xu_1
                 U3_2 = (sqrt2_3 * xe_02) * xu_m1 + (sqrt1_3 * xe_m12) * xu_1
                 U3_3 = (sqrt2_3 * xe_03) * xu_m1 + (sqrt1_3 * xe_m13) * xu_1
-                U3_4 = (sqrt2_3 * xe_04) * xu_m1 
+                U3_4 = (sqrt2_3 * xe_04) * xu_m1
             elseif l == 3
                 xu_1 = SVector{4,ComplexF64}(zk0m * ct2dexp, zk0m * st2, zkk * ct2dexp, zkk * st2)
                 xe_11 = (im * sp - ct * cp) * dexpdsqrt2
@@ -218,7 +218,7 @@ end
                 U3_1 = (sqrt2_3 * xe_01) * xu_1 + (sqrt1_3 * xe_11) * xu_m1
                 U3_2 = (sqrt2_3 * xe_02) * xu_1 + (sqrt1_3 * xe_12) * xu_m1
                 U3_3 = (sqrt2_3 * xe_03) * xu_1 + (sqrt1_3 * xe_13) * xu_m1
-                U3_4 = (sqrt2_3 * xe_04) * xu_1 
+                U3_4 = (sqrt2_3 * xe_04) * xu_1
             elseif l == -1
                 xu_m1 = SVector{4,ComplexF64}(zkk * st2, -zkk * ct2exp, -zk0m * st2, zk0m * ct2exp)
                 xu_1 = SVector{4,ComplexF64}(zkk * ct2dexp, zkk * st2, zk0m * ct2dexp, zk0m * st2)
@@ -233,7 +233,7 @@ end
                 U3_1 = (sqrt2_3 * xe_01) * xu_m1 + (sqrt1_3 * xe_m11) * xu_1
                 U3_2 = (sqrt2_3 * xe_02) * xu_m1 + (sqrt1_3 * xe_m12) * xu_1
                 U3_3 = (sqrt2_3 * xe_03) * xu_m1 + (sqrt1_3 * xe_m13) * xu_1
-                U3_4 = (sqrt2_3 * xe_04) * xu_m1 
+                U3_4 = (sqrt2_3 * xe_04) * xu_m1
             elseif l == 3
                 xu_1 = SVector{4,ComplexF64}(zkk * ct2dexp, zkk * st2, zk0m * ct2dexp, zk0m * st2)
                 xe_11 = (im * sp - ct * cp) * dexpdsqrt2
@@ -256,7 +256,7 @@ end
                 U3_4 = xe_m14 * xu_m1
             end
         end
-        return SVector{5,SVector{4, ComplexF64}}(U3_1, U3_2, U3_3, U3_4, SVector{4,ComplexF64}(0.0im, 0.0im, 0.0im, 0.0im))
+        return SVector{5,SVector{4,ComplexF64}}(U3_1, U3_2, U3_3, U3_4, SVector{4,ComplexF64}(0.0im, 0.0im, 0.0im, 0.0im))
         #return (U3_1, U3_2, U3_3, U3_4, SVector(0.0im, 0.0im, 0.0im, 0.0im))
     else
         if !V
@@ -274,7 +274,7 @@ end
                 U3_1 = (sqrt2_3 * xe_01) * xu_1 + (sqrt1_3 * xe_11) * xu_m1
                 U3_2 = (sqrt2_3 * xe_02) * xu_1 + (sqrt1_3 * xe_12) * xu_m1
                 U3_3 = (sqrt2_3 * xe_03) * xu_1 + (sqrt1_3 * xe_13) * xu_m1
-                U3_4 = (sqrt2_3 * xe_04) * xu_1 
+                U3_4 = (sqrt2_3 * xe_04) * xu_1
             elseif l == -1
                 xu_m1 = SVector{4,ComplexF64}(-zk0m * st2, zk0m * ct2dexp, -zkk * st2, zkk * ct2dexp)
                 xu_1 = SVector{4,ComplexF64}(zk0m * ct2exp, zk0m * st2, -zkk * ct2exp, -zkk * st2)
@@ -288,9 +288,9 @@ end
                 U3_1 = (sqrt2_3 * xe_01) * xu_m1 + (sqrt1_3 * xe_m11) * xu_1
                 U3_2 = (sqrt2_3 * xe_02) * xu_m1 + (sqrt1_3 * xe_m12) * xu_1
                 U3_3 = (sqrt2_3 * xe_03) * xu_m1 + (sqrt1_3 * xe_m13) * xu_1
-                U3_4 = (sqrt2_3 * xe_04) * xu_m1 
+                U3_4 = (sqrt2_3 * xe_04) * xu_m1
             elseif l == 3
-                xu_1 = SVector{4,ComplexF64}(zk0m * ct2exp, zk0m * st2+0.0im, -zkk * ct2exp, -zkk * st2+0.0im)
+                xu_1 = SVector{4,ComplexF64}(zk0m * ct2exp, zk0m * st2 + 0.0im, -zkk * ct2exp, -zkk * st2 + 0.0im)
                 xe_11 = (im * sp - ct * cp) * dexpdsqrt2
                 xe_12 = (-im * cp - ct * sp) * dexpdsqrt2
                 xe_13 = st * dexpdsqrt2
@@ -324,7 +324,7 @@ end
                 U3_1 = (sqrt2_3 * xe_01) * xu_1 + (sqrt1_3 * xe_11) * xu_m1
                 U3_2 = (sqrt2_3 * xe_02) * xu_1 + (sqrt1_3 * xe_12) * xu_m1
                 U3_3 = (sqrt2_3 * xe_03) * xu_1 + (sqrt1_3 * xe_13) * xu_m1
-                U3_4 = (sqrt2_3 * xe_04) * xu_1 
+                U3_4 = (sqrt2_3 * xe_04) * xu_1
             elseif l == -1
                 xu_m1 = SVector{4,ComplexF64}(zkk * st2, -zkk * ct2exp, -zk0m * st2, zk0m * ct2exp)
                 xu_1 = SVector{4,ComplexF64}(zkk * ct2dexp, zkk * st2, zk0m * ct2dexp, zk0m * st2)
@@ -339,7 +339,7 @@ end
                 U3_1 = (sqrt2_3 * xe_01) * xu_m1 + (sqrt1_3 * xe_m11) * xu_1
                 U3_2 = (sqrt2_3 * xe_02) * xu_m1 + (sqrt1_3 * xe_m12) * xu_1
                 U3_3 = (sqrt2_3 * xe_03) * xu_m1 + (sqrt1_3 * xe_m13) * xu_1
-                U3_4 = (sqrt2_3 * xe_04) * xu_m1 
+                U3_4 = (sqrt2_3 * xe_04) * xu_m1
             elseif l == 3
                 xu_1 = SVector{4,ComplexF64}(zkk * ct2dexp, zkk * st2, zk0m * ct2dexp, zk0m * st2)
                 xe_11 = (im * sp - ct * cp) * dexpdsqrt2
@@ -361,7 +361,7 @@ end
                 U3_4 = SVector{4,ComplexF64}(0.0im, 0.0im, 0.0im, 0.0im)
             end
         end
-        return SVector{5,SVector{4, ComplexF64}}(U3_1, U3_2, U3_3, U3_4, SVector{4,ComplexF64}(0.0im, 0.0im, 0.0im, 0.0im))
+        return SVector{5,SVector{4,ComplexF64}}(U3_1, U3_2, U3_3, U3_4, SVector{4,ComplexF64}(0.0im, 0.0im, 0.0im, 0.0im))
         #return (U3_1', U3_2', U3_3', U3_4', SVector(0.0im, 0.0im, 0.0im, 0.0im)')
     end
 end
@@ -398,18 +398,18 @@ end
 end
 
 @inline function LC(a::SVector, b::SVector, c::SVector, d::SVector)
-    return  a[4]*b[1]*c[2]*d[3] - a[4]*b[1]*c[3]*d[2] +
-    a[4]*b[2]*c[3]*d[1] - a[4]*b[2]*c[1]*d[3] +
-    a[4]*b[3]*c[1]*d[2] - a[4]*b[3]*c[2]*d[1] +
-    a[1]*b[4]*c[3]*d[2] - a[1]*b[4]*c[2]*d[3] +
-    a[1]*b[2]*c[4]*d[3] - a[1]*b[2]*c[3]*d[4] +
-    a[1]*b[3]*c[2]*d[4] - a[1]*b[3]*c[4]*d[2] +
-    a[2]*b[4]*c[1]*d[3] - a[2]*b[4]*c[3]*d[1] +
-    a[2]*b[1]*c[3]*d[4] - a[2]*b[1]*c[4]*d[3] +
-    a[2]*b[3]*c[4]*d[1] - a[2]*b[3]*c[1]*d[4] +
-    a[3]*b[4]*c[2]*d[1] - a[3]*b[4]*c[1]*d[2] +
-    a[3]*b[1]*c[4]*d[2] - a[3]*b[1]*c[2]*d[4] +
-    a[3]*b[2]*c[1]*d[4] - a[3]*b[2]*c[4]*d[1]
+    return a[4] * b[1] * c[2] * d[3] - a[4] * b[1] * c[3] * d[2] +
+           a[4] * b[2] * c[3] * d[1] - a[4] * b[2] * c[1] * d[3] +
+           a[4] * b[3] * c[1] * d[2] - a[4] * b[3] * c[2] * d[1] +
+           a[1] * b[4] * c[3] * d[2] - a[1] * b[4] * c[2] * d[3] +
+           a[1] * b[2] * c[4] * d[3] - a[1] * b[2] * c[3] * d[4] +
+           a[1] * b[3] * c[2] * d[4] - a[1] * b[3] * c[4] * d[2] +
+           a[2] * b[4] * c[1] * d[3] - a[2] * b[4] * c[3] * d[1] +
+           a[2] * b[1] * c[3] * d[4] - a[2] * b[1] * c[4] * d[3] +
+           a[2] * b[3] * c[4] * d[1] - a[2] * b[3] * c[1] * d[4] +
+           a[3] * b[4] * c[2] * d[1] - a[3] * b[4] * c[1] * d[2] +
+           a[3] * b[1] * c[4] * d[2] - a[3] * b[1] * c[2] * d[4] +
+           a[3] * b[2] * c[1] * d[4] - a[3] * b[2] * c[4] * d[1]
 end
 
 import Base: *
@@ -431,11 +431,11 @@ function *(Q::SVector{5,ComplexF64}, W::SVector{5,ComplexF64})::ComplexF64
     return temp
 end
 
-function *(A::SVector{4, ComplexF64}, M::SMatrix{4, 4, ComplexF64, 16})
-    return transpose(A)*M  
+function *(A::SVector{4,ComplexF64}, M::SMatrix{4,4,ComplexF64,16})
+    return transpose(A) * M
 end
-function *(A::SVector{4, ComplexF64}, B::SVector{4, ComplexF64})
-    return transpose(A)*B  
+function *(A::SVector{4,ComplexF64}, B::SVector{4,ComplexF64})
+    return transpose(A) * B
 end
 
 
