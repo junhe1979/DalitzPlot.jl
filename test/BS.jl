@@ -421,4 +421,4 @@ end
 @time main() #运行主程序
 
 include("plot.jl") #gnuplot画图
-run(`gnuplot plot/plotL1405jl.gp`) #matplotlib画图
+#run(`gnuplot plot/plotL1405jl.gp`) #matplotlib画图

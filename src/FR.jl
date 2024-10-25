@@ -68,7 +68,7 @@ end
     zkx, zky, zkz, zk0, zm = real(k[1]), real(k[2]), real(k[3]), k[4], real(k[5])
     zkk = sqrt(zkx^2 + zky^2 + zkz^2)
     if zkk < 1e-30
-        return zk0, zm, zkk, 1.0 + 0.0im, 1.0, 0.0, 1.0, 0.0
+        return 1.0, 0.0, 1.0, 0.0, 1.0 + 0.0im, zk0, zm, zkk
     end
     ct = zkz / zkk
     st = sqrt(1.0 - ct^2)
@@ -81,7 +81,7 @@ end
     zkk = sqrt(zkx^2 + zky^2 + zkz^2)
 
     if zkk < 1e-30
-        return zk0, zm, zkk, 1.0 + 0.0im, 1.0, 0.0, 1.0, 0.0
+        return 1.0, 0.0, 1.0, 0.0, 1.0 + 0.0im, zk0, zm, zkk
     end
     ct = zkz / zkk
     st = sqrt(1.0 - ct^2)

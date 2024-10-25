@@ -87,9 +87,9 @@ const p = ParticlesType[] #store of information of particles in this global vect
 const pkey = Dict{String,Int64}() #store the dictionary for key and the number of particles
 #*******************************************************************************************
 function fPropFF(k, ex, L, LLi, LLf; lregu=1, lFFex=0) #form factors
-    m = p[ex].m 
+    m = p[ex].m
     if lFFex >= 10
-        L = m + 0.22 * L  
+        L = m + 0.22 * L
         LLi = m + 0.22 * LLi
         LLf = m + 0.22 * LLf
         lFFex -= 10
@@ -99,7 +99,7 @@ function fPropFF(k, ex, L, LLi, LLf; lregu=1, lFFex=0) #form factors
     FFex = 1.0 + 0im #form factor for exchanged particles
     FFre = 0.0 + 0im #form factor for constituent particles
     if p[ex].name != "V" #not contact interaction
-        fProp *= (1.0 + 0im) / (k.q2 - ComplexF64(m^2)) 
+        fProp *= (1.0 + 0im) / (k.q2 - ComplexF64(m^2))
         if lFFex == 1
             FFex *= ((L^2 - m^2) / (L^2 - k.q2))^2  #type 1
         elseif lFFex == 2
@@ -119,7 +119,7 @@ function fPropFF(k, ex, L, LLi, LLf; lregu=1, lFFex=0) #form factors
         mi2 = real(k.i2[5])
         mf2 = real(k.f2[5])
         if mi1 <= mi2
-            FFre += -(mi1^2 - k.i1 * k.i1)^2 / LLi^4 
+            FFre += -(mi1^2 - k.i1 * k.i1)^2 / LLi^4
         end
         if mi1 > mi2
             FFre += -(mi2^2 - k.i2 * k.i2)^2 / LLi^4
@@ -163,11 +163,11 @@ function fKernel(kf, ki, iNih1, iNih2, Ec, qn, CB, IA, IH, fV)::ComplexF64 # Cal
     eta = p[CB[ichi].p[1]].P * CB[ichi].P[2] * qn.P *
           (-1)^(qn.J / qn.Jh - CB[ichi].J[1] / CB[ichi].Jh[1] - CB[ichi].J[2] / CB[ichi].Jh[2])
 
-    lJJ = qn.J / qn.Jh 
+    lJJ = qn.J / qn.Jh
     l21i = -l.i2 / l.i2h + l.i1 / l.i1h
     l21f = l.f2 / l.f2h - l.f1 / l.f1h
-    lf = Int64(lJJ + l21f) + 1 
-    d50 = 2.0 / 50.0  
+    lf = Int64(lJJ + l21f) + 1
+    d50 = 2.0 / 50.0
     Ker0 = 0 + 0im
     for i in 1:50
         x = -1.0 + d50 * (i - 0.5)
@@ -205,7 +205,7 @@ function fProp(iNih, ii, rp, Ec, Np, CB, IH)
     mi1 = CB[ich].m[1]
     mi2 = CB[ich].m[2]
     mi2p2 = 1.0
-    if IH[iNih].helh[1] == 2 
+    if IH[iNih].helh[1] == 2
         mi2p2 *= 2.0 * mi1
     end
     if IH[iNih].helh[2] == 2
@@ -285,7 +285,7 @@ function srAB(Ec, qn, CB, IH, IA, fV; lRm=1)
     return Vc, Gc, II
 end
 #*******************************************************************************************
-function WORKSPACE(Ec, lRm, Np, Nih, CB, IH) 
+function WORKSPACE(Ec, lRm, Np, Nih, CB, IH)
     #produce the dimensions in a independent helicity amplitudes, especially for the onshell dimension.
     Ec += Complex{Float64}(0.0, 1e-15)
     Nt = 0
@@ -402,22 +402,42 @@ function Independent_amp(Project, channels, CC, qn; Np=10, Nx=50)
             chnamef[1] = CB[i2].name[3]
             chname = "$(chnamei[1])-->$(chnamef[1])"
 
-            Nex = length(CC[chname])
-            IA0 = InterActionType(
-                Project,
-                Nex,
-                [CC[chname][i][1][1] for i in 1:Nex],  #name
-                [pkey[CC[chname][i][1][1]] for i in 1:Nex],  #key
-                [p[pkey[CC[chname][i][1][1]]].J for i in 1:Nex],  #J
-                [p[pkey[CC[chname][i][1][1]]].Jh for i in 1:Nex],  #Jh
-                [p[pkey[CC[chname][i][1][1]]].P for i in 1:Nex],  #P
-                [p[pkey[CC[chname][i][1][1]]].m for i in 1:Nex],  #m
-                [CC[chname][i][1][2] for i in 1:Nex],  #dc
-                [CC[chname][i][2] for i in 1:Nex],     #CC
-                wD  # Vector{Matrix{Float64}} for D
-            )
+            if i1 <= i2
+                if haskey(CC, chname) == true
+                    Nex = length(CC[chname])
+                    IA0 = InterActionType(
+                        Project,
+                        Nex,
+                        [CC[chname][i][1][1] for i in 1:Nex],  #name
+                        [pkey[CC[chname][i][1][1]] for i in 1:Nex],  #key
+                        [p[pkey[CC[chname][i][1][1]]].J for i in 1:Nex],  #J
+                        [p[pkey[CC[chname][i][1][1]]].Jh for i in 1:Nex],  #Jh
+                        [p[pkey[CC[chname][i][1][1]]].P for i in 1:Nex],  #P
+                        [p[pkey[CC[chname][i][1][1]]].m for i in 1:Nex],  #m
+                        [CC[chname][i][1][2] for i in 1:Nex],  #dc
+                        [CC[chname][i][2] for i in 1:Nex],     #CC
+                        wD  # Vector{Matrix{Float64}} for D
+                    )
+                else
+                    Nex = 0
+                    IA0 = InterActionType(
+                        Project,
+                        Nex,
+                        [],  #name
+                        [],  #key
+                        [],  #J
+                        [],  #Jh
+                        [],  #P
+                        [],  #m
+                        [],  #dc
+                        [],     #CC
+                        wD  # Vector{Matrix{Float64}} for D
+                    )
+                end
+                IA[i1, i2] = IA0
+                IA[i2, i1] = IA0
+            end
 
-            IA[i1, i2] = IA0
         end
     end
 
