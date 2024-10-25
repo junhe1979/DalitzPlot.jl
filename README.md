@@ -175,11 +175,11 @@ Example usage:
 ```julia
 using ProgressBars
 function progress_callback(pb)
-   ProgressBars.update(pb)  # 更新进度条
+   ProgressBars.update(pb)  
 end
 nevtot=Int64(1e7)
-pb = ProgressBar(1:nevtot)  # 创建进度条，范围从1到n
-callback = i -> progress_callback(pb)  # 创建回调函数，传入进度条对象
+pb = ProgressBar(1:nevtot)  
+callback = i -> progress_callback(pb)  
 res = Xs.Xsection(Xs.plab2pcm(p_lab, ch.mi), ch, callback,axes=[23, 21], nevtot=Int64(1e7), Nbin=500, para=(p=p_lab, l=1.0))
 ```
 
