@@ -4,7 +4,7 @@ module qBSE
 using FastGaussQuadrature, StaticArrays, WignerD
 using Base.Threads
 using StaticArrays
-using ..FR
+
 # store the information of a channel. The kv and wv are stored here for convenience. 
 struct ChannelBasisType #CB
     p::Vector{Int64} #particles of channel
@@ -85,6 +85,68 @@ function particles!(particles::Vector{ParticlesType}, pkey::Dict{String,Int64}, 
 end
 const p = ParticlesType[] #store of information of particles in this global vector
 const pkey = Dict{String,Int64}() #store the dictionary for key and the number of particles
+#*******************************************************************************************
+# Calculate the \sum|M|^2 for each channel 
+function M2_channel(T,IH,CB)
+  
+    Nih = length(IH)
+    NCB = length(CB)
+    resM2 = zeros(Float64, NCB, NCB)
+    Np = length(CB[1].kv)
+    resA = [IH[iNih1].Nmo == 1 && IH[iNih2].Nmo == 1 ?
+            T[IH[iNih1].Nm0+Np+1, IH[iNih2].Nm0+Np+1] : 0.0
+            for iNih1 in 1:Nih, iNih2 in 1:Nih]
+    #@show ER, abs2(resA[2,2])
+    hel1 = 1
+    for iCB1 in 1:NCB
+        hel2 = 1
+        for iCB2 in 1:NCB
+            for i in hel1:hel1+CB[iCB1].Nhel-1, j in hel2:hel2+CB[iCB2].Nhel-1
+                #@show NCB, iCB1, iCB2, i, j, size(resA)
+                resM2[iCB1, iCB2] += abs2(resA[i, j])
+            end
+            hel2 += CB[iCB2].Nhel
+        end
+        hel1 += CB[iCB1].Nhel
+    end
+    return resM2
+end
+
+@inline function lambda(m1, m2, m3)
+    m1_sq = m1 * m1
+    m2_plus_m3 = m2 + m3
+    m2_minus_m3 = m2 - m3
+    l = (m1_sq - m2_plus_m3 * m2_plus_m3) * (m1_sq - m2_minus_m3 * m2_minus_m3)
+    return l > 0.0 ? sqrt(l) : 0.0
+end
+
+function simpleXsection(xx, M2, CB; Ep="cm")
+
+    Xsection = Matrix{Float64}[]
+    NCB = length(CB)
+    N=length(xx)
+    for i in 1:N
+        Xs0 = zeros(size(M2[1]))
+        for iM2 in 1:NCB
+            for fM2 in 1:NCB
+                mi1 = p[CB[iM2].p[1]].m
+                mi2 = p[CB[iM2].p[2]].m
+                mf1 = p[CB[fM2].p[1]].m
+                mf2 = p[CB[fM2].p[2]].m
+                W = xx[i]
+                if Ep == "L"
+                    W = sqrt((sqrt(W^2 + mi1^2) + mi2)^2 - W^2)
+                end
+                fac = lambda(W, mf1, mf2) / lambda(W, mi1, mi2) / W^2 * (2.0 * mi2 * 2.0 * mi2 * 0.3894 / 16.0 / pi)
+                Xs0[iM2, fM2] = M2[i][iM2, fM2] * fac
+            end
+        end
+        push!(Xsection,Xs0)
+    end
+    return Xsection
+end
+
+
 #*******************************************************************************************
 function fPropFF(k, ex, L, LLi, LLf; lregu=1, lFFex=0) #form factors
     m = p[ex].m
@@ -196,6 +258,8 @@ function fKernel(kf, ki, iNih1, iNih2, Ec, qn, CB, IA, IH, fV)::ComplexF64 # Cal
     if l.i1 == 0 && l.i2 == 0
         fKernel /= sqrt(2.0)
     end
+    #@show fKernel
+    #exit()
     return fKernel
 end
 #*******************************************************************************************
@@ -282,7 +346,7 @@ function srAB(Ec, qn, CB, IH, IA, fV; lRm=1)
         end
     end
 
-    return Vc, Gc, II
+    return Vc, Gc, II, IH
 end
 #*******************************************************************************************
 function WORKSPACE(Ec, lRm, Np, Nih, CB, IH)
@@ -320,14 +384,14 @@ function Independent_amp(Project, channels, CC, qn; Np=10, Nx=50)
     CB = ChannelBasisType[]
     IH = IndependentHelicityType[]
     Nih, Nc = 1, 1
-    kv, wv = gausslaguerre(Np)
-    wv = wv .* exp.(kv)
-    #kv = [2.0496633800321580e-002, 0.10637754206664184, 0.25725070911685544,
-    #    0.47691569315652682, 0.78977094890173449, 1.2661898317497706, 2.0968065118988930,
-    #    3.8872580463677919, 9.4004780129091756, 48.788435306583473]
-    #wv = [5.2385549033825828e-002, 0.11870709308644416, 0.18345726134358431,
-    #    0.25958276865541480, 0.37687641122072230, 0.60422211564747619, 1.1412809934307626,
-    #    2.7721814583372204, 10.490025610274076, 124.69392072758504]
+    #kv, wv = gausslaguerre(Np)
+    #wv = wv .* exp.(kv)
+    kv = [2.0496633800321580e-002, 0.10637754206664184, 0.25725070911685544,
+        0.47691569315652682, 0.78977094890173449, 1.2661898317497706, 2.0968065118988930,
+        3.8872580463677919, 9.4004780129091756, 48.788435306583473]
+    wv = [5.2385549033825828e-002, 0.11870709308644416, 0.18345726134358431,
+        0.25958276865541480, 0.37687641122072230, 0.60422211564747619, 1.1412809934307626,
+        2.7721814583372204, 10.490025610274076, 124.69392072758504]
 
     wD = [wignerd(qn.J / qn.Jh, acos(-1.0 + 2.0 / Nx * (i - 0.5))) for i in 1:Nx]
     for channel in channels

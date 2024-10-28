@@ -225,7 +225,7 @@ Minkowski metric is chosen as $g^{\mu\nu}=diag(1,-1,-1,-1)$. In the code, we sti
 
 `g= SMatrix{5,5,Float64}([-1.0 0.0 0.0 0.0 0.0;0.0 -1.0 0.0 0.0 0.0;0.0 0.0 -1.0 0.0 0.0;0.0 0.0 0.0 1.0 0.0;0.0 0.0 0.0 0.0 0.0])`.
 
-For example, $g^{00}$ is accessed as `g[4,4]`.
+For example, $g^{00}$ is accessed as `FR.g[4,4]`.
 
 ## Dirac Gamma matrices.
 
@@ -245,9 +245,9 @@ $$
 
 The Dirac gamma matrices are represented by the array GA=$[\gamma_1,\gamma_2,\gamma_3,\gamma_0,\gamma_5]$, with each gamma matrix defined as `SMatrix{4,4,ComplexF64}`.
 
-For example, $\gamma_2$ can be accessed as `GA[2]` and has the type `SMatrix{4,4,ComplexF64}`. The unit matrix is accessed as `I`
+For example, $\gamma_2$ can be accessed as `FR.GA[2]` and has the type `SMatrix{4,4,ComplexF64}`. The unit matrix is accessed as   `FR.I`
 
-A function `GS` is provided for calculate $\gamma \cdot k$ as `function GS(k::SVector{5, Type})::SMatrix{4,4,ComplexF64}`
+A function `FR.GS` is provided for calculate $\gamma \cdot k$ as `function GS(k::SVector{5, Type})::SMatrix{4,4,ComplexF64}`
 
 ## Functions for particles with different spins
 

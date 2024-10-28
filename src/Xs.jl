@@ -4,13 +4,16 @@ using StaticArrays
 include("GEN.jl")
 using .GEN
 
+
+
+
 function binx(i::Int64, bin, iaxis::Int64)::Float64
     return bin.min[iaxis] + (i - 0.5) / bin.Nbin * (bin.max[iaxis] - bin.min[iaxis])
 end
 
 function binrange(laxes, tecm, ch)
-    min = Float64[(ch.mf[axes0[1]] + ch.mf[axes0[2]])^2  for axes0 in laxes]
-    max = Float64[(tecm - sum(ch.mf) + ch.mf[axes0[1]] + ch.mf[axes0[2]])^2  for axes0 in laxes]
+    min = Float64[(ch.mf[axes0[1]] + ch.mf[axes0[2]])^2 for axes0 in laxes]
+    max = Float64[(tecm - sum(ch.mf) + ch.mf[axes0[1]] + ch.mf[axes0[2]])^2 for axes0 in laxes]
     return min, max
 end
 
@@ -23,7 +26,7 @@ function Nsum3(laxes, bin::NamedTuple, kf::MMatrix{5,18,Float64,90})
         kf2 = SVector{5,Float64}(kf[1:5, axes0[2]])
 
         k12 = kf1 + kf2
-        k12s = k12*k12
+        k12s = k12 * k12
         Nsum[iaxes] = convert(Int64, cld((k12s - bin.min[iaxes]) * bin.Nbin, (bin.max[iaxes] - bin.min[iaxes])))
     end
     return Nsum
@@ -102,7 +105,7 @@ function Xsection(tecm, ch, callback; axes=[23, 21], nevtot=Int64(1e6), Nbin=100
     end
     zsum = 0e0
     zsumt = zeros(Float64, 2, Nbin)
-    zsumd = zeros(Float64, Nbin , Nbin)
+    zsumd = zeros(Float64, Nbin, Nbin)
 
     for ine in 1:nevtot
 
@@ -123,7 +126,7 @@ function Xsection(tecm, ch, callback; axes=[23, 21], nevtot=Int64(1e6), Nbin=100
     cs0 = zsum / nevtot
     cs1 = zsumt / nevtot
     cs2 = zsumd / nevtot
-    res = (cs0=cs0, cs1=cs1, cs2=cs2, axesV=axesV, axes=axes,ch=ch)
+    res = (cs0=cs0, cs1=cs1, cs2=cs2, axesV=axesV, axes=axes, ch=ch)
     return res
 end
 
