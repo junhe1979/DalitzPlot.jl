@@ -29,7 +29,11 @@ Printf = "1.11.0"
 ProgressBars = "1.5.1"
 StaticArrays = "1.9.0"
 WignerD = "0.1.4"
+<<<<<<< HEAD
 julia = "1.11.1"
+=======
+julia = "1.10.0"
+>>>>>>> 5d2dfcc12ca40b96a85c9a5d476debc6122b90c9
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"

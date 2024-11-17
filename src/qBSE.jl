@@ -1,7 +1,11 @@
 module qBSE
 using FastGaussQuadrature, StaticArrays, WignerD, LinearAlgebra, Printf
 using Base.Threads
+<<<<<<< HEAD
 using StaticArrays
+=======
+using StaticArrays 
+>>>>>>> 5d2dfcc12ca40b96a85c9a5d476debc6122b90c9
 #*******************************************************************************************
 # store the information of a interaction
 struct structInterAction #IA
