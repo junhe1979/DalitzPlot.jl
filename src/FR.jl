@@ -1,9 +1,7 @@
-#############################################################################
-# FR #
-#############################################################################
 module FR
 #export III, GA, GS, epsilon, Uc, Ubc, LCV
 using StaticArrays
+#############################################################################
 const g = SMatrix{5,5,Float64}([
     -1.0 0.0 0.0 0.0 0.0;
     0.0 -1.0 0.0 0.0 0.0;
@@ -40,6 +38,7 @@ const GA = [SMatrix{4,4,ComplexF64}([
         0.0+0.0im 0.0+0.0im 0.0+0.0im 1.0+0.0im
         1.0+0.0im 0.0+0.0im 0.0+0.0im 0.0+0.0im
         0.0+0.0im 1.0+0.0im 0.0+0.0im 0.0+0.0im])]
+#############################################################################
 @inline function GS(k::SVector{5,ComplexF64})::SMatrix{4,4,ComplexF64}
     k1_im_k2 = k[1] + im * k[2]
     k1_min_im_k2 = k[1] - im * k[2]
@@ -51,7 +50,6 @@ const GA = [SMatrix{4,4,ComplexF64}([
         k1_im_k2 -k[3] 0 -k[4]
     ]
 end
-
 @inline function GS(k::SVector{5,Float64})::SMatrix{4,4,ComplexF64}
     k1_im_k2 = k[1] + im * k[2]
     k1_min_im_k2 = k[1] - im * k[2]
@@ -63,7 +61,7 @@ end
         k1_im_k2 -k[3] 0 -k[4]
     ]
 end
-
+#############################################################################
 @inline function kph(k::SVector{5,ComplexF64})
     zkx, zky, zkz, zk0, zm = real(k[1]), real(k[2]), real(k[3]), k[4], real(k[5])
     zkk = sqrt(zkx^2 + zky^2 + zkz^2)
@@ -365,7 +363,7 @@ end
         #return (U3_1', U3_2', U3_3', U3_4', SVector(0.0im, 0.0im, 0.0im, 0.0im)')
     end
 end
-
+#############################################################################
 @inline function LC(a::SVector, b::SVector, c::SVector)
 
     V4 = -a[1] * b[2] * c[3] + a[1] * b[3] * c[2] + a[2] * b[1] * c[3] - a[2] * b[3] * c[1] - a[3] * b[1] * c[2] + a[3] * b[2] * c[1]
@@ -374,7 +372,6 @@ end
     V3 = -a[4] * b[1] * c[2] + a[4] * b[2] * c[1] + a[1] * b[4] * c[2] - a[1] * b[2] * c[4] - a[2] * b[4] * c[1] + a[2] * b[1] * c[4]
     return @SVector [V1, V2, V3, V4, 0]
 end
-
 @inline function LC(i0::Int64, i1::Int64, i2::Int64, i3::Int64)
     # 如果任意两个索引相等，则返回0
     if i0 == i1 || i0 == i2 || i0 == i3 || i1 == i2 || i1 == i3 || i2 == i3
@@ -396,7 +393,6 @@ end
     # here we choose epsilon_{0123}=-1. Other vector should be A^\mu
     return -sign
 end
-
 @inline function LC(a::SVector, b::SVector, c::SVector, d::SVector)
     return a[4] * b[1] * c[2] * d[3] - a[4] * b[1] * c[3] * d[2] +
            a[4] * b[2] * c[3] * d[1] - a[4] * b[2] * c[1] * d[3] +
@@ -411,9 +407,8 @@ end
            a[3] * b[1] * c[4] * d[2] - a[3] * b[1] * c[2] * d[4] +
            a[3] * b[2] * c[1] * d[4] - a[3] * b[2] * c[4] * d[1]
 end
-
+#############################################################################
 import Base: *
-
 function *(Q::SVector{5,Float64}, W::SVector{5,Float64})::Float64
     temp = Q[4] * W[4] - Q[1] * W[1] - Q[2] * W[2] - Q[3] * W[3]
     return temp
@@ -430,13 +425,10 @@ function *(Q::SVector{5,ComplexF64}, W::SVector{5,ComplexF64})::ComplexF64
     temp = Q[4] * W[4] - Q[1] * W[1] - Q[2] * W[2] - Q[3] * W[3]
     return temp
 end
-
 function *(A::SVector{4,ComplexF64}, M::SMatrix{4,4,ComplexF64,16})
     return transpose(A) * M
 end
 function *(A::SVector{4,ComplexF64}, B::SVector{4,ComplexF64})
     return transpose(A) * B
 end
-
-
 end
