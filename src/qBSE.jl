@@ -1,10 +1,8 @@
-#*******************************************************************************************
-#*******************************************************************************************
 module qBSE
-using FastGaussQuadrature, StaticArrays, WignerD
+using FastGaussQuadrature, StaticArrays, WignerD, LinearAlgebra, Printf
 using Base.Threads
 using StaticArrays
-
+#*******************************************************************************************
 # store the information of a interaction
 struct structInterAction #IA
     Nex::Int64  #total number of exchanges
@@ -17,7 +15,6 @@ struct structInterAction #IA
     dc::Vector{Int64}  #direct or cross
     CC::Vector{Float64}  #flavor factors
 end
-
 # store the information of each dimension for matrix
 mutable struct structDimension #Dim
     iIH::Int64 # which independent helicity this dimension belongs to 
@@ -25,7 +22,6 @@ mutable struct structDimension #Dim
     w::Float64 #weights of discreting
     Dimo::Int64 # +1 or not for onshell W>sum m. Np+Dimo is the total dimensions of a independent helicities
 end
-
 # store the information of an independent helicity for matrix
 mutable struct structIndependentHelicity #IH
     iCH::Int64 # which channel this independent helicity belongs to 
@@ -36,7 +32,6 @@ mutable struct structIndependentHelicity #IH
     Dimn::Int64 #the number of dimensions in this independent helicities
     Dimo::Int64 # +1 or not for onshell W>sum m. Np+Dimo is the total dimensions of a independent helicities
 end
-
 # store the information of a channel. The kv and wv are stored here for convenience. 
 struct structChannel #CH
     p::Vector{Int64} #particles of channel
@@ -51,15 +46,13 @@ struct structChannel #CH
     IHe::Int64
     IHn::Int64 #total number of helicity amplitudes of a channel
 end
-
 struct structProject
     Project::String
     kv::Vector{Float64} #momenta of discreting
     wv::Vector{Float64} #weights of discreting
     D::Vector{Matrix{Float64}}   #WignerD
 end
-
-
+#*******************************************************************************************
 mutable struct structMomentum #momenta
     i1::SVector{5,ComplexF64} # initial 1
     f1::SVector{5,ComplexF64}
@@ -79,6 +72,7 @@ mutable struct structHelicity #l
     f2::Int64
     f2h::Int64
 end
+#*******************************************************************************************
 struct structParticle #store the information of particles
     name::String
     name0::String
@@ -121,7 +115,6 @@ function M2_channel(T, IH, CH)
 
     return resM2
 end
-
 @inline function lambda(m1, m2, m3)
     m1_sq = m1 * m1
     m2_plus_m3 = m2 + m3
@@ -129,7 +122,6 @@ end
     l = (m1_sq - m2_plus_m3 * m2_plus_m3) * (m1_sq - m2_minus_m3 * m2_minus_m3)
     return l > 0.0 ? sqrt(l) : 0.0
 end
-
 function simpleXsection(xx, M2, CH; Ep="cm")
     Xsection = Matrix{Float64}[]
     NCH = length(CH)
@@ -164,9 +156,83 @@ function simpleXsection(xx, M2, CH; Ep="cm")
 
     return Xsection
 end
+#得到log|1-VG|以寻找极点。
+function res(Range, iER, qn, CH, IH, IA, PJ, fV)
+    resEct = ComplexF64[] #设置保存复的总能量Ec=ER+EI*im的数组
+    reslogt = Float64[] #设置保存log|1-VG|的数组
+    NCH = length(CH)
+    resM2 = zeros(Float64, NCH, NCH)
+    ER = Range.ERmax - iER * (Range.ERmax - Range.ERmin) / Range.NER #计算ER
+    if Range.Ep == "L" #here, we use the pL, so should be transfered to ER
+        PL = Range.ERmax - iER * (Range.ERmax - Range.ERmin) / Range.NER #计算ER
+        ER = sqrt((sqrt(PL^2 + qBSE.p[qBSE.pkey["K_m"]].m^2) + qBSE.p[qBSE.pkey["N_p"]].m)^2 - PL^2)
+    end
+    for iEI in -Range.NEI:Range.NEI #虚部部分循环
+        EI = iEI * Range.EIt / Range.NEI #计算虚部
+        Ec = ER + EI * im
+        Vc, Gc, II, IH, Dim = qBSE.srAB(Ec, qn, CH, IH, IA, PJ, fV, lRm=1) # Calculate the V, G, and unit matrix II
+        VGI = II - Vc * Gc
+        detVGI = det(VGI)   # Compute determinant of (1 - VGc)，调用LinearAlgebra包det函数
+        logdetVGI = log(abs(detVGI)^2)
+        push!(resEct, Ec)
+        push!(reslogt, logdetVGI)
+        if iEI == 0
+            T = inv(VGI) * Vc
+            resM2 = qBSE.M2_channel(T, IH, CH)
+        end
+    end
+    if Range.Ep == "L"
+        resEct[1] = PL
+    end
+    return resEct, reslogt, resM2
+end
+#*******************************************************************************************
+#显示
+function showPJInfo(Range, qn, CH, IH, IA)
+    dashline = repeat('-', 70)
+    println(dashline)
+    @printf("I(J,P)= %1d(%1d,%2d)\n", qn.I, qn.J, qn.P)
+    for ih in eachindex(IH)
+        @printf("%-15s: %2d/%1d, %2d/%1d;  cutoff = %5.3f GeV\n", CH[IH[ih].iCH].name[3], IH[ih].hel[1],
+            IH[ih].helh[1], IH[ih].hel[2], IH[ih].helh[2], CH[IH[ih].iCH].cutoff)
+    end
+    Nc = length(CH)
+    println(dashline)
+    @printf("%-15s\n", "channel")
+
+    for i1 in 1:Nc
+        @printf("%-15s", CH[i1].name[3])
+        for i in 1:Nc
+            @printf("%2d ", IA[i1, i].Nex)
+        end
+        @printf("\n")
+    end
+    println(dashline)
+    println("ER=$(Range.ERmax) to $(Range.ERmin) GeV, NER=$(Range.NER)  ;   EI=$(Range.EIt*1e3) MeV, NEI=$(Range.NEI)")
+    println(dashline)
+end
+function showPoleInfo(qn, resEc, reslog, filename)
+    Ampmin, Ampminx, Ampminy = 0.0, 0.0, 0.0
+    for i in eachindex(resEc)
+        Ec = resEc[i]
+        logdetVGI = reslog[i]
+        open(filename, "a") do file
+            write(file, @sprintf("%.4f %.4f %.4f\n", real(Ec), imag(Ec) * 1e3, logdetVGI))
+        end
+        if Ampmin > logdetVGI
+            Ampmin = logdetVGI
+            Ampminx = real(Ec)
+            Ampminy = imag(Ec) * 1e3
+        end
+    end
 
 
-
+    dashline = repeat('-', 70)
+    println(dashline)
+    println("I(J,P)=$(qn.I)($(qn.J),$(qn.P))  pole= $Ampmin at $(Ampminx * 1e3), $Ampminy")
+    println(dashline)
+    return Ampmin, Ampminx, Ampminy
+end
 #*******************************************************************************************
 function fPropFF(k, ex, L, LLi, LLf; lregu=1, lFFex=0) #form factors
     m = p[ex].m

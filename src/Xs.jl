@@ -1,8 +1,8 @@
-
 module Xs
 using StaticArrays
-include("GEN.jl")
-using .GEN
+#include("GEN.jl")
+using ..GEN
+#############################################################################
 function LorentzBoost!(k::SVector, p::SVector)
     kp = k[1] * p[1] + k[2] * p[2] + k[3] * p[3]
     k1 = k[1] + p[1] * ((kp / (p[5] + p[4]) + k[4]) / p[5])
@@ -13,26 +13,21 @@ function LorentzBoost!(k::SVector, p::SVector)
 
     return @SVector [k1, k2, k3, k4, k5]
 end
-
 function LorentzRotation!(k::SVector, ct::Float64, st::Float64, cp::Float64, sp::Float64)
     k1 = ct * cp * k[1] + ct * sp * k[2] - st * k[3]
     k2 = -sp * k[1] + cp * k[2]
     k3 = st * cp * k[1] + st * sp * k[2] + ct * k[3]
     return @SVector [k1, k2, k3, k[4], k[5]]
 end
-
-
+#############################################################################
 function binx(i::Int64, bin, iaxis::Int64)::Float64
     return bin.min[iaxis] + (i - 0.5) / bin.Nbin * (bin.max[iaxis] - bin.min[iaxis])
 end
-
 function binrange(laxes, tecm, ch, stype)
     min = Float64[(ch.mf[axes0[1]] + ch.mf[axes0[2]])^stype for axes0 in laxes]
     max = Float64[(tecm - sum(ch.mf) + ch.mf[axes0[1]] + ch.mf[axes0[2]])^stype for axes0 in laxes]
     return min, max
 end
-
-#bin
 function Nsum3(laxes, bin::NamedTuple, kf, stype)
     Nsij = zeros(Int64, 2)
     sij = zeros(Float64, 2)
@@ -46,17 +41,12 @@ function Nsum3(laxes, bin::NamedTuple, kf, stype)
     end
     return Nsij, sij
 end
-
 #############################################################################
-#Transfer
-#############################################################################
-
 function plab2pcm(p::Float64, mi::Vector{Float64})
     ebm = sqrt(p^2 + mi[1]^2) #
     W = sqrt((ebm + mi[2])^2 - p^2)
     return W
 end
-
 function getkf(p::Float64, kf::Vector{SVector{5,Float64}}, ch::NamedTuple)
     # 预计算常量
     ebm = sqrt(p^2 + ch.mi[1]^2)
@@ -76,8 +66,6 @@ function getkf(p::Float64, kf::Vector{SVector{5,Float64}}, ch::NamedTuple)
 
     return klab
 end
-
-
 function plab(p::Float64, mi::Vector{Float64})
 
     m1, m2 = mi[1], mi[2]
@@ -86,7 +74,6 @@ function plab(p::Float64, mi::Vector{Float64})
 
     return p1, p2
 end
-
 function pcm(tecm::Float64, mi::Vector{Float64})
     m1, m2 = mi[1], mi[2]
     E1 = (tecm^2 + m1^2 - m2^2) / (2.0 * tecm)
@@ -97,7 +84,7 @@ function pcm(tecm::Float64, mi::Vector{Float64})
 
     return p1, p2
 end
-
+#############################################################################
 function Xsection(tecm, ch, callback; axes=[23, 21], min=[], max=[], nevtot=Int64(1e6),
     Nbin=100, para=(l = 1.0), stype=1)
     Nf = length(ch.mf)
@@ -156,5 +143,4 @@ function Xsection(tecm, ch, callback; axes=[23, 21], min=[], max=[], nevtot=Int6
     res = (cs0=cs0, cs1=cs1, cs2=cs2, axesV=axesV, axes=axes, ch=ch)
     return res
 end
-
 end

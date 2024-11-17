@@ -6,8 +6,8 @@ function plotD(res; cg=cgrad([:white, :green, :blue, :red], [0, 0.01, 0.1, 0.5, 
     cs1 = res[2]
     cs2 = res[3]
     axesV = res[4]
-    axes=res[5]
-    ch=res[6]
+    axes = res[5]
+    ch = res[6]
 
     laxes = [[div(axes[1], 10), mod(axes[1], 10)], [div(axes[2], 10), mod(axes[2], 10)]]
     Laxes = [ch.namef[laxes[1][1]] * ch.namef[laxes[1][2]], ch.namef[laxes[2][1]] * ch.namef[laxes[2][2]]]
@@ -53,11 +53,11 @@ end
 function plotWeb(res)
     cs0, cs1, cs2 = res.cs0, res.cs1, res.cs2
     Nbin = length(res.axesV[1])
-    x,y = res.axesV
-    xlims,ylims = (minimum(x), maximum(x)), (minimum(y), maximum(y))
-    dx,dy = (maximum(x) - minimum(x)) / Nbin, (maximum(y) - minimum(y)) / Nbin
-    y1,y2 = cs1[1, :] / dx, cs1[2, :] / dy
+    x, y = res.axesV
+    xlims, ylims = (minimum(x), maximum(x)), (minimum(y), maximum(y))
+    dx, dy = (maximum(x) - minimum(x)) / Nbin, (maximum(y) - minimum(y)) / Nbin
+    y1, y2 = cs1[1, :] / dx, cs1[2, :] / dy
     z = [[cs2[ix, iy] / (dx * dy) for iy in 1:Nbin] for ix in 1:Nbin]
-    return x,y,z,y1,y2
+    return x, y, z, y1, y2
 end
 end

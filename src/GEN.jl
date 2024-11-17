@@ -1,6 +1,4 @@
-
 module GEN
-
 export GENEV
 using StaticArrays
 #######################################
@@ -16,7 +14,6 @@ function cut(a::Int32)::Int64
     end
     return decimal_num
 end
-
 global MCGN::Int32 = 12345
 function RNDM()::Float32
     global MCGN
@@ -38,7 +35,6 @@ function RNDM()::Float32
     end
     return RNDM
 end
-
 function NRAN(N::Int64)::Vector{Float64}
     VECTOR = Vector{Float64}(undef, N)
     for I in 1:N
@@ -46,11 +42,9 @@ function NRAN(N::Int64)::Vector{Float64}
     end
     return VECTOR
 end
-
 #######################################
-
-function ROTES2!(cos_theta::Float64,sin_theta::Float64,cos_theta2::Float64,
-    sin_theta2::Float64, pr::MMatrix{5, 18, Float64, 90}, i::Int64)
+function ROTES2!(cos_theta::Float64, sin_theta::Float64, cos_theta2::Float64,
+    sin_theta2::Float64, pr::MMatrix{5,18,Float64,90}, i::Int64)
     @inbounds begin
         k1 = 5 * (i - 1) + 1
         k2 = k1 + 1
@@ -68,7 +62,6 @@ function ROTES2!(cos_theta::Float64,sin_theta::Float64,cos_theta2::Float64,
         pr[k2] = a * sin_theta2 + b * cos_theta2
     end
 end
-
 function PDK(A::Float64, B::Float64, C::Float64)::Float64
     A_squared = A * A
     B_squared = B * B
@@ -76,7 +69,6 @@ function PDK(A::Float64, B::Float64, C::Float64)::Float64
     pdk = 0.5 * sqrt(abs(A_squared + (B_squared - C_squared)^2 / A_squared - 2.0 * (B_squared + C_squared)))
     return pdk
 end
-
 function GENEV(tecm::Float64, EM::Vector{Float64})
     NT = length(EM)
     EMM = @MVector zeros(Float64, 18)
@@ -115,7 +107,7 @@ function GENEV(tecm::Float64, EM::Vector{Float64})
 
         if KGENEV > 1
             WTMAXQ = TECMTM^NTM2 * FFQ[NT] / tecm
-          else
+        else
             EMMAX = TECMTM + EM[1]
             EMMIN = 0.0
             WTMAX = 1.0
@@ -129,13 +121,13 @@ function GENEV(tecm::Float64, EM::Vector{Float64})
     end
 
 
-     #RNO = NRAN(NTNM4)  # 模拟随机数生成 
-     RNO = rand(NTNM4)  # 模拟随机数生成 (替代 NRAN)
+    #RNO = NRAN(NTNM4)  # 模拟随机数生成 
+    RNO = rand(NTNM4)  # 模拟随机数生成 (替代 NRAN)
 
-     # 排序前 NTM2 个随机数
-     if NTM2 > 1
-         RNO[1:NTM2] .= sort(RNO[1:NTM2])  # 使用部分排序
-     end
+    # 排序前 NTM2 个随机数
+    if NTM2 > 1
+        RNO[1:NTM2] .= sort(RNO[1:NTM2])  # 使用部分排序
+    end
 
 
     if NTM2 > 0
@@ -196,7 +188,4 @@ function GENEV(tecm::Float64, EM::Vector{Float64})
     P = [SVector{5,Float64}(PCM[1:5, i]) for i in 1:NT]
     return P, WT
 end
-
-
-
 end
