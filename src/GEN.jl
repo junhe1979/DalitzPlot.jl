@@ -3,7 +3,8 @@ module GEN
 
 export GENEV
 using StaticArrays
-
+#######################################
+#only for comparision
 function cut(a::Int32)::Int64
     binary_string = bitstring(a * 69069)
     binary_str = binary_string[end-31:end]
@@ -39,8 +40,6 @@ function RNDM()::Float32
 end
 
 function NRAN(N::Int64)::Vector{Float64}
-    return rand(N)
-
     VECTOR = Vector{Float64}(undef, N)
     for I in 1:N
         VECTOR[I] = RNDM()
@@ -48,40 +47,26 @@ function NRAN(N::Int64)::Vector{Float64}
     return VECTOR
 end
 
-function RANGNR(vector_length::Int64, num_elements::Int64)
-    rno = NRAN(vector_length)
-    if num_elements - 2 == 0
-        if rno[1] > rno[2]
-            rno[1], rno[2] = rno[2], rno[1]
-        end
-    elseif num_elements - 2 > 0
-        km1 = num_elements - 1
-        @inbounds @simd for i in 1:km1
-            ni = num_elements - i
-            for j in 1:ni
-                if rno[j] - rno[j+1] < 0
-                    rno[j], rno[j+1] = rno[j+1], rno[j]
-                    return
-                end
-            end
-        end
-    end
-    rno
-end
+#######################################
 
-function ROTES2!(cos_theta::Float64, sin_theta::Float64, cos_theta2::Float64, sin_theta2::Float64, pr0::MMatrix{5,18,Float64,90}, i::Int64)
-    pr = reshape(pr0, 18 * 5)
-    k1 = 5 * i - 4
-    k2 = k1 + 1
-    sa = pr[k1]
-    sb = pr[k2]
-    a = sa * cos_theta - sb * sin_theta
-    pr[k2] = sa * sin_theta + sb * cos_theta
-    k2 += 1
-    b = pr[k2]
-    pr[k1] = a * cos_theta2 - b * sin_theta2
-    pr[k2] = a * sin_theta2 + b * cos_theta2
-    pr0 = reshape(pr, 5, 18)
+function ROTES2!(cos_theta::Float64,sin_theta::Float64,cos_theta2::Float64,
+    sin_theta2::Float64, pr::MMatrix{5, 18, Float64, 90}, i::Int64)
+    @inbounds begin
+        k1 = 5 * (i - 1) + 1
+        k2 = k1 + 1
+        sa = pr[k1]
+        sb = pr[k2]
+
+        # First rotation
+        a = sa * cos_theta - sb * sin_theta
+        pr[k2] = sa * sin_theta + sb * cos_theta
+
+        # Second rotation
+        k2 += 1
+        b = pr[k2]
+        pr[k1] = a * cos_theta2 - b * sin_theta2
+        pr[k2] = a * sin_theta2 + b * cos_theta2
+    end
 end
 
 function PDK(A::Float64, B::Float64, C::Float64)::Float64
@@ -107,7 +92,6 @@ function GENEV(tecm::Float64, EM::Vector{Float64})
     TWOPI = 6.2831853073
     WTMAX = 0.0
     WTMAXQ = 0.0
-    KGENEV = 2
 
     if tecm - ETC != 0
         if INIT <= 0
@@ -127,8 +111,11 @@ function GENEV(tecm::Float64, EM::Vector{Float64})
         TECMTM = tecm - TM
         ETC = tecm
         EMM[NT] = tecm
+        KGENEV = 3
 
-        if KGENEV <= 1
+        if KGENEV > 1
+            WTMAXQ = TECMTM^NTM2 * FFQ[NT] / tecm
+          else
             EMMAX = TECMTM + EM[1]
             EMMIN = 0.0
             WTMAX = 1.0
@@ -138,12 +125,18 @@ function GENEV(tecm::Float64, EM::Vector{Float64})
                 WTMAX *= PDK(EMMAX, EMMIN, EM[i])
             end
             WTMAXQ = 1.0 / WTMAX
-        else
-            WTMAXQ = TECMTM^NTM2 * FFQ[NT] / tecm
         end
     end
 
-    RNO = RANGNR(NTNM4, NTM2)
+
+     #RNO = NRAN(NTNM4)  # 模拟随机数生成 
+     RNO = rand(NTNM4)  # 模拟随机数生成 (替代 NRAN)
+
+     # 排序前 NTM2 个随机数
+     if NTM2 > 1
+         RNO[1:NTM2] .= sort(RNO[1:NTM2])  # 使用部分排序
+     end
+
 
     if NTM2 > 0
         for j in 2:NTM1
@@ -198,9 +191,10 @@ function GENEV(tecm::Float64, EM::Vector{Float64})
         end
     end
     for i in 1:NT
-    PCM[5, i] = EM[i]
-    end 
-    return PCM, WT
+        PCM[5, i] = EM[i]
+    end
+    P = [SVector{5,Float64}(PCM[1:5, i]) for i in 1:NT]
+    return P, WT
 end
 
 

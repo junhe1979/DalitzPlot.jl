@@ -111,6 +111,7 @@ Users are expected to customize the amplitudes within this function according to
 
 ```julia
 function amp(tecm, kf, ch, para)
+
     # get kf as momenta in the center-of-mass ,
     #k1,k2,k3=getkf(kf)   
     #get kf as momenta in laboratory frame
@@ -123,16 +124,15 @@ function amp(tecm, kf, ch, para)
     p1, p2 = Xs.plab(para.p, ch.mi)
 
     #flux
-    #flux factor for cross section in Laboratory frame
-  
+    #flux factor for cross section
     fac = 1e9 / (4 * para.p * ch.mi[2] * (2 * pi)^5)
 
     k12 = k1 + k2
-    s12 = k12*k12
-    m = 3.2
+    s12 = k12 * k12
+    m = 10.
     A = 1 / (s12 - m^2 + im * m * 0.1)
 
-  total = abs2(A) * fac * 0.389379e-3
+    total = abs2(A) * fac * 0.389379e-3
 
     return total
 end
@@ -162,6 +162,7 @@ Example usage:
 ```julia
 p_lab = 20.0
 tecm = Xs.pcm(p_lab, ch.mi)
+tecm=10.
 ```
 
 ## Calculate
@@ -180,7 +181,7 @@ end
 nevtot=Int64(1e7)
 pb = ProgressBar(1:nevtot)  
 callback = i -> progress_callback(pb)  
-res = Xs.Xsection(Xs.plab2pcm(p_lab, ch.mi), ch, callback,axes=[23, 21], nevtot=Int64(1e7), Nbin=500, para=(p=p_lab, l=1.0))
+res = Xs.Xsection(tecm, ch, callback,axes=[23, 21], nevtot=Int64(1e7), Nbin=500, para=(p=p_lab, l=1.0))
 ```
 
 The results are stored in the variable `res` as a `NamedTuple`. Specifically, `res.cs0` corresponds to the total cross section, `res.cs1` represents the invariant mass spectrum, and `res.cs2` captures the data for the Dalitz plot.
@@ -211,7 +212,7 @@ PCM, WT=GEN.GENEV(tecm,EM)
   * `tecm`: a `Float64` value representing the total momentum in the center of mass frame.
   * `EM`: a `Vector{Float64}` containing the masses of the particles.
 - Output: the momenta of the particles `PCM`, and a weight `WT`.
-  * `PCM`: a StaticArrays `@MArray (Float64, 5, 18)` storing the momenta of the particles. Note that at most 18 particles can be considered.
+  * `PCM`: a StaticArrays `Vector{SVector{5,Float64}}` storing the momenta of the particles. Note that at most 18 particles can be considered.
   * `WT`:  `Float64` value representing the weight for this event.
 
 # FR Package: for Numerical Calculation of Feynman Rules

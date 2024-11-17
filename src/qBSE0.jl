@@ -7,6 +7,7 @@ using StaticArrays
 
 # store the information of a interaction
 struct structInterAction #IA
+    Project::String
     Nex::Int64  #total number of exchanges
     name_ex::Vector{String}  #exchange
     key_ex::Vector{Int64}
@@ -16,13 +17,14 @@ struct structInterAction #IA
     m_ex::Vector{Float64}  #exchange
     dc::Vector{Int64}  #direct or cross
     CC::Vector{Float64}  #flavor factors
+    D::Vector{Matrix{Float64}}   #WignerD
 end
 
 # store the information of each dimension for matrix
 mutable struct structDimension #Dim
     iIH::Int64 # which independent helicity this dimension belongs to 
-    k::ComplexF64 #momenta of discreting
-    w::Float64 #weights of discreting
+    kv::ComplexF64 #momenta of discreting
+    wv::Float64 #weights of discreting
     Dimo::Int64 # +1 or not for onshell W>sum m. Np+Dimo is the total dimensions of a independent helicities
 end
 
@@ -31,8 +33,8 @@ mutable struct structIndependentHelicity #IH
     iCH::Int64 # which channel this independent helicity belongs to 
     hel::Vector{Int64} # helicities
     helh::Vector{Int64} # fermion or boson
-    Dimb::Int64 #the number of begin dimension in this independent helicities
-    Dime::Int64 #the number of end dimension in this independent helicities
+    Dimi::Int64 #the number of first dimension in this independent helicities
+    Dimf::Int64 #the number of last dimension in this independent helicities
     Dimn::Int64 #the number of dimensions in this independent helicities
     Dimo::Int64 # +1 or not for onshell W>sum m. Np+Dimo is the total dimensions of a independent helicities
 end
@@ -40,23 +42,16 @@ end
 # store the information of a channel. The kv and wv are stored here for convenience. 
 struct structChannel #CH
     p::Vector{Int64} #particles of channel
-    m::Vector{Float64} #particle masses of channel
-    J::Vector{Int64} #particle spins of channel
-    Jh::Vector{Int64} #particle  spins of channel
-    P::Vector{Int64} #particle parities of channel
+    m::Vector{Float64} #particles of channel
+    J::Vector{Int64} #particles of channel
+    Jh::Vector{Int64} #particles of channel
+    P::Vector{Int64} #particles of channel
     cutoff::Float64 #cutoff of channel
     name::Vector{String}  #name of channel
     name0::Vector{String} #name of channel (without charge)
-    IHb::Int64
-    IHe::Int64
-    IHn::Int64 #total number of helicity amplitudes of a channel
-end
-
-struct structProject
-    Project::String
+    Nhel::Int64 #total number of helicity amplitudes of a channel
     kv::Vector{Float64} #momenta of discreting
     wv::Vector{Float64} #weights of discreting
-    D::Vector{Matrix{Float64}}   #WignerD
 end
 
 
@@ -106,17 +101,28 @@ const pkey = Dict{String,Int64}() #store the dictionary for key and the number o
 #*******************************************************************************************
 # Calculate the \sum|M|^2 for each channel 
 function M2_channel(T, IH, CH)
-
+    Nih = length(IH)
     NCH = length(CH)
+    Np = length(CH[1].kv)
     resM2 = zeros(Float64, NCH, NCH)
-    for iCHf in 1:NCH
-        for iCHi in 1:NCH
-            for f in CH[iCHf].IHb:CH[iCHf].IHe, i in CH[iCHi].IHb:CH[iCHi].IHe
-                if IH[f].Dimo == 1 && IH[i].Dimo == 1
-                    resM2[iCHf, iCHi] += abs2(T[IH[f].Dime, IH[i].Dime])
-                end
+
+    # 使用数组保存 resA 以减少嵌套循环中的条件判断
+    resA = [IH[iNih1].Dimo == 1 && IH[iNih2].Dimo == 1 ?
+            T[IH[iNih1].Dimi+Np, IH[iNih2].Dimi+Np] : 0.0
+            for iNih1 in 1:Nih, iNih2 in 1:Nih]
+
+    hel1 = 1
+    for iCH1 in 1:NCH
+        hel2 = 1
+        nhel1 = CH[iCH1].Nhel
+        for iCH2 in 1:NCH
+            nhel2 = CH[iCH2].Nhel
+            @inbounds for i in hel1:hel1+nhel1-1, j in hel2:hel2+nhel2-1
+                resM2[iCH1, iCH2] += abs2(resA[i, j])
             end
+            hel2 += nhel2
         end
+        hel1 += nhel1
     end
 
     return resM2
@@ -164,7 +170,6 @@ function simpleXsection(xx, M2, CH; Ep="cm")
 
     return Xsection
 end
-
 
 
 #*******************************************************************************************
@@ -216,9 +221,9 @@ function fPropFF(k, ex, L, LLi, LLf; lregu=1, lFFex=0) #form factors
     return fProp * FFex * exp(FFre)
 
 end
-function fKernel(kf, ki, IHf, IHi, Ec, qn, CH, IA, PJ, fV)::ComplexF64 # Calculating fKernel
-    ichi = IHi.iCH # channel
-    ichf = IHf.iCH
+function fKernel(kf, ki, IH1, IH2, Ec, qn, CH, IA, IH, fV)::ComplexF64 # Calculating fKernel
+    ichi = IH2.iCH # channel
+    ichf = IH1.iCH
 
     if IA[ichi, ichf].Nex == 0 # no exchange, returen 0
         return 0 + 0im
@@ -236,13 +241,13 @@ function fKernel(kf, ki, IHf, IHi, Ec, qn, CH, IA, PJ, fV)::ComplexF64 # Calcula
     qt = (qti - qtf)^2 + 0im
 
     l = structHelicity(  #helicities
-        IHi.hel[1], IHi.helh[1],
-        IHf.hel[1], IHf.helh[1],
-        IHi.hel[2], IHi.helh[2],
-        IHf.hel[2], IHf.helh[2]
+        IH2.hel[1], IH2.helh[1],
+        IH1.hel[1], IH1.helh[1],
+        IH2.hel[2], IH2.helh[2],
+        IH1.hel[2], IH1.helh[2]
     )
 
-    eta = CH[ichi].P[1] * CH[ichi].P[2] * qn.P *
+    eta = p[CH[ichi].p[1]].P * CH[ichi].P[2] * qn.P *
           (-1)^(qn.J / qn.Jh - CH[ichi].J[1] / CH[ichi].Jh[1] - CH[ichi].J[2] / CH[ichi].Jh[2])
 
     lJJ = qn.J / qn.Jh
@@ -263,10 +268,10 @@ function fKernel(kf, ki, IHf, IHi, Ec, qn, CH, IA, PJ, fV)::ComplexF64 # Calcula
         k = structMomentum(ki1, kf1, ki2, kf2, q, q2, qt)
 
         l.f1, l.i2 = -l.f1, -l.i2  #helicity to spin and the minus for fixed parity
-        Kerm1 = fV(k, l, CH, IA, ichi, ichf) * PJ.D[i][Int64(lJJ + l21i)+1, lf] * eta
+        Kerm1 = fV(k, l, CH, IA, ichi, ichf) * IA[ichi, ichf].D[i][Int64(lJJ + l21i)+1, lf] * eta
         l.f1, l.i2 = -l.f1, -l.i2
         l.i1, l.f1 = -l.i1, -l.f1
-        Kerp1 = fV(k, l, CH, IA, ichi, ichf) * PJ.D[i][Int64(lJJ - l21i)+1, lf]
+        Kerp1 = fV(k, l, CH, IA, ichi, ichf) * IA[ichi, ichf].D[i][Int64(lJJ - l21i)+1, lf]
         l.i1, l.f1 = -l.i1, -l.f1
         Ker0 += (Kerp1 + Kerm1) * d50
     end
@@ -283,7 +288,7 @@ function fKernel(kf, ki, IHf, IHi, Ec, qn, CH, IA, PJ, fV)::ComplexF64 # Calcula
     return fKernel
 end
 #*******************************************************************************************
-function fProp(IH, Dimo, k, kv, w, wv, Ec, Np, CH)
+function fProp(IH, Dimo, rp, wv, Ec, Np, CH)
     fprop = Complex{Float64}(0, 0)
     ich = IH.iCH
     mi1, mi2 = CH[ich].m[1], CH[ich].m[2]
@@ -299,11 +304,11 @@ function fProp(IH, Dimo, k, kv, w, wv, Ec, Np, CH)
 
     # For off-momenta
     if Dimo == 0
-        cE1, cE2 = sqrt(k^2 + mi1^2), sqrt(k^2 + mi2^2)
+        cE1, cE2 = sqrt(rp^2 + mi1^2), sqrt(rp^2 + mi2^2)
         denominator = (mi1 <= mi2) ? 2 * cE2 * ((Ec - cE2)^2 - cE1^2) : 2 * cE1 * ((Ec - cE1)^2 - cE2^2)
 
         if denominator != 0  # To avoid division by zero
-            fprop = mi2p2 * k^2 * w / pi_factor / denominator
+            fprop = mi2p2 * rp^2 * wv / pi_factor / denominator
         end
     end
 
@@ -323,18 +328,19 @@ function fProp(IH, Dimo, k, kv, w, wv, Ec, Np, CH)
 
         # Loop over Np elements
         for i3 in 1:Np
-            kv_i3 = kv[i3]
+            kv_i3 = CH[ich].kv[i3]
             denominator = 2 * Ec * (kv_i3^2 - konc2)
-            fprop += mi2p2 * wv[i3] * konc2 / pi_factor / denominator
+            fprop += mi2p2 * CH[ich].wv[i3] * konc2 / pi_factor / denominator
         end
     end
 
     return fprop
 end
-function srAB(Ec, qn, CH, IH, IA, PJ, fV; lRm=1)
+function srAB(Ec, qn, CH, IH, IA, fV; lRm=1)
     # Determine the dimension of the work matrix. 
-    Np = length(PJ.kv)
-    IH, Dim, PJ = WORKSPACE(Ec, lRm, Np, CH, IH, PJ)
+    Np = length(CH[1].kv)
+    Nih = length(IH)
+    IH, Dim = WORKSPACE(Ec, lRm, Np, Nih, CH, IH)
     Nt = length(Dim)
 
     # Initialize matrices
@@ -343,57 +349,56 @@ function srAB(Ec, qn, CH, IH, IA, PJ, fV; lRm=1)
     II = zeros(Float64, Nt, Nt)
 
     # Populate Vc, Gc, and II
-    for i_f = 1:Nt
-        Dimf = Dim[i_f]
-        kf = Dimf.k
+    for i1 = 1:Nt
+        Dim1 = Dim[i1]
+        kf1 = Dim1.kv
 
-        for i_i = i_f:Nt
-            Dimi = Dim[i_i]
-            ki = Dimi.k
+        for i2 = i1:Nt
+            Dim2 = Dim[i2]
+            ki2 = Dim2.kv
 
             # Compute Vc for upper triangular part
-            Vc[i_f, i_i] = fKernel(kf, ki, IH[Dimf.iIH], IH[Dimi.iIH], Ec, qn, CH, IA, PJ, fV)::ComplexF64
+            Vc[i1, i2] = fKernel(kf1, ki2, IH[Dim1.iIH], IH[Dim2.iIH], Ec, qn, CH, IA, IH, fV)::ComplexF64
 
             # Compute Gc and II only on the diagonal
-            if i_i == i_f
-                Gc[i_f, i_i] = fProp(IH[Dimf.iIH], Dimf.Dimo, kf, PJ.kv, Dimf.w, PJ.wv, Ec, Np, CH)
-                II[i_f, i_i] = 1.0
+            if i1 == i2
+                Gc[i1, i2] = fProp(IH[Dim1.iIH], Dim1.Dimo, kf1, Dim1.wv, Ec, Np, CH)
+                II[i1, i2] = 1.0
             end
         end
     end
 
     # Populate lower triangular part of Vc based on conjugate symmetry
-    for i_f = 2:Nt
-        Dimf_IH = IH[Dim[i_f].iIH]
+    for i1 = 2:Nt
+        Dim1_IH = IH[Dim[i1].iIH]
 
-        for i_i = 1:i_f-1
-            Dimi_IH = IH[Dim[i_i].iIH]
+        for i2 = 1:i1-1
+            Dim2_IH = IH[Dim[i2].iIH]
 
-            if Dimf_IH.iCH != Dimi_IH.iCH
-                Vc[i_f, i_i] = conj(Vc[i_i, i_f])
+            if Dim1_IH.iCH != Dim2_IH.iCH
+                Vc[i1, i2] = conj(Vc[i2, i1])
             else
-                Vc[i_f, i_i] = Vc[i_i, i_f]
+                Vc[i1, i2] = Vc[i2, i1]
             end
         end
     end
 
-    return Vc, Gc, II, IH, Dim
+    return Vc, Gc, II, IH
 end
 #*******************************************************************************************
-function WORKSPACE(Ec, lRm, Np, CH, IH, PJ)
+function WORKSPACE(Ec, lRm, Np, Nih, CH, IH)
     #produce the dimensions in a independent helicity amplitudes, especially for the onshell dimension.
     Ec += Complex{Float64}(0.0, 1e-15)
     Dim = structDimension[]
-    Nih = length(IH)
     Nt = 0
     for i1 in 1:Nih
         IH[i1].Dimo = 0
-        IH[i1].Dimb = 0
-        IH[i1].Dime = 0
+        IH[i1].Dimi = 0
+        IH[i1].Dimf = 0
         IH[i1].Dimn = 0
     end
     for i1 in 1:Nih
-        IH[i1].Dimb = Nt + 1
+        IH[i1].Dimi = Nt+1
         mass1 = p[CH[IH[i1].iCH].p[1]].m
         mass2 = p[CH[IH[i1].iCH].p[2]].m
         Rm = false
@@ -406,37 +411,33 @@ function WORKSPACE(Ec, lRm, Np, CH, IH, PJ)
             kon = sqrt((Ec^2 - (mass1 + mass2)^2) * (Ec^2 - (mass1 - mass2)^2)) / (2.0 * Ec)
             IH[i1].Dimo = 1
             Nt += Np + IH[i1].Dimo
-            IH[i1].Dime = Nt
+            IH[i1].Dimf = Nt
             IH[i1].Dimn = Np + IH[i1].Dimo
             for idim in 1:Np
-                Dim0 = structDimension(IH[i1].iCH, PJ.kv[idim], PJ.wv[idim], 0)
+                Dim0 = structDimension(IH[i1].iCH, CH[IH[i1].iCH].kv[idim], CH[IH[i1].iCH].wv[idim], 0)
                 push!(Dim, Dim0)
             end
             Dim0 = structDimension(IH[i1].iCH, kon, 0.0, 1)
             push!(Dim, Dim0)
         else
             Nt += Np
-            IH[i1].Dime = Nt
+            IH[i1].Dimf = Nt
             IH[i1].Dimn = Np
-
             for idim in 1:Np
-                Dim0 = structDimension(IH[i1].iCH, PJ.kv[idim], PJ.wv[idim], 0)
+                Dim0 = structDimension(IH[i1].iCH, CH[IH[i1].iCH].kv[idim], CH[IH[i1].iCH].wv[idim], 0)
                 push!(Dim, Dim0)
-
             end
         end
 
     end
 
-
-    return IH, Dim, PJ
+    return IH, Dim
 end
 #*******************************************************************************************
 function Independent_amp(Project, channels, CC, qn; Np=10, Nx=50)
     #store the channel information, interaction information in CH,IH,IA
     CH = structChannel[]
     IH = structIndependentHelicity[]
-    Dim = structDimension[]
     Nih, Nc = 1, 1
     #kv, wv = gausslaguerre(Np)
     #wv = wv .* exp.(kv)
@@ -454,11 +455,11 @@ function Independent_amp(Project, channels, CC, qn; Np=10, Nx=50)
         J1, J2 = p[p1].J, p[p2].J
         Jh1, Jh2 = p[p1].Jh, p[p2].Jh
         P1, P2 = p[p1].P, p[p2].P
-        IHn = 0
+        Nhel = 0
         #independent helicities
         Nih0 = Nih
         IH0 = structIndependentHelicity[]
-        IH00 = structIndependentHelicity(0, Int64[], Int64[], 0, 0, 0, 0)
+        IH00 = structIndependentHelicity(0, Int64[], Int64[], 0,0,0,0)
         for i1 in -p[p1].J:p[p1].Jh:p[p1].J
             for i2 in -p[p2].J:p[p2].Jh:p[p2].J
 
@@ -483,7 +484,7 @@ function Independent_amp(Project, channels, CC, qn; Np=10, Nx=50)
                         push!(IH0, deepcopy(IH00))
 
                         Nih += 1
-                        IHn += 1
+                        Nhel += 1
                     end
                 end
             end
@@ -499,9 +500,9 @@ function Independent_amp(Project, channels, CC, qn; Np=10, Nx=50)
             channel[3],
             [p[p1].name, p[p2].name, "$(p[p1].name):$(p[p2].name)"],
             [p[p1].name0, p[p2].name0, "$(p[p1].name0):$(p[p2].name0)"],
-            Nih0,
-            Nih0 + IHn - 1,
-            IHn
+            Nhel,
+            kv,
+            wv
         )
         push!(CH, deepcopy(CH0))
         append!(IH, deepcopy(IH0))
@@ -524,6 +525,7 @@ function Independent_amp(Project, channels, CC, qn; Np=10, Nx=50)
                 if haskey(CC, chname) == true
                     Nex = length(CC[chname])
                     IA0 = structInterAction(
+                        Project,
                         Nex,
                         [CC[chname][i][1][1] for i in 1:Nex],  #name
                         [pkey[CC[chname][i][1][1]] for i in 1:Nex],  #key
@@ -532,11 +534,13 @@ function Independent_amp(Project, channels, CC, qn; Np=10, Nx=50)
                         [p[pkey[CC[chname][i][1][1]]].P for i in 1:Nex],  #P
                         [p[pkey[CC[chname][i][1][1]]].m for i in 1:Nex],  #m
                         [CC[chname][i][1][2] for i in 1:Nex],  #dc
-                        [CC[chname][i][2] for i in 1:Nex]     #CC
+                        [CC[chname][i][2] for i in 1:Nex],     #CC
+                        wD  # Vector{Matrix{Float64}} for D
                     )
                 else
                     Nex = 0
                     IA0 = structInterAction(
+                        Project,
                         Nex,
                         [],  #name
                         [],  #key
@@ -545,7 +549,8 @@ function Independent_amp(Project, channels, CC, qn; Np=10, Nx=50)
                         [],  #P
                         [],  #m
                         [],  #dc
-                        []     #CC
+                        [],     #CC
+                        wD  # Vector{Matrix{Float64}} for D
                     )
                 end
                 IA[i1, i2] = IA0
@@ -554,8 +559,7 @@ function Independent_amp(Project, channels, CC, qn; Np=10, Nx=50)
 
         end
     end
-    PJ = structProject(Project, kv, wv, wD)
 
-    return CH, IH, IA, PJ
+    return CH, IH, IA
 end
 end

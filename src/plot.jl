@@ -1,7 +1,8 @@
-module plot
+module PLOT
 using Plots, LaTeXStrings, Colors, Compose, DelimitedFiles
 
 function plotD(res; cg=cgrad([:white, :green, :blue, :red], [0, 0.01, 0.1, 0.5, 1.0]))
+    ENV["GKSwstype"] = "100"
     cs1 = res[2]
     cs2 = res[3]
     axesV = res[4]
