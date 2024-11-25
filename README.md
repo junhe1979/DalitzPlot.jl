@@ -273,7 +273,7 @@ A function `FR.GS` is provided for calculate $\gamma \cdot k$ as `function GS(k:
 
 `function LC(a::SVector, b::SVector, c::SVector)`: $\epsilon_{\mu\nu\rho\lambda}a^\mu b^\nu c^\rho$.
 
-`function LC(i0::Int64, i1::Int64, i2::Int64, i3::Int64)`: $\epsilon_{i_0 i_1 i_2 i_3}$
+`function LC(i0::Int64, i1::Int64, i2::Int64, i3::Int64)`: $\epsilon_{\mu\nu\rho\lambda}$
 
 `function LC(a::SVector, b::SVector, c::SVector, d::SVector)`: $\epsilon_{\mu\nu\rho\lambda}a^\mu b^\nu c^\rho d^\lambda$.
 

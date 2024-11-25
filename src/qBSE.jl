@@ -2,7 +2,17 @@ module qBSE
 using FastGaussQuadrature, StaticArrays, WignerD, LinearAlgebra, Printf
 using Base.Threads
 using StaticArrays
+using ..Xs,..FR
 #*******************************************************************************************
+#store informations about system 
+struct structSys
+    Sys::String
+    kv::Vector{Float64} #momenta of discreting
+    wv::Vector{Float64} #weights of discreting
+    D::Vector{Matrix{Float64}}   #WignerD
+    sp::Vector{Float64}
+    cp::Vector{Float64}
+end
 # store the information of a interaction
 struct structInterAction #IA
     Nex::Int64  #total number of exchanges
@@ -14,23 +24,6 @@ struct structInterAction #IA
     m_ex::Vector{Float64}  #exchange
     dc::Vector{Int64}  #direct or cross
     CC::Vector{Float64}  #flavor factors
-end
-# store the information of each dimension for matrix
-mutable struct structDimension #Dim
-    iIH::Int64 # which independent helicity this dimension belongs to 
-    k::ComplexF64 #momenta of discreting
-    w::Float64 #weights of discreting
-    Dimo::Int64 # +1 or not for onshell W>sum m. Np+Dimo is the total dimensions of a independent helicities
-end
-# store the information of an independent helicity for matrix
-mutable struct structIndependentHelicity #IH
-    iCH::Int64 # which channel this independent helicity belongs to 
-    hel::Vector{Int64} # helicities
-    helh::Vector{Int64} # fermion or boson
-    Dimb::Int64 #the number of begin dimension in this independent helicities
-    Dime::Int64 #the number of end dimension in this independent helicities
-    Dimn::Int64 #the number of dimensions in this independent helicities
-    Dimo::Int64 # +1 or not for onshell W>sum m. Np+Dimo is the total dimensions of a independent helicities
 end
 # store the information of a channel. The kv and wv are stored here for convenience. 
 struct structChannel #CH
@@ -46,11 +39,22 @@ struct structChannel #CH
     IHe::Int64
     IHn::Int64 #total number of helicity amplitudes of a channel
 end
-struct structProject
-    Project::String
-    kv::Vector{Float64} #momenta of discreting
-    wv::Vector{Float64} #weights of discreting
-    D::Vector{Matrix{Float64}}   #WignerD
+# store the information of an independent helicity for matrix
+mutable struct structIndependentHelicity #IH
+    iCH::Int64 # which channel this independent helicity belongs to 
+    hel::Vector{Int64} # helicities
+    helh::Vector{Int64} # fermion or boson
+    Dimb::Int64 #the number of begin dimension in this independent helicities
+    Dime::Int64 #the number of end dimension in this independent helicities
+    Dimn::Int64 #the number of dimensions in this independent helicities
+    Dimo::Int64 # +1 or not for onshell W>sum m. Np+Dimo is the total dimensions of a independent helicities
+end
+# store the information of each dimension for matrix
+mutable struct structDimension #Dim
+    iIH::Int64 # which independent helicity this dimension belongs to 
+    k::ComplexF64 #momenta of discreting
+    w::Float64 #weights of discreting
+    Dimo::Int64 # +1 or not for onshell W>sum m. Np+Dimo is the total dimensions of a independent helicities
 end
 #*******************************************************************************************
 mutable struct structMomentum #momenta
@@ -99,7 +103,7 @@ const p = structParticle[] #store of information of particles in this global vec
 const pkey = Dict{String,Int64}() #store the dictionary for key and the number of particles
 #*******************************************************************************************
 # Calculate the \sum|M|^2 for each channel 
-function M2_channel(T, IH, CH)
+function M2_channel(T, CH, IH)
 
     NCH = length(CH)
     resM2 = zeros(Float64, NCH, NCH)
@@ -157,20 +161,26 @@ function simpleXsection(xx, M2, CH; Ep="cm")
     return Xsection
 end
 #得到log|1-VG|以寻找极点。
-function res(Range, iER, qn, CH, IH, IA, PJ, fV)
+function res(Range, iER, qn, SYS, IA, CH, IH, fV)
     resEct = ComplexF64[] #设置保存复的总能量Ec=ER+EI*im的数组
     reslogt = Float64[] #设置保存log|1-VG|的数组
+    Dim = nothing
+    TG = nothing
     NCH = length(CH)
     resM2 = zeros(Float64, NCH, NCH)
     ER = Range.ERmax - iER * (Range.ERmax - Range.ERmin) / Range.NER #计算ER
+    EI = 0.0
     if Range.Ep == "L" #here, we use the pL, so should be transfered to ER
         PL = Range.ERmax - iER * (Range.ERmax - Range.ERmin) / Range.NER #计算ER
         ER = sqrt((sqrt(PL^2 + qBSE.p[qBSE.pkey["K_m"]].m^2) + qBSE.p[qBSE.pkey["N_p"]].m)^2 - PL^2)
     end
-    for iEI in -Range.NEI:Range.NEI #虚部部分循环
-        EI = iEI * Range.EIt / Range.NEI #计算虚部
+    NEI = Range.NEI
+    for iEI in -NEI:NEI #虚部部分循环
+        if NEI != 0
+            EI = iEI * Range.EIt / NEI #计算虚部
+        end
         Ec = ER + EI * im
-        Vc, Gc, II, IH, Dim = qBSE.srAB(Ec, qn, CH, IH, IA, PJ, fV, lRm=1) # Calculate the V, G, and unit matrix II
+        Vc, Gc, II, IH, Dim = qBSE.srAB(Ec, qn, SYS, IA, CH, IH, fV, lRm=qn.lRm) # Calculate the V, G, and unit matrix II
         VGI = II - Vc * Gc
         detVGI = det(VGI)   # Compute determinant of (1 - VGc)，调用LinearAlgebra包det函数
         logdetVGI = log(abs(detVGI)^2)
@@ -178,17 +188,119 @@ function res(Range, iER, qn, CH, IH, IA, PJ, fV)
         push!(reslogt, logdetVGI)
         if iEI == 0
             T = inv(VGI) * Vc
-            resM2 = qBSE.M2_channel(T, IH, CH)
+            TG = T * Gc
+
+            resM2 = qBSE.M2_channel(T, CH, IH)
         end
     end
+
     if Range.Ep == "L"
         resEct[1] = PL
     end
-    return resEct, reslogt, resM2
+    return resEct, reslogt, resM2, IH, Dim, TG
+end
+function interpolation(E, Et, Range, Tt, IHt, Dimt)
+    ii = length(Et) - Xs.Nsij(E, Range.ERmin, Range.ERmax, length(Et) - 1)
+    Emin, Emax = Et[ii+1], Et[ii]
+    Tmin, Tmax = Tt[ii], Tt[ii+1]
+    T, IH, Dim = nothing, nothing, nothing
+
+    if size(Tmin) == size(Tmax)
+        ww = (E - Emin) / (Emax - Emin)
+        T = (1.0 - ww) * Tmin + ww * Tmax
+        IH = IHt[ii]
+        Dim = Dimt[ii]
+    else
+        mid = (Emin + Emax) / 2.0
+        if E >= mid
+            T = Tt[ii]
+            IH = IHt[ii]
+            Dim = Dimt[ii]
+        else
+            T = Tt[ii+1]
+            IH = IHt[ii+1]
+            Dim = Dimt[ii+1]
+        end
+    end
+
+    return T, IH, Dim
+end
+function TGA(lfinal, linter, Ver, predet, para)
+    TG, qn, SYS, CH, IH, Dim, k, P = para.TG, para.qn, para.SYS, para.CH, para.IH, para.Dim, para.k, para.P
+    IHb = CH[lfinal].IHb
+    IHe = CH[lfinal].IHe
+    Dimb = IH[CH[linter].IHb].Dimb
+    Dime = IH[CH[linter].IHe].Dime
+    lJJ = qn.J / qn.Jh
+    TGAdic = Dict()
+    for il in IHb:IHe
+        IHl = IH[il]
+        l21 = IHl.hel[2] / IHl.helh[2] - IHl.hel[1] / IHl.helh[1]
+        Dl21 = Int64(lJJ + l21) + 1
+        TGA = 0.0
+        for iDim in Dimb:Dime
+            p20 = Dim[iDim].k
+            IHp = IH[Dim[iDim].iIH]
+            l21p = IHp.hel[2] / IHp.helh[2] - IHp.hel[1] / IHp.helh[1]
+            CH0 = CH[IHp.iCH]
+            eta = CH0.P[1] * CH0.P[2] * qn.P * (-1)^(qn.J / qn.Jh - CH0.J[1] / CH0.Jh[1] - CH0.J[2] / CH0.Jh[2])
+            Dl21pp = Int64(lJJ + l21p) + 1
+            Dl21pm = Int64(lJJ - l21p) + 1
+            ndx = length(SYS.D)
+            ndphi = length(SYS.cp)
+            dx = 2.0 / ndx
+            dphi = 2.0 * pi / ndphi
+            A = 0.0
+            for i in 1:ndx
+                ct = -1.0 + dx * (i - 0.5)
+                st = sqrt(1.0 - ct^2)
+                for j in 1:ndphi
+                    phi = (j - 1) * dphi
+                    cosphi, sinphi = SYS.cp[j], SYS.sp[j]
+                    px, py, pz = p20 * st * cosphi, p20 * st * sinphi, p20 * ct
+                    m1, m2 = CH[il].m[1], CH[il].m[2]
+                    p1 = @SVector [-px, -py, -pz, sqrt(p20^2 + m1^2), m1]
+                    p2 = @SVector [px, py, pz, sqrt(p20^2 + m2^2), m2]
+
+                    l1, l2 = IHl.hel[1], IHl.hel[2]
+                    Ap = Ver(p1, p2, l1, l2, predet, k, P)
+                    Am = Ver(p1, p2, -l1, -l2, predet, k, P)
+
+                    Dp = SYS.D[i][Dl21, Dl21pp]
+                    Dm = SYS.D[i][Dl21, Dl21pm] * eta
+
+                    A -= exp(-im * phi * l21) * (Dp * Ap + Dm * Am) * dx * dphi
+                    #A -= exp( im*phi/3. ) * dphi
+                end
+            end
+
+            TGA += TG[IH[il].Dime, iDim] * A
+        end
+        h1, h2 = IHl.hel[1], IHl.hel[2]
+        TGAdic[(h1, h2)] = TGA
+        TGAdic[(-h1, -h2)] = TGA
+        if h1 == 0 && h2 == 0
+            TGAdic[(h1, h2)] = TGA / sqrt(2.0)
+        end
+
+    end
+    return TGAdic
+end
+function LorentzBoostRotation(tecm, k, p1, p2)
+    kij = k[p1] + k[p2]
+    s12 = kij * kij
+    P = @SVector [0.0, 0.0, 0.0, tecm, tecm]
+    pLB = @SVector [-kij[1], -kij[2], -kij[3], kij[4], sqrt(s12)]
+    knew = Xs.LorentzBoost(k, pLB)
+    Pnew = Xs.LorentzBoost(P, pLB)
+    ct, st, cp, sp = FR.kph(knew[p2])
+    Pnew = Xs.Rotation(Pnew, ct, st, cp, sp)
+    knew = Xs.Rotation(knew, ct, st, cp, sp)
+    return knew, Pnew
 end
 #*******************************************************************************************
 #显示
-function showPJInfo(Range, qn, CH, IH, IA)
+function showSYSInfo(Range, qn, IA, CH, IH)
     dashline = repeat('-', 70)
     println(dashline)
     @printf("I(J,P)= %1d(%1d,%2d)\n", qn.I, qn.J, qn.P)
@@ -282,7 +394,7 @@ function fPropFF(k, ex, L, LLi, LLf; lregu=1, lFFex=0) #form factors
     return fProp * FFex * exp(FFre)
 
 end
-function fKernel(kf, ki, IHf, IHi, Ec, qn, CH, IA, PJ, fV)::ComplexF64 # Calculating fKernel
+function fKernel(kf, ki, Ec, qn, SYS, IA, CH, IHf, IHi, fV)::ComplexF64 # Calculating fKernel
     ichi = IHi.iCH # channel
     ichf = IHf.iCH
 
@@ -315,10 +427,11 @@ function fKernel(kf, ki, IHf, IHi, Ec, qn, CH, IA, PJ, fV)::ComplexF64 # Calcula
     l21i = -l.i2 / l.i2h + l.i1 / l.i1h
     l21f = l.f2 / l.f2h - l.f1 / l.f1h
     lf = Int64(lJJ + l21f) + 1
-    d50 = 2.0 / 50.0
+    ndx = length(SYS.D)
+    dx = 2.0 / ndx
     Ker0 = 0 + 0im
-    for i in 1:50
-        x = -1.0 + d50 * (i - 0.5)
+    for i in 1:ndx
+        x = -1.0 + dx * (i - 0.5)
         sqrt1_x2 = sqrt(1 - x^2)
         ki1 = @SVector [0.0 + 0im, 0.0 + 0im, -ki + 0im, ki10 + 0im, mi1 + 0im]
         kf1 = @SVector [-kf * sqrt1_x2 + 0im, 0.0 + 0im, -kf * x + 0im, kf10 + 0im, mf1 + 0im]
@@ -329,12 +442,12 @@ function fKernel(kf, ki, IHf, IHi, Ec, qn, CH, IA, PJ, fV)::ComplexF64 # Calcula
         k = structMomentum(ki1, kf1, ki2, kf2, q, q2, qt)
 
         l.f1, l.i2 = -l.f1, -l.i2  #helicity to spin and the minus for fixed parity
-        Kerm1 = fV(k, l, CH, IA, ichi, ichf) * PJ.D[i][Int64(lJJ + l21i)+1, lf] * eta
+        Kerm1 = fV(k, l, SYS, IA, CH, ichi, ichf) * SYS.D[i][Int64(lJJ + l21i)+1, lf] * eta
         l.f1, l.i2 = -l.f1, -l.i2
         l.i1, l.f1 = -l.i1, -l.f1
-        Kerp1 = fV(k, l, CH, IA, ichi, ichf) * PJ.D[i][Int64(lJJ - l21i)+1, lf]
+        Kerp1 = fV(k, l, SYS, IA, CH, ichi, ichf) * SYS.D[i][Int64(lJJ - l21i)+1, lf]
         l.i1, l.f1 = -l.i1, -l.f1
-        Ker0 += (Kerp1 + Kerm1) * d50
+        Ker0 += (Kerp1 + Kerm1) * dx
     end
 
     fKernel = Ker0 * 2pi
@@ -349,7 +462,7 @@ function fKernel(kf, ki, IHf, IHi, Ec, qn, CH, IA, PJ, fV)::ComplexF64 # Calcula
     return fKernel
 end
 #*******************************************************************************************
-function fProp(IH, Dimo, k, kv, w, wv, Ec, Np, CH)
+function fProp(k, kv, w, wv, Ec, Np, CH, IH, Dimo)
     fprop = Complex{Float64}(0, 0)
     ich = IH.iCH
     mi1, mi2 = CH[ich].m[1], CH[ich].m[2]
@@ -397,10 +510,10 @@ function fProp(IH, Dimo, k, kv, w, wv, Ec, Np, CH)
 
     return fprop
 end
-function srAB(Ec, qn, CH, IH, IA, PJ, fV; lRm=1)
+function srAB(Ec, qn, SYS, IA, CH, IH, fV; lRm=1)
     # Determine the dimension of the work matrix. 
-    Np = length(PJ.kv)
-    IH, Dim, PJ = WORKSPACE(Ec, lRm, Np, CH, IH, PJ)
+    Np = length(SYS.kv)
+    SYS, IH, Dim, = WORKSPACE(Ec, lRm, Np, SYS, CH, IH)
     Nt = length(Dim)
 
     # Initialize matrices
@@ -418,11 +531,11 @@ function srAB(Ec, qn, CH, IH, IA, PJ, fV; lRm=1)
             ki = Dimi.k
 
             # Compute Vc for upper triangular part
-            Vc[i_f, i_i] = fKernel(kf, ki, IH[Dimf.iIH], IH[Dimi.iIH], Ec, qn, CH, IA, PJ, fV)::ComplexF64
+            Vc[i_f, i_i] = fKernel(kf, ki, Ec, qn, SYS, IA, CH, IH[Dimf.iIH], IH[Dimi.iIH], fV)::ComplexF64
 
             # Compute Gc and II only on the diagonal
             if i_i == i_f
-                Gc[i_f, i_i] = fProp(IH[Dimf.iIH], Dimf.Dimo, kf, PJ.kv, Dimf.w, PJ.wv, Ec, Np, CH)
+                Gc[i_f, i_i] = fProp(kf, SYS.kv, Dimf.w, SYS.wv, Ec, Np, CH, IH[Dimf.iIH], Dimf.Dimo)
                 II[i_f, i_i] = 1.0
             end
         end
@@ -446,7 +559,7 @@ function srAB(Ec, qn, CH, IH, IA, PJ, fV; lRm=1)
     return Vc, Gc, II, IH, Dim
 end
 #*******************************************************************************************
-function WORKSPACE(Ec, lRm, Np, CH, IH, PJ)
+function WORKSPACE(Ec, lRm, Np, SYS, CH, IH)
     #produce the dimensions in a independent helicity amplitudes, especially for the onshell dimension.
     Ec += Complex{Float64}(0.0, 1e-15)
     Dim = structDimension[]
@@ -475,7 +588,7 @@ function WORKSPACE(Ec, lRm, Np, CH, IH, PJ)
             IH[i1].Dime = Nt
             IH[i1].Dimn = Np + IH[i1].Dimo
             for idim in 1:Np
-                Dim0 = structDimension(IH[i1].iCH, PJ.kv[idim], PJ.wv[idim], 0)
+                Dim0 = structDimension(IH[i1].iCH, SYS.kv[idim], SYS.wv[idim], 0)
                 push!(Dim, Dim0)
             end
             Dim0 = structDimension(IH[i1].iCH, kon, 0.0, 1)
@@ -486,7 +599,7 @@ function WORKSPACE(Ec, lRm, Np, CH, IH, PJ)
             IH[i1].Dimn = Np
 
             for idim in 1:Np
-                Dim0 = structDimension(IH[i1].iCH, PJ.kv[idim], PJ.wv[idim], 0)
+                Dim0 = structDimension(IH[i1].iCH, SYS.kv[idim], SYS.wv[idim], 0)
                 push!(Dim, Dim0)
 
             end
@@ -495,25 +608,15 @@ function WORKSPACE(Ec, lRm, Np, CH, IH, PJ)
     end
 
 
-    return IH, Dim, PJ
+    return SYS, IH, Dim
 end
 #*******************************************************************************************
-function Independent_amp(Project, channels, CC, qn; Np=10, Nx=50)
+function Independent_amp(Sys, channels, CC, qn; Np=10, Nx=50, Nphi=100)
     #store the channel information, interaction information in CH,IH,IA
     CH = structChannel[]
     IH = structIndependentHelicity[]
-    Dim = structDimension[]
     Nih, Nc = 1, 1
-    #kv, wv = gausslaguerre(Np)
-    #wv = wv .* exp.(kv)
-    kv = [2.0496633800321580e-002, 0.10637754206664184, 0.25725070911685544,
-        0.47691569315652682, 0.78977094890173449, 1.2661898317497706, 2.0968065118988930,
-        3.8872580463677919, 9.4004780129091756, 48.788435306583473]
-    wv = [5.2385549033825828e-002, 0.11870709308644416, 0.18345726134358431,
-        0.25958276865541480, 0.37687641122072230, 0.60422211564747619, 1.1412809934307626,
-        2.7721814583372204, 10.490025610274076, 124.69392072758504]
 
-    wD = [wignerd(qn.J / qn.Jh, acos(-1.0 + 2.0 / Nx * (i - 0.5))) for i in 1:Nx]
     for channel in channels
         p1, p2 = pkey[channel[1]], pkey[channel[2]]
         m1, m2 = p[p1].m, p[p2].m
@@ -620,8 +723,22 @@ function Independent_amp(Project, channels, CC, qn; Np=10, Nx=50)
 
         end
     end
-    PJ = structProject(Project, kv, wv, wD)
+    kv, wv = gausslaguerre(Np)
+    wv = wv .* exp.(kv)
+    #kv = [2.0496633800321580e-002, 0.10637754206664184, 0.25725070911685544,
+    #    0.47691569315652682, 0.78977094890173449, 1.2661898317497706, 2.0968065118988930,
+    #    3.8872580463677919, 9.4004780129091756, 48.788435306583473]
+    #wv = [5.2385549033825828e-002, 0.11870709308644416, 0.18345726134358431,
+    #    0.25958276865541480, 0.37687641122072230, 0.60422211564747619, 1.1412809934307626,
+    #    2.7721814583372204, 10.490025610274076, 124.69392072758504]
 
-    return CH, IH, IA, PJ
+    wD = [wignerd(qn.J / qn.Jh, acos(-1.0 + 2.0 / Nx * (i - 0.5))) for i in 1:Nx]
+
+    dphi = 2.0 * pi / Nphi
+    sp = [sin((i - 1) * dphi) for i in 1:Nphi]
+    cp = [cos((i - 1) * dphi) for i in 1:Nphi]
+    SYS = structSys(Sys, kv, wv, wD, sp, cp)
+
+    return SYS, IA, CH, IH
 end
 end

@@ -68,6 +68,7 @@ N^2_J\int d\Omega' d\Omega
 D^{J}_{M,\lambda'}(\phi',\theta',0){\cal V}_{\lambda'\lambda}({\bm k}',{\bm k})D^{J*}_{M,\lambda}(\phi,\theta,0).
 \end{align}
 $$
+
 where $N_J=\sqrt{\frac{2J+1}{4\pi}}$, $\int d\Omega D^{J*}_{\lambda_1,\lambda_2}(\phi,\theta,0)D^{J'*}_{\lambda'_1,\lambda'_2}(\phi,\theta,0)=N_J^{-2}$.
 
 To calculate ${\cal V}_{\lambda'\lambda}^{JM}({\rm k}',{\rm k})$, we adopt a special reference frame. The momenta are chosen as $k_2=(E_2,0,0,{\rm k})$, $k_1=(W-E_2,0,0,-{\rm k})$  and $k'_2=(E'_2,{\rm k}'\sin\theta_{k,k'},0,{\rm k}'\cos\theta_{k,k'})$, $k=(W-E_2, -{\rm k}'\sin\theta_{k,k'},0,-{\rm k}'\cos\theta_{k,k'})$ with ${\rm k}=|{\bm k}|$ and ${\rm k}'=|{\bm k}'|$.
@@ -87,7 +88,8 @@ $$
 {\cal V}_{\lambda'\lambda}({\bm k}',{\bm k}).
 \end{align}
 $$
-where $\int^1_{-1}d\cos\theta' d^{J'}_{\lambda,\lambda'}(\theta')d^{J}_{\lambda,\lambda'}(\theta')=N_J^{-2}/2\pi\delta_{JJ'}$ are used. 
+
+where $\int^1_{-1}d\cos\theta' d^{J'}_{\lambda,\lambda'}(\theta')d^{J}_{\lambda,\lambda'}(\theta')=N_J^{-2}/2\pi\delta_{JJ'}$ are used.
 
 NOTE: Which particle is chosen to parallel to $z$ axis is related to the order of $\lambda$ and $\lambda'$ in $d^{J}_{\lambda'\lambda}(\theta_{k,k'})$, so it can not be chosen arbitrarily. And the definition of helicity is also dependent of the definition of ${\bm k}_{1,2}$. Here, $\lambda=\lambda_2-\lambda_1$  and $\lambda_1=-s_1$, $\lambda_2=s_2$. The scattering amplitudes ${\cal M}$ has analogous relations.
 
@@ -100,12 +102,10 @@ N^2_J\int d\Omega' d\Omega D^{J*}_{\lambda_R,\lambda'}(\phi',\theta',0)D^{J}_{\l
 &\cdot\left[i{\cal V}_{\lambda'\lambda}({\bm k}',{\bm
 k})+\int\frac{d{\bm k}''}{(2\pi)^3}i{\cal V}_{\lambda'\lambda''}({\bm
 k}',{\bm k}'') G_0({\bm k}'')i{\cal M}_{\lambda''\lambda}({\bm k}'',{\bm k})\right]\nonumber\\
-
 &=i{\cal V}^J_{\lambda'\lambda}({\rm k}',{\rm k})+\int\frac{{\rm k}''^2d{\rm k}''}{(2\pi)^3}i{\cal V}^J_{\lambda'\lambda''}({\rm k}',{\rm k}'')
 G_0({\bm k}'')i{\cal M}^J_{\lambda''\lambda}({\rm k}'',{\rm k})
 \end{align}
 $$
-
 
 ## Fixed parity
 
@@ -162,6 +162,7 @@ $$
 \Rightarrow&i{{\cal M}}^{J^P}_{ij}=i{\cal V}^{J^P}_{ij}+\sum_{k}i{\cal V}^{J^P}_{ik}G_0i{\cal M}^{J^P}_{kj}.
 \end{align}
 $$
+
 where $i$, $j$, $k$ are the indices for the independent amplitudes. And we redefine
 
 $$
@@ -222,7 +223,7 @@ i{\cal V}_{\lambda'-\lambda}({\bm k}',{\bm k})].
 \end{align}
 $$
 
-Note here the $f_if_j$ is also incorporated. Additionally, the form factors for the interacting particles are also included in the potential, modifying it as ${\cal V}\to f(k'){\cal V}f(k)$. Consequently, the resulting amplitude ${\cal M}$ also includes these form factors. 
+Note here the $f_if_j$ is also incorporated. Additionally, the form factors for the interacting particles are also included in the potential, modifying it as ${\cal V}\to f(k'){\cal V}f(k)$. Consequently, the resulting amplitude ${\cal M}$ also includes these form factors.
 
 ## Transformation to a matrix equation
 
@@ -324,6 +325,7 @@ G^{N+1}_{1}&0\\
 $$
 
 ## Code
+
 **Attention**: The following details are specific to the old version of the code, which includes Fortran code and Julia code versions prior to v0.2.4. In the new version, the treatment described below is obsolete.
 
 In old code, we choose $\hat{V}^{J^P}=f(k'){V}^{J^P}f(k)/4\pi$, $\hat{G}=4\pi{G}$, and $\hat{M}^{J^P}=f(k'){M}^{J^P}f(k)/4\pi$. The form factors are also included in to the ampltudes and the potential kernel. Hence, the qBSE becomes
@@ -391,7 +393,7 @@ $$
 \end{align}
 $$
 
-where $j_1$ and $j_2$ is the spin of the intitial particles, and we define $\tilde{j}=2j+1$. 
+where $j_1$ and $j_2$ is the spin of the intitial particles, and we define $\tilde{j}=2j+1$.
 
 The total cross section can be written as
 
@@ -448,7 +450,7 @@ where $a^J=-\frac{|{\bm k}|}{8\pi\sqrt{s}}{\cal M}(|{\bm k}|)$, which can be dis
 
 ## kinematics
 
-### Lorentz boost
+### ~~L~~orentz boost
 
 Here, we consider an process $Y\to m_1X\to m_1m_2m_3$.
 To study a $1\to3$ decay with the qBSE, we need consider the center of mass frame (CMS) of $Y$ (which is also the laboratory frame in this issue) and the $m_1m_2$ where the qBSE is applied. The momenta of initial and final particles in the CMS of $Y$, remarked as $lab$,  are
@@ -472,7 +474,7 @@ k_z&\frac{k_z k_x}{E+m}&\frac{k_z k_y}{E+m}&m+\frac{k_z k_z}{E+m}\nonumber\\
 \end{align}
 $$
 
-With  the Lorentz boost  the momenta for particle 23 in the laboratory frame $(E^{lab}_{23},-{\bm p}^{lab}_1)$ can be written with the momenta in the CMS of particles 23 $(M_{23},{\bm 0})$ as $p^{lab}=\Lambda(E^{lab}_{23},-{\bm p}^{lab}_1) p^{cm}$, 
+With  the Lorentz boost  the momenta for particle 23 in the laboratory frame $(E^{lab}_{23},-{\bm p}^{lab}_1)$ can be written with the momenta in the CMS of particles 23 $(M_{23},{\bm 0})$ as $p^{lab}=\Lambda(E^{lab}_{23},-{\bm p}^{lab}_1) p^{cm}$,
 
 $$
 \begin{align}
@@ -508,7 +510,6 @@ $$
 As described above, we perform both a Lorentz boost and a rotation. Through the Lorentz boost, the momentum $p^{lab}$ in the lab frame transforms into $p^{cm}$ in the center-of-mass system (CMS) of particles 2 and 3. The value of $p_1^{cm}$ depends on $p_1^{lab}$ and $M_{23}$, and the lab-frame energy $E_1^{lab}$ can also be derived from $M_{23}$. Thus, $p_1^{cm}$ is ultimately dependent only on $\Omega_1^{lab}$ and $M_{23}$. The momenta $p_{2,3}^{cm}$ depend on $p^{lab}_{2,3}$ and $\Omega_1^{lab}$ and can be expressed in terms of $M_{23}$ and the spherical angle $\Omega_3^{cm}$.
 
 After rotation, $p^{cm}$ becomes $p$ in the new CMS frame of particles 2 and 3. The momenta $p_{2,3}$ of the final particles are aligned along the z-axis and depend solely on $M_{23}$. However, for intermediate particles, they are functions of ${\rm p}'_3$ and $\Omega'_3$. Finally, $p_1$ depends on $\Omega_1^{lab}$, $M_{23}$, and $\Omega_3^{cm}$.
-
 
 ## Amplitude
 
