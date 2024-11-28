@@ -48,6 +48,11 @@ $$
 
 Note: the $i{\cal M}$ and $i{\cal V}$ are usually real. In the center of mass frame. We choose ${\bm k}_2={\bm k}$ and ${\bm k}_1=-{\bm k}$.
 
+The potential is introduced by `fV` function in main file as 
+```julia
+fV(k, l, SYS, IA, CH, ichi, ichf) 
+```
+
 ## Partial-wave expansion
 
 To reduce the equation to one-dimensional equation, we apply the partial wave expansion,
@@ -134,8 +139,15 @@ $$
 
 $$
 \begin{align}
+{\cal M}^{J}_{-\lambda'-\lambda}=\tilde{\eta}\tilde{\eta}'{\cal M}^{J}_{\lambda'\lambda}
+\end{align}
+$$
+
+$$
+\begin{align}
 	&{\cal M}^{J\pm}_{\lambda'\lambda}=\langle J,\lambda';\pm|{\cal M}|J,\lambda;\pm\rangle
-	={\cal M}^{J}_{\lambda'\lambda}\pm \tilde{\eta} {\cal M}^J_{\lambda'-\lambda},\\
+	={\cal M}^{J}_{\lambda'\lambda}\pm \tilde{\eta} {\cal M}^J_{\lambda'-\lambda}
+	={\cal M}^{J}_{\lambda'\lambda}\pm \tilde{\eta}'{\cal M}^J_{-\lambda'\lambda},\\
 &{\cal M}^{J\pm}_{\lambda'-\lambda}=\pm\tilde{\eta} {\cal M}^{J\pm}_{\lambda'\lambda}\equiv\eta {\cal M}^{J\pm}_{\lambda'\lambda},\ \ {\cal M}^{J\pm}_{-\lambda'\lambda}=\pm\tilde{\eta}' {\cal M}^{J\pm}_{\lambda'\lambda}\equiv\eta' {\cal M}^{J\pm}_{\lambda'\lambda}
 \end{align}
 $$
@@ -712,16 +724,17 @@ $$
 $$
 \begin{align}
 &{\cal A}^{J^P\lambda_{ji}}_{\lambda_k;\lambda'_i,\lambda'_j;\lambda}(...)=
-N_J2\pi\int d\Omega'_j \left[D^{J}_{\lambda_{ji},\lambda'_{ji}}(\phi'_j, \theta'_j,0) {\cal A}_{\lambda_k;\lambda'_i,\lambda'_j;\lambda}(...,\Omega'_j,...)+\eta'D^{J}_{\lambda_{ji},-\lambda'_{ji}}(\phi'_j, \theta'_j,0) {\cal A}_{\lambda_k;-\lambda'_i,-\lambda'_j;\lambda}(...,\Omega'_j,...)\right].
+N_J^2\int d\Omega'_j \left[D^{J}_{\lambda_{ji},\lambda'_{ji}}(\phi'_j, \theta'_j,0) {\cal A}_{\lambda_k;\lambda'_i,\lambda'_j;\lambda}(...,\Omega'_j,...)+\eta'D^{J}_{\lambda_{ji},-\lambda'_{ji}}(\phi'_j, \theta'_j,0) {\cal A}_{\lambda_k;-\lambda'_i,-\lambda'_j;\lambda}(...,\Omega'_j,...)\right].
 \end{align}
 $$
 
 $$
 \begin{align}
 i{\cal M}^{Z}_{\lambda_k;\lambda_i,\lambda_j;\lambda}(p_k,p_i,p_j)
-&=\frac{1}{2}\sum_{J^P}N_{J}\sum_{i'j'}\int \frac{{\rm p}'^{2}_jd{\rm p}'_j}{(2\pi)^3} i{\cal T}^{J^P}_{\lambda_i,\lambda_j;i'j'}({\rm p}'_j,M_{ij})  \ G_0({\rm p}'_j) i{\cal A}^{J^P\lambda_{ji}}_{\lambda_k;i'j';\lambda}(\Omega^{lab}_k,{\rm p}'_j,M_{ij},\Omega^{cm}_j).
+&=\frac{1}{2}\sum_{J^P,i'j'}\int \frac{{\rm p}'^{2}_jd{\rm p}'_j}{(2\pi)^3} i{\cal T}^{J^P}_{\lambda_i,\lambda_j;i'j'}({\rm p}'_j,M_{ij})  \ G_0({\rm p}'_j) i{\cal A}^{J^P\lambda_{ji}}_{\lambda_k;i'j';\lambda}(\Omega^{lab}_k,{\rm p}'_j,M_{ij},\Omega^{cm}_j).
 \end{align}
 $$
+Here we move the $N_J$ in ${\cal M}$ to the definition of ${\cal A}^{J^P}$.
 
 $$
 \begin{align}

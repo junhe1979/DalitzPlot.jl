@@ -2,14 +2,14 @@ module qBSE
 using FastGaussQuadrature, StaticArrays, WignerD, LinearAlgebra, Printf
 using Base.Threads
 using StaticArrays
-using ..Xs,..FR
+using ..Xs, ..FR
 #*******************************************************************************************
 #store informations about system 
 struct structSys
     Sys::String
     kv::Vector{Float64} #momenta of discreting
     wv::Vector{Float64} #weights of discreting
-    D::Vector{Matrix{Float64}}   #WignerD
+    d::Vector{Matrix{Float64}}   #Wignerd
     sp::Vector{Float64}
     cp::Vector{Float64}
 end
@@ -232,21 +232,23 @@ function TGA(lfinal, linter, Ver, predet, para)
     Dimb = IH[CH[linter].IHb].Dimb
     Dime = IH[CH[linter].IHe].Dime
     lJJ = qn.J / qn.Jh
+    NJ2 = (2.0 * lJJ + 1.0) / (4.0 * pi)
     TGAdic = Dict()
     for il in IHb:IHe
         IHl = IH[il]
         l21 = IHl.hel[2] / IHl.helh[2] - IHl.hel[1] / IHl.helh[1]
         Dl21 = Int64(lJJ + l21) + 1
         TGA = 0.0
+        eta=0.
         for iDim in Dimb:Dime
             p20 = Dim[iDim].k
             IHp = IH[Dim[iDim].iIH]
             l21p = IHp.hel[2] / IHp.helh[2] - IHp.hel[1] / IHp.helh[1]
             CH0 = CH[IHp.iCH]
-            eta = CH0.P[1] * CH0.P[2] * qn.P * (-1)^(qn.J / qn.Jh - CH0.J[1] / CH0.Jh[1] - CH0.J[2] / CH0.Jh[2])
+            etap = CH0.P[1] * CH0.P[2] * qn.P * (-1)^(qn.J / qn.Jh - CH0.J[1] / CH0.Jh[1] - CH0.J[2] / CH0.Jh[2])
             Dl21pp = Int64(lJJ + l21p) + 1
             Dl21pm = Int64(lJJ - l21p) + 1
-            ndx = length(SYS.D)
+            ndx = length(SYS.d)
             ndphi = length(SYS.cp)
             dx = 2.0 / ndx
             dphi = 2.0 * pi / ndphi
@@ -266,8 +268,8 @@ function TGA(lfinal, linter, Ver, predet, para)
                     Ap = Ver(p1, p2, l1, l2, predet, k, P)
                     Am = Ver(p1, p2, -l1, -l2, predet, k, P)
 
-                    Dp = SYS.D[i][Dl21, Dl21pp]
-                    Dm = SYS.D[i][Dl21, Dl21pm] * eta
+                    Dp = SYS.d[i][Dl21, Dl21pp]
+                    Dm = SYS.d[i][Dl21, Dl21pm] * etap
 
                     A -= exp(-im * phi * l21) * (Dp * Ap + Dm * Am) * dx * dphi
                     #A -= exp( im*phi/3. ) * dphi
@@ -276,11 +278,15 @@ function TGA(lfinal, linter, Ver, predet, para)
 
             TGA += TG[IH[il].Dime, iDim] * A
         end
+
         h1, h2 = IHl.hel[1], IHl.hel[2]
+        TGA*=NJ2
         TGAdic[(h1, h2)] = TGA
-        TGAdic[(-h1, -h2)] = TGA
+        CHf = CH[il]
+        eta = CHf.P[1] * CHf.P[2] * qn.P * (-1)^(qn.J / qn.Jh - CHf.J[1] / CHf.Jh[1] - CHf.J[2] / CHf.Jh[2])
+        TGAdic[(-h1, -h2)] = TGA *eta
         if h1 == 0 && h2 == 0
-            TGAdic[(h1, h2)] = TGA / sqrt(2.0)
+            TGAdic[(h1, h2)] = TGA * sqrt(2.0)
         end
 
     end
@@ -427,7 +433,7 @@ function fKernel(kf, ki, Ec, qn, SYS, IA, CH, IHf, IHi, fV)::ComplexF64 # Calcul
     l21i = -l.i2 / l.i2h + l.i1 / l.i1h
     l21f = l.f2 / l.f2h - l.f1 / l.f1h
     lf = Int64(lJJ + l21f) + 1
-    ndx = length(SYS.D)
+    ndx = length(SYS.d)
     dx = 2.0 / ndx
     Ker0 = 0 + 0im
     for i in 1:ndx
@@ -442,10 +448,10 @@ function fKernel(kf, ki, Ec, qn, SYS, IA, CH, IHf, IHi, fV)::ComplexF64 # Calcul
         k = structMomentum(ki1, kf1, ki2, kf2, q, q2, qt)
 
         l.f1, l.i2 = -l.f1, -l.i2  #helicity to spin and the minus for fixed parity
-        Kerm1 = fV(k, l, SYS, IA, CH, ichi, ichf) * SYS.D[i][Int64(lJJ + l21i)+1, lf] * eta
+        Kerm1 = fV(k, l, SYS, IA, CH, ichi, ichf) * SYS.d[i][Int64(lJJ + l21i)+1, lf] * eta
         l.f1, l.i2 = -l.f1, -l.i2
         l.i1, l.f1 = -l.i1, -l.f1
-        Kerp1 = fV(k, l, SYS, IA, CH, ichi, ichf) * SYS.D[i][Int64(lJJ - l21i)+1, lf]
+        Kerp1 = fV(k, l, SYS, IA, CH, ichi, ichf) * SYS.d[i][Int64(lJJ - l21i)+1, lf]
         l.i1, l.f1 = -l.i1, -l.f1
         Ker0 += (Kerp1 + Kerm1) * dx
     end
@@ -732,12 +738,12 @@ function Independent_amp(Sys, channels, CC, qn; Np=10, Nx=50, Nphi=100)
     #    0.25958276865541480, 0.37687641122072230, 0.60422211564747619, 1.1412809934307626,
     #    2.7721814583372204, 10.490025610274076, 124.69392072758504]
 
-    wD = [wignerd(qn.J / qn.Jh, acos(-1.0 + 2.0 / Nx * (i - 0.5))) for i in 1:Nx]
+    wd = [wignerd(qn.J / qn.Jh, acos(-1.0 + 2.0 / Nx * (i - 0.5))) for i in 1:Nx]
 
     dphi = 2.0 * pi / Nphi
     sp = [sin((i - 1) * dphi) for i in 1:Nphi]
     cp = [cos((i - 1) * dphi) for i in 1:Nphi]
-    SYS = structSys(Sys, kv, wv, wD, sp, cp)
+    SYS = structSys(Sys, kv, wv, wd, sp, cp)
 
     return SYS, IA, CH, IH
 end
