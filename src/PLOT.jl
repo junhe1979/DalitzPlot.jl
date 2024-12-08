@@ -6,11 +6,11 @@ function plotD(res; cg=cgrad([:white, :green, :blue, :red], [0, 0.01, 0.1, 0.5, 
     cs1 = res[2]
     cs2 = res[3]
     axesV = res[4]
-    axes = res[5]
+    laxes = res[5]
     ch = res[6]
 
-    laxes = [[div(axes[1], 10), mod(axes[1], 10)], [div(axes[2], 10), mod(axes[2], 10)]]
-    Laxes = [ch.namef[laxes[1][1]] * ch.namef[laxes[1][2]], ch.namef[laxes[2][1]] * ch.namef[laxes[2][2]]]
+    laxes1 = [laxes0[1] for laxes0 in laxes]
+    Laxes = [ch.namef[laxes1[1][1]] * ch.namef[laxes1[1][2]], ch.namef[laxes1[2][1]] * ch.namef[laxes1[2][2]]]
 
 
     Nbin = length(axesV[1])

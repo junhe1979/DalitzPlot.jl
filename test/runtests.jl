@@ -4,7 +4,7 @@ using DalitzPlot, DalitzPlot.Xs, DalitzPlot.PLOT, DalitzPlot.FR
 using Test, ProgressBars
 @testset "DalitzPlot Tests" begin
 
-    function amp(tecm, kf, ch, para)
+    function amps(tecm, kf, ch, para)
 
         # get kf as momenta in the center-of-mass ,
         #k1,k2,k3=kf       
@@ -33,10 +33,10 @@ using Test, ProgressBars
 
     function main()
 
-        ch = (mi=[1.0, 1.0], mf=[2.0 for i in 1:3],
+        ch = (pf=["p1","p2","p3"],
+            mi=[1.0, 1.0], mf=[2.0 for i in 1:3],
             namei=["p^i_{1}", "p^i_{2}"], namef=["p^f_{1}", "p^f_{2}", "p^f_{3}"],
-            amp=amp)
-
+            amps=amps)
         p = 8000.0
         #@show Xs.plab2pcm(p, ch.mi)
         function progress_callback(pb)
@@ -45,7 +45,7 @@ using Test, ProgressBars
         nevtot = Int64(1e7)
         pb = ProgressBar(1:nevtot)  # 创建进度条，范围从1到n
         callback = i -> progress_callback(pb)  # 创建回调函数，传入进度条对象
-        res = Xs.Xsection(10.0, ch, callback, axes=[23, 21], nevtot=nevtot, Nbin=1000,
+        res = Xs.Xsection(10.0, ch, callback, axes=[["p2","p3"],["p1","p2"]], nevtot=nevtot, Nbin=1000,
             para=(p=p, l=1.0),stype=2)
         #@show Xs.plab2pcm(p, ch.mi), res.cs0
         PLOT.plotD(res)

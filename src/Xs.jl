@@ -4,7 +4,7 @@ using StaticArrays, Distributed, ProgressBars
 using ..GEN
 #############################################################################
 
-function LorentzBoost(k::SVector{5, Float64}, p::SVector{5, Float64})
+function LorentzBoost(k::SVector{5,Float64}, p::SVector{5,Float64})
     kp = k[1] * p[1] + k[2] * p[2] + k[3] * p[3]  # 点积 k ⋅ p
     beta_factor = kp / (p[4] + p[5]) + k[4]       # β-related factor
 
@@ -15,50 +15,90 @@ function LorentzBoost(k::SVector{5, Float64}, p::SVector{5, Float64})
     k4 = (p[4] * k[4] + kp) / p[5]
     k5 = k[5]  # 不变的标量
 
-    # 返回新的 SVector
     return @SVector [k1, k2, k3, k4, k5]
 end
 
-function LorentzBoost(momenta::Vector{SVector{5, Float64}}, p::SVector{5, Float64})
+function LorentzBoost(momenta::Vector{SVector{5,Float64}}, p::SVector{5,Float64})
     return [LorentzBoost(i, p) for i in momenta]
 end
 
-function Rotation(k::SVector{5, Float64}, ct::Float64, st::Float64, cp::Float64, sp::Float64)
+function Rotation(k::SVector{5,Float64}, ct::Float64, st::Float64, cp::Float64, sp::Float64)
     k1 = ct * cp * k[1] + ct * sp * k[2] - st * k[3]
     k2 = -sp * k[1] + cp * k[2]
     k3 = st * cp * k[1] + st * sp * k[2] + ct * k[3]
     return @SVector [k1, k2, k3, k[4], k[5]]
 end
 
-function Rotation(momenta::Vector{SVector{5, Float64}}, ct::Float64, st::Float64, cp::Float64, sp::Float64)
-    # 对每个动量应用旋转，返回新数组
+function Rotation(momenta::Vector{SVector{5,Float64}}, ct::Float64, st::Float64, cp::Float64, sp::Float64)
     return [Rotation(k, ct, st, cp, sp) for k in momenta]
 end
 
 #############################################################################
 function binx(i::Int64, bin, iaxis::Int64)::Float64
-    return bin.min[iaxis] + (i - 0.5) / bin.Nbin * (bin.max[iaxis] - bin.min[iaxis])
+    return bin.min[iaxis][1] + (i - 0.5) / bin.Nbin * (bin.max[iaxis][1] - bin.min[iaxis][1])
 end
-function binrange(laxes, tecm, ch, stype)
+function binrange(laxes::Vector{Int64}, tecm, ch, stype)
+    min = (ch.mf[laxes[1]] + ch.mf[laxes[2]])^stype
+    max = (tecm - sum(ch.mf) + ch.mf[laxes[1]] + ch.mf[laxes[2]])^stype
+    return min, max
+end
+
+function binrange(laxes::Vector{Vector{Int64}}, tecm, ch, stype)
     min = Float64[(ch.mf[axes0[1]] + ch.mf[axes0[2]])^stype for axes0 in laxes]
     max = Float64[(tecm - sum(ch.mf) + ch.mf[axes0[1]] + ch.mf[axes0[2]])^stype for axes0 in laxes]
     return min, max
+end
+
+function binrange(laxes::Vector{Vector{Vector{Int64}}}, tecm, ch, stype; Range=[])
+    minn = Vector{Float64}[]
+    maxn = Vector{Float64}[]
+
+    for i in eachindex(laxes)
+        # 计算每个子向量的最小值和最大值
+        min0, max0 = binrange(laxes[i], tecm, ch, stype)
+
+        # 如果用户传入了min和max参数，覆盖默认计算值
+        if !isempty(Range)
+            if !ismissing(Range[i][1])
+                min0 .= Range[i][1]
+            end
+
+            if !ismissing(Range[i][2])
+                max0 .= Range[i][2]
+            end
+        end
+        push!(minn, min0)  # 将结果添加到minn
+        push!(maxn, max0)  # 将结果添加到maxn
+    end
+
+
+    return minn, maxn
 end
 function Nsij(kijs, min, max, Nbin)
     return convert(Int64, cld((kijs - min) * Nbin, (max - min)))
 end
 
-function Nsum3(laxes, bin::NamedTuple, kf, stype)
-    Ns = zeros(Int64, 2)
-    sij = zeros(Float64, 2)
+function Nsum3(laxes::Vector{Vector{Int64}}, i, bin::NamedTuple, kf, stype)
+    Ns = Int64[]
+    sij = Float64[]
+
     for iaxes in eachindex(laxes)
         axes0 = laxes[iaxes]
-
+        # 计算 kij 和 kijs
         kij = kf[axes0[1]] + kf[axes0[2]]
         kijs = stype == 2 ? kij * kij : sqrt(kij * kij)
-        sij[iaxes] = kijs
-        #Nsij[iaxes] = convert(Int64, cld((kijs - bin.min[iaxes]) * bin.Nbin, (bin.max[iaxes] - bin.min[iaxes])))
-        Ns[iaxes] = Nsij(kijs, bin.min[iaxes], bin.max[iaxes], bin.Nbin)
+        sij = push!(sij, kijs)
+        # 计算 Nsij 并添加到 Ns 数组中
+        push!(Ns, Nsij(kijs, bin.min[i][iaxes], bin.max[i][iaxes], bin.Nbin))
+    end
+    return Ns, sij
+end
+
+function Nsum3(laxes::Vector{Vector{Vector{Int64}}}, bin::NamedTuple, kf, stype)
+    Ns = Vector{Vector{Int64}}(undef, length(laxes))
+    sij = Vector{Vector{Float64}}(undef, length(laxes))
+    for i in eachindex(laxes)
+        Ns[i], sij[i] = Nsum3(laxes[i], i, bin, kf, stype)
     end
     return Ns, sij
 end
@@ -106,26 +146,25 @@ function pcm(tecm::Float64, mi::Vector{Float64})
     return p1, p2
 end
 #############################################################################
-function Xsection(tecm, ch, callback; axes=[23, 21], min=[], max=[], nevtot=Int64(1e6),
+function Xsection(tecm, ch, callback; axes=[], Range=[], nevtot=Int64(1e6),
     Nbin=100, para=(l = 1.0), stype=1)
-    Nf = length(ch.mf)
+    Nf = length(ch.pf)
+    laxes = Vector{Vector{Int64}}[]
+    for axis in axes
+        positions = [findall(==(element), ch.pf) for element in axis]
+        laxes0 = Vector{Int64}[]
+        for p1 in positions[1], p2 in positions[2]
+            push!(laxes0, [p1, p2])
+        end
+        push!(laxes, laxes0)
+    end
+
     Naxes = length(axes)
-    Nmax = length(max)
-    Nmin = length(min)
     axesV = []
-
     if Nf > 2
-        laxes = [[div(axes0, 10), mod(axes0, 10)] for axes0 in axes]
-        mins, maxs = binrange(laxes, tecm, ch, stype)
-
-        if Nmin == 0
-            min = mins
-        end
-        if Nmax == 0
-            max = maxs
-        end
-
+        min, max = binrange(laxes, tecm, ch, stype, Range=Range)
         bin = (Nbin=Nbin, min=min, max=max)
+
         axesV = [[binx(ix, bin, iaxes) for ix in 1:Nbin] for iaxes in eachindex(laxes)]
     end
     zsum = 0e0
@@ -140,16 +179,30 @@ function Xsection(tecm, ch, callback; axes=[23, 21], min=[], max=[], nevtot=Int6
         #@show wt
         if Nf > 2
             Nsij, sij = Nsum3(laxes, bin, kf, stype)
+
         end
-        if all(min .<= sij) && all(sij .<= max)
-            amp0 = ch.amp(tecm, kf, ch, para)
+
+        #if all(min .<= sij .<= max)
+        if all([any(min[i] .<= sij[i] .&& sij[i] .<= max[i]) for i in eachindex(min)])
+
+            #@show Nsij
+
+            amp0 = ch.amps(tecm, kf, ch, para)
             wt = wt * amp0
             if Nf > 2
                 for i in 1:Naxes
-                    zsumt[i, Nsij[i]] += wt
+                    for isij in Nsij[i]
+                        if 1 < isij <= Nbin
+                            zsumt[i, isij] += wt
+                        end
+                    end
                 end
                 if Naxes >= 2
-                    zsumd[Nsij[1], Nsij[2]] += wt
+                    for isij in Nsij[1], jsij in Nsij[2]
+                        if 1 < isij <= Nbin && 1 < jsij <= Nbin
+                            zsumd[isij, jsij] += wt
+                        end
+                    end
                 end
             end
         end
@@ -161,11 +214,11 @@ function Xsection(tecm, ch, callback; axes=[23, 21], min=[], max=[], nevtot=Int6
     cs0 = zsum / nevtot
     cs1 = zsumt / nevtot
     cs2 = zsumd / nevtot
-    res = (cs0=cs0, cs1=cs1, cs2=cs2, axesV=axesV, axes=axes, ch=ch)
+    res = (cs0=cs0, cs1=cs1, cs2=cs2, axesV=axesV, laxes=laxes, ch=ch)
     return res
 end
 
-function worker_Xsection(tecm, ch, axes, min_vals, max, nevt, Nbin, para, stype)
+function worker_Xsection(tecm, ch, axes, Range, nevt, Nbin, para, stype)
     # 定义进度条更新函数
     function progress_callback(pb)
         ProgressBars.update(pb)  # 更新进度条
@@ -177,18 +230,16 @@ function worker_Xsection(tecm, ch, axes, min_vals, max, nevt, Nbin, para, stype)
     else
         callback = _ -> nothing  # 其他进程不显示进度条
     end
-    return Xsection(tecm, ch, callback, axes=axes, min=min_vals, max=max, nevtot=nevt, Nbin=Nbin, para=para, stype=stype)
+    return Xsection(tecm, ch, callback, axes=axes, Range=Range, nevtot=nevt, Nbin=Nbin, para=para, stype=stype)
 end
 
-
-
-function Xsection(tecm, ch; axes=[23, 21], min_vals=[], max=[], nevtot=Int64(1e6), Nbin=100, para=(l = 1.0), stype=1)
+function Xsection(tecm, ch; axes=[23, 21], Range=[], nevtot=Int64(1e6), Nbin=100, para=(l = 1.0), stype=1)
     num_workers = nworkers()
     nevt_per_worker = div(nevtot, num_workers)
     ranges = [(i * nevt_per_worker + 1, Base.min((i + 1) * nevt_per_worker, nevtot)) for i in 0:(num_workers-1)]
 
     # 使用 pmap 执行任务并获取结果
-    results = pmap(r -> worker_Xsection(tecm, ch, axes, min_vals, max, r[2] - r[1] + 1, Nbin, para, stype), ranges)
+    results = pmap(r -> worker_Xsection(tecm, ch, axes, Range, r[2] - r[1] + 1, Nbin, para, stype), ranges)
 
     # 汇总结果
     zsum = 0.0
@@ -215,7 +266,7 @@ function Xsection(tecm, ch; axes=[23, 21], min_vals=[], max=[], nevtot=Int64(1e6
     cs1 = zsumt / nevtot
     cs2 = isnothing(zsumd) ? nothing : zsumd / nevtot
 
-    return (cs0=cs0, cs1=cs1, cs2=cs2, axesV=results[1].axesV, axes=results[1].axes, ch=ch)
+    return (cs0=cs0, cs1=cs1, cs2=cs2, axesV=results[1].axesV, laxes=results[1].laxes, ch=ch)
 end
 
 

@@ -148,7 +148,7 @@ The function for amplitudes with factors is saved as `amp`.
 Example usage:
 
 ```julia
-ch = (mi=[mass_i_1, mass_i_2], mf=[mass_f_1, mass_f_2, mass_f_3], namei=["p^i_{1}", "p^i_{2}"], namef=["p^f_{1}", "p^f_{2}", "p^f_{3}"], amp=amp)
+ch = (pf=["p1","p2","p3"],mi=[mass_i_1, mass_i_2], mf=[mass_f_1, mass_f_2, mass_f_3], namei=["p^i_{1}", "p^i_{2}"], namef=["p^f_{1}", "p^f_{2}", "p^f_{3}"], amp=amp)
 ```
 
 Make sure to replace `mass_i_1`, `mass_i_2`, `mass_f_1`, `mass_f_2`, and `mass_f_3` with the actual masses of the particles (1.0, 1.0, 1.0, 2.0, 3.0 here).
@@ -181,7 +181,7 @@ end
 nevtot=Int64(1e7)
 pb = ProgressBar(1:nevtot)  
 callback = i -> progress_callback(pb)  
-res = Xs.Xsection(tecm, ch, callback,axes=[23, 21], nevtot=Int64(1e7), Nbin=500, para=(p=p_lab, l=1.0))
+res = Xs.Xsection(tecm, ch, callback,axes=[["p2","p3"], ["p1","p2"]], nevtot=Int64(1e7), Nbin=500, para=(p=p_lab, l=1.0))
 ```
 
 The results are stored in the variable `res` as a `NamedTuple`. Specifically, `res.cs0` corresponds to the total cross section, `res.cs1` represents the invariant mass spectrum, and `res.cs2` captures the data for the Dalitz plot.
