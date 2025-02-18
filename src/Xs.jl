@@ -6,13 +6,15 @@ using ..GEN
 
 function LorentzBoost(k::SVector{5,Float64}, p::SVector{5,Float64})
     kp = k[1] * p[1] + k[2] * p[2] + k[3] * p[3]  # 点积 k ⋅ p
-    beta_factor = kp / (p[4] + p[5]) + k[4]       # β-related factor
+    p5=sqrt(p[4]^2-p[1]^2-p[2]^2-p[3]^2)
+    beta_factor = kp / (p[4] + p5) + k[4]       # β-related factor
+    inv_p5 = 1.0 / p5  # 预计算倒数，提高计算效率
 
     # 计算新的动量和能量分量
-    k1 = k[1] + p[1] * beta_factor / p[5]
-    k2 = k[2] + p[2] * beta_factor / p[5]
-    k3 = k[3] + p[3] * beta_factor / p[5]
-    k4 = (p[4] * k[4] + kp) / p[5]
+    k1 = k[1] + p[1] * beta_factor * inv_p5
+    k2 = k[2] + p[2] * beta_factor * inv_p5
+    k3 = k[3] + p[3] * beta_factor * inv_p5
+    k4 = (p[4] * k[4] + kp) * inv_p5
     k5 = k[5]  # 不变的标量
 
     return @SVector [k1, k2, k3, k4, k5]
@@ -147,7 +149,7 @@ function pcm(tecm::Float64, mi::Vector{Float64})
 end
 #############################################################################
 function Xsection(tecm, ch, callback; axes=[], Range=[], nevtot=Int64(1e6),
-    Nbin=100, para=(l = 1.0), stype=1)
+    Nbin=1000, para=(l = 1.0), stype=1)
     Nf = length(ch.pf)
     laxes = Vector{Vector{Int64}}[]
     for axis in axes
@@ -158,6 +160,7 @@ function Xsection(tecm, ch, callback; axes=[], Range=[], nevtot=Int64(1e6),
         end
         push!(laxes, laxes0)
     end
+
 
     Naxes = length(axes)
     axesV = []
@@ -181,7 +184,7 @@ function Xsection(tecm, ch, callback; axes=[], Range=[], nevtot=Int64(1e6),
             Nsij, sij = Nsum3(laxes, bin, kf, stype)
 
         end
-
+  
         #if all(min .<= sij .<= max)
         if all([any(min[i] .<= sij[i] .&& sij[i] .<= max[i]) for i in eachindex(min)])
 
@@ -247,7 +250,7 @@ function Xsection(tecm, ch; axes=[23, 21], Range=[], nevtot=Int64(1e6), Nbin=100
     zsumd = nothing
 
     for res in results
-        zsum += res.cs0 * nevtot
+        zsum += res.cs0 
         if isnothing(zsumt)
             zsumt = res.cs1
         else
@@ -262,9 +265,9 @@ function Xsection(tecm, ch; axes=[23, 21], Range=[], nevtot=Int64(1e6), Nbin=100
         end
     end
 
-    cs0 = zsum / nevtot
-    cs1 = zsumt / nevtot
-    cs2 = isnothing(zsumd) ? nothing : zsumd / nevtot
+    cs0 = zsum/num_workers 
+    cs1 = zsumt/num_workers 
+    cs2 = isnothing(zsumd) ? nothing : zsumd/num_workers 
 
     return (cs0=cs0, cs1=cs1, cs2=cs2, axesV=results[1].axesV, laxes=results[1].laxes, ch=ch)
 end

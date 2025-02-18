@@ -39,28 +39,20 @@ const GA = [SMatrix{4,4,ComplexF64}([
         1.0+0.0im 0.0+0.0im 0.0+0.0im 0.0+0.0im
         0.0+0.0im 1.0+0.0im 0.0+0.0im 0.0+0.0im])]
 #############################################################################
-@inline function GS(k::SVector{5,ComplexF64})::SMatrix{4,4,ComplexF64}
+@inline function GS(k::SVector{5,T})::SMatrix{4,4,ComplexF64} where T<:Number
     k1_im_k2 = k[1] + im * k[2]
     k1_min_im_k2 = k[1] - im * k[2]
 
     return @SMatrix [
-        k[4] 0 -k[3] -k1_im_k2;
-        0 k[4] -k1_min_im_k2 k[3];
+        k[4] 0 -k[3] -k1_min_im_k2;
+        0 k[4] -k1_im_k2 k[3];
         k[3] k1_min_im_k2 -k[4] 0;
         k1_im_k2 -k[3] 0 -k[4]
     ]
 end
-@inline function GS(k::SVector{5,Float64})::SMatrix{4,4,ComplexF64}
-    k1_im_k2 = k[1] + im * k[2]
-    k1_min_im_k2 = k[1] - im * k[2]
 
-    return @SMatrix [
-        k[4] 0 -k[3] -k1_im_k2;
-        0 k[4] -k1_min_im_k2 k[3];
-        k[3] k1_min_im_k2 -k[4] 0;
-        k1_im_k2 -k[3] 0 -k[4]
-    ]
-end
+
+
 #############################################################################
 @inline function kph(k::SVector{5,ComplexF64})
     zkx, zky, zkz, zk0, zm = real(k[1]), real(k[2]), real(k[3]), k[4], real(k[5])
@@ -409,21 +401,9 @@ end
 end
 #############################################################################
 import Base: *
-function *(Q::SVector{5,Float64}, W::SVector{5,Float64})::Float64
-    temp = Q[4] * W[4] - Q[1] * W[1] - Q[2] * W[2] - Q[3] * W[3]
-    return temp
-end
-function *(Q::SVector{5,Float64}, W::SVector{5,ComplexF64})::ComplexF64
-    temp = Q[4] * W[4] - Q[1] * W[1] - Q[2] * W[2] - Q[3] * W[3]
-    return temp
-end
-function *(Q::SVector{5,ComplexF64}, W::SVector{5,Float64})::ComplexF64
-    temp = Q[4] * W[4] - Q[1] * W[1] - Q[2] * W[2] - Q[3] * W[3]
-    return temp
-end
-function *(Q::SVector{5,ComplexF64}, W::SVector{5,ComplexF64})::ComplexF64
-    temp = Q[4] * W[4] - Q[1] * W[1] - Q[2] * W[2] - Q[3] * W[3]
-    return temp
+function *(Q::SVector{5,T1}, W::SVector{5,T2}) where {T1<:Number, T2<:Number}
+    R = promote_type(T1, T2)  # 确保结果类型正确
+    return R(Q[4] * W[4] - Q[1] * W[1] - Q[2] * W[2] - Q[3] * W[3])
 end
 function *(A::SVector{4,ComplexF64}, M::SMatrix{4,4,ComplexF64,16})
     return transpose(A) * M
@@ -431,4 +411,20 @@ end
 function *(A::SVector{4,ComplexF64}, B::SVector{4,ComplexF64})
     return transpose(A) * B
 end
+import Base: -
+function -(A::T, B::SMatrix{4,4,ComplexF64,16}) where {T <: Number}
+    return A*I-B
+end
+function -(B::SMatrix{4,4,ComplexF64,16},A::T) where {T <: Number}
+    return B-A*I
+end
+
+import Base: +
+function +(A::T, B::SMatrix{4,4,ComplexF64,16}) where {T <: Number}
+    return A*I+B
+end
+function +(B::SMatrix{4,4,ComplexF64,16},A::T) where {T <: Number}
+    return B+A*I
+end
+
 end

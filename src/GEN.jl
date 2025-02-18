@@ -2,47 +2,6 @@ module GEN
 export GENEV
 using StaticArrays
 #######################################
-#only for comparision
-function cut(a::Int32)::Int64
-    binary_string = bitstring(a * 69069)
-    binary_str = binary_string[end-31:end]
-    if startswith(binary_str, "0")
-        decimal_num = parse(Int, binary_str, base=2)
-    else
-        decimal_num = parse(Int, binary_str[2:end], base=2)
-        decimal_num -= 2^(length(binary_str) - 1)
-    end
-    return decimal_num
-end
-global MCGN::Int32 = 12345
-function RNDM()::Float32
-    global MCGN
-    MSK1::Int32 = 0xC000000
-    MSK2::Int32 = 0x33333300
-    AMAN::Float32 = 0.0f0
-    MCGN = cut(MCGN::Int32)
-    MANT = MCGN >>> 8
-    if MANT != 0
-        AMAN = MANT
-        MANT = reinterpret(Int32, AMAN)
-        MANT = MANT - MSK1
-        AMAN = reinterpret(Float32, MANT)
-        RNDM::Float32 = AMAN
-    elseif MANT == 0
-        MANT = MSK2
-        AMAN = reinterpret(Float32, MANT)
-        RNDM = AMAN
-    end
-    return RNDM
-end
-function NRAN(N::Int64)::Vector{Float64}
-    VECTOR = Vector{Float64}(undef, N)
-    for I in 1:N
-        VECTOR[I] = RNDM()
-    end
-    return VECTOR
-end
-#######################################
 function ROTES2!(cos_theta::Float64, sin_theta::Float64, cos_theta2::Float64,
     sin_theta2::Float64, pr::MMatrix{5,18,Float64,90}, i::Int64)
     @inbounds begin

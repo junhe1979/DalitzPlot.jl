@@ -2,8 +2,6 @@
 
 The general form of the BSE for the scattering amplitude is in a from
 
-
-
 $$
 \begin{align}
 {\cal M}(k'_1k'_2,k_1k_2;P)&={\cal
@@ -14,7 +12,8 @@ V}(k'_1k'_2,k''_1k''_2;P)G(k''_1k''_2;P){\cal
 M}(k''_1k''_2,k_1k_2;P),\quad
 \end{align}
 $$
-where ${\cal V}$ is the potential kernel and $G$ is the propagators for two constituent particles. Here the momentum of the system $P=k_1+k_2=k'_1+k'_2=k''_1+k''_2$. 
+
+where ${\cal V}$ is the potential kernel and $G$ is the propagators for two constituent particles. Here the momentum of the system $P=k_1+k_2=k'_1+k'_2=k''_1+k''_2$.
 
 It can be abbreviated as
 
@@ -26,23 +25,27 @@ $$
 
 The BS equation for the external legs amputed scattering matrix ${\cal
 M}^{[\mu_f][\mu_i]}$ is
-$$\begin{align}
+
+$$
+\begin{align}
 	{\cal M}_{[\mu_f][\mu_i]}={\cal V}_{[\mu_f][\mu_i]}
 	+{\cal V}_{[\mu_f][\mu']}G^{[\mu'][\mu]}{\cal
 	M}_{[\mu][\mu_i]},
-\end{align}$$
+\end{align}
+$$
+
 where ${\cal V}$ is the potential kernel and the propagators for two constituent particles are
-$$\begin{align}
+
+$$
+\begin{align}
 	G^{[\mu'][\mu]}=G_1^{[\mu'_1][\mu_1]}~G^{[\mu'_2][\mu'_2]}_2
 	 =\frac{-P^{[\mu'][\mu]}}{(k_1^2-m_1^2)(k_2^2-m_2^2)}=P^{[\mu'][\mu]}
 \tilde{G}_0,
-\end{align}$$
-
+\end{align}
+$$
 
 where $P^{[\mu'][\mu]}$ is a general form. For two vector meson, we have $P^{[\mu'][\mu]}=(-g^{\mu'_1\mu_1}+k^{\mu'_1}_1k^{\mu_1}_1/m_1^2)(-g^{\mu'_2\mu_2}+k^{\mu'_2}_2k^{\mu_2}_2/m_2^2)$ and for two baryon with $S=1/2$ we have $P^{[\mu'][\mu]}=(\gamma\cdot k_1+m_1)(\gamma\cdot k_1+m_1)$.
 It is difficult to treat such propagator because the ${\cal V}$ and ${\cal M}$ can not be separated from each other. The propagator with two constituents near shell is more important, and in the following sections, a from factor or cutoff will be introduced to constrain two constituents in propagator near onshellness.  So, it is safe to assume the $P^{[\mu'][\mu]}$ is on-shell,so can be rewritten as $\sum_{\lambda_1\lambda_2}A_{\lambda_1}^{[\mu'_1][}A_{\lambda_1}^{[\mu_1]}A_{\lambda_2}^{[\mu'_2]}A_{\lambda_2}^{[\mu_2]}$ with $A$ being the polarization vector or the spinor.
-
-
 
 The Gross form of proposed quasipotential propagators for particles 1 and 2 with mass $m_1$ and $m_2$ written down in
 the center of mass frame where $P=(W,{\bm 0})$ with particle 2 being on shell are
@@ -70,8 +73,6 @@ M}({\bm k}'',{\bm k}),\quad
 $$
 
 Note: the $i{\cal M}$ and $i{\cal V}$ are usually real. In the center of mass frame. We choose ${\bm k}_2={\bm k}$ and ${\bm k}_1=-{\bm k}$.
-
-
 
 ## Partial-wave expansion
 
@@ -131,9 +132,6 @@ k}',{\bm k}'') G_0({\bm k}'')i{\cal M}_{\lambda''\lambda}({\bm k}'',{\bm k})\rig
 G_0({\bm k}'')i{\cal M}^J_{\lambda''\lambda}({\rm k}'',{\rm k})
 \end{align}
 $$
-
-
-
 
 ## Fixed parity
 
@@ -260,13 +258,14 @@ $$
 
 Note here the $f_if_j$ is also incorporated. Additionally, the form factors for the interacting particles are also included in the potential, modifying it as ${\cal V}\to f(k'){\cal V}f(k)$. Consequently, the resulting amplitude ${\cal M}$ also includes these form factors.
 
+The potential ${\cal V}_{\lambda'-\lambda}({\bm k}',{\bm k})$ is introduced by `fV` function in main file as
 
-The potential ${\cal V}_{\lambda'-\lambda}({\bm k}',{\bm k})$ is introduced by `fV` function in main file as 
 ```julia
 fV(k, l, SYS, IA0, CHf, CHi) 
 ```
-where `k` and `l` are for the momenta and helicities of final and initial particles. `SYS` is 
-for the system information. `IA0` is for the interaction information., `CHf` and `CHi` are for the information of final and initial channels. 
+
+where `k` and `l` are for the momenta and helicities of final and initial particles. `SYS` is
+for the system information. `IA0` is for the interaction information., `CHf` and `CHi` are for the information of final and initial channels.
 
 Transition of ${\cal V}_{\lambda'-\lambda}({\bm k}',{\bm k})$ to ${\cal V}^{J^P}_{ij}({\rm k}',{\rm k}'')$ performed in `qBSE.fKernel(kf, ki, Ec, qn, SYS, IA, CH, IHf, IHi, fV)`
 
@@ -326,6 +325,7 @@ $$
 	\end{array}\right.
 \end{align}
 $$
+
 where $\bar{q}=\frac{1}{2W}\sqrt{[W^2-(m_1+m_2)^2][W^2-(m_1-m_2)^2]}$. The indices $i, j, k$ is for discrete momentum values, independent helicities, and coupled channels.
 
 The propagator is calculated in `function fProp(k, kv, w, wv, Ec, Np, CH, IH, Dimo)`
@@ -372,8 +372,7 @@ $$
 
 The informations about the dimensions are calculated in `WORKSPACE(Ec, lRm, Np, SYS, CH, IH)`.
 
-The matrix $V$ and $G$ are calculated in `qBSE.srAB(Ec, qn, SYS, IA, CH, IH, fV; lRm=1)`. 
-
+The matrix $V$ and $G$ are calculated in `qBSE.srAB(Ec, qn, SYS, IA, CH, IH, fV; lRm=1)`.
 
 ## Code
 
@@ -420,8 +419,8 @@ $$
 |1-V(z)G(z)|=0
 \end{align}
 $$
-with $z=E_R+i\Gamma_R/2$.
 
+with $z=E_R+i\Gamma_R/2$.
 
 The $|1-V(z)G(z)|$ in complex enery plane is calculated in `qBSE.res(Range, iER, qn, SYS, IA, CH, IH, fV)` and the pole can be found with function `qBSE.showPoleInfo(qn, resEc, reslog, filename)`.
 
@@ -432,10 +431,10 @@ $$
 M_{ij}(z)=\{[(1-VG)^{-1}]V\}_{ij}
 \end{align}
 $$
+
 with $i$ and $k$ chosen as the onshell momentum, that is, $0$ dimension for $G$, and extra dimension for $V$.
 
 The $|M|^2$ for each channel is calculated in `qBSE.M2_channel(T, CH, IH)`.
-
 
 ### The cross section for the channel considered
 
@@ -457,8 +456,8 @@ $$
 	\sigma
 =\frac{1}{\tilde{j}_1\tilde{j}_2}\frac{1}{64\pi^2
 	s}\frac{{\rm k}'}{{\rm k}}\sum_{J,\lambda}N_J^2|i{\cal M}^J_{\lambda\lambda'}({\rm k}',{\rm k})|^2
-=\frac{1}{\tilde{j}_1\tilde{j}_2}\frac{1}{64\pi^3
-	s}\frac{|{\bm k}'|}{|{\bm k}|}\sum_{J^P,ij}N_J^2\left|{{ M}}^{J^P}_{ij}\right|^2.
+=\frac{1}{\tilde{j}_1\tilde{j}_2}\frac{1}{64\pi^2
+	s}\frac{{\rm k}'}{{\rm k}}\sum_{J^P,ij}N_J^2\left|{{ M}}^{J^P}_{ij}\right|^2.
 \end{align}
 $$
 
@@ -570,7 +569,6 @@ After rotation, $p^{cm}$ becomes $p$ in the new CMS frame of particles 2 and 3. 
 
 The Lorentz boost is performed by `Xs.LorentzBoost(k, p)`, and rotation by `Xs.Rotation(k, ct, st, cp, sp)` with `ct`, `st`, `cp`, `sp` calculated by `FR.kph(k)`.
 A function `qBSE.LorentzBoostRotation(tecm, k, p1, p2)` is also provided to make both a Lorentz boost and a rotation.
-
 
 ## Amplitude
 
@@ -772,8 +770,6 @@ $$
 \end{align}
 $$
 
-
-
 $$
 \begin{align}
 &{\cal A}^{J^P\lambda_{ji}}_{\lambda_k;\lambda'_i,\lambda'_j;\lambda}(...)=
@@ -787,6 +783,7 @@ i{\cal M}^{Z}_{\lambda_k;\lambda_i,\lambda_j;\lambda}(p_k,p_i,p_j)
 &=\sum_{J^P}\frac{N_J^2}{2}\int \frac{{\rm p}'^{2}_jd{\rm p}'_j}{(2\pi)^3} \sum_{i'j'}i{\cal T}^{J^P}_{\lambda_i,\lambda_j;i'j'}({\rm p}'_j,M_{ij})  \ G_0({\rm p}'_j) i{\cal A}^{J^P\lambda_{ji}}_{\lambda_k;i'j';\lambda}(\Omega^{lab}_k,{\rm p}'_j,M_{ij},\Omega^{cm}_j).
 \end{align}
 $$
+
 Here we move the $N_J$ in ${\cal A}^{J^P}$ to the definition of ${\cal M}$. The amplitude
 are calculated in `qBSE.TGA(lfinal, linter, Ver, predet, para)`.
 

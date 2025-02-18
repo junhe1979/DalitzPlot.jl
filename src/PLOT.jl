@@ -1,13 +1,44 @@
 module PLOT
 using Plots, LaTeXStrings, Colors, Compose, DelimitedFiles
+function readdata(filename)
+    data_groups = []
+    current_group = []  # 临时存储当前数据组
 
-function plotD(res; cg=cgrad([:white, :green, :blue, :red], [0, 0.01, 0.1, 0.5, 1.0]))
+    open(filename, "r") do file
+        for line in eachline(file)
+            # 忽略以 # 开头的行
+            if startswith(strip(line), "#")
+                continue
+            end
+
+            if isempty(strip(line))  # 判断是否为空行
+                # 如果当前数据组不为空，说明到达一组结束
+                if !isempty(current_group)
+                    push!(data_groups, hcat(current_group...)')  # 保存当前数据组
+                    empty!(current_group)  # 清空临时数组
+                end
+            else
+                # 将每行解析为浮点数，并添加到当前数据组
+                row = [parse(Float64, x) for x in split(line)]
+                push!(current_group, row)
+            end
+        end
+        # 最后检查并保存最后一个数据组（如果存在）
+        if !isempty(current_group)
+            push!(data_groups, hcat(current_group...)')
+        end
+    end
+    return data_groups
+end
+
+
+function plotD(res; cg=cgrad([:white, :green, :blue, :red], [0, 0.01, 0.1, 0.5, 1.0]), xx=[], xy=[], yx=[], yy=[])
     ENV["GKSwstype"] = "100"
-    cs1 = res[2]
-    cs2 = res[3]
-    axesV = res[4]
-    laxes = res[5]
-    ch = res[6]
+    cs1 = res.cs1
+    cs2 = res.cs2
+    axesV = res.axesV
+    laxes = res.laxes
+    ch = res.ch
 
     laxes1 = [laxes0[1] for laxes0 in laxes]
     Laxes = [ch.namef[laxes1[1][1]] * ch.namef[laxes1[1][2]], ch.namef[laxes1[2][1]] * ch.namef[laxes1[2][2]]]
@@ -19,10 +50,14 @@ function plotD(res; cg=cgrad([:white, :green, :blue, :red], [0, 0.01, 0.1, 0.5, 
     xlims = (minimum(x1), maximum(x1))
     ylims = (minimum(y1), maximum(y1))
     dx = (maximum(x1) - minimum(x1)) / Nbin
-    ylims = (minimum(y1) / dx, maximum(y1) / dx)
+    ylims = (minimum(y1) / dx, maximum(y1) / dx * 1.1)
 
-    p1 = Plots.plot(x1, y1 / dx, xlims=xlims, ylims=ylims, xticks=:auto, ylabel=latexstring("d\\sigma/m^2_{" * Laxes[1] * "} (\\textrm{ barn/GeV^2})"), framestyle=:box, xmirror=true, legend=:none, linetype=:steppre)
-
+    p0 = Plots.plot(x1, y1 / dx, xlims=xlims, ylims=ylims, xticks=:auto, ylabel=latexstring("d\\sigma/m^2_{" * Laxes[1] * "} (\\textrm{ barn/GeV^2})"), framestyle=:box, xmirror=true, legend=:none, linetype=:steppre)
+    if !isempty(xx)
+        p1 = Plots.scatter!(xx, xy, markersize=1)
+    else
+        p1 = p0
+    end
 
     y2 = axesV[2]
     x2 = cs1[2, :]
@@ -30,8 +65,13 @@ function plotD(res; cg=cgrad([:white, :green, :blue, :red], [0, 0.01, 0.1, 0.5, 
     xlims = (minimum(x2), maximum(x2))
     ylims = (minimum(y2), maximum(y2))
     dy = (maximum(y2) - minimum(y2)) / Nbin
-    xlims = (minimum(x2) / dy, maximum(x2) / dy)
-    p2 = Plots.plot(x2 / dy, y2, xlims=xlims, ylims=ylims, xlabel=latexstring("d\\sigma/m^2_{" * Laxes[2] * "} (\\textrm{ barn/GeV^2})"), framestyle=:box, ymirror=true, legend=:none, linetype=:steppre)
+    xlims = (minimum(x2) / dy, maximum(x2) / dy * 1.1)
+    p0=Plots.plot(x2 / dy, y2, xlims=xlims, ylims=ylims, xlabel=latexstring("d\\sigma/m^2_{" * Laxes[2] * "} (\\textrm{ barn/GeV^2})"), framestyle=:box, ymirror=true, legend=:none, linetype=:steppre)
+    if !isempty(yy)
+        p2 = Plots.scatter!(yy, yx, markersize=1)
+    else
+        p2 = p0
+    end
 
     x = axesV[1]
     y = axesV[2]

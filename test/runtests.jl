@@ -24,7 +24,7 @@ using Test, ProgressBars
         k12 = k1 + k2
         s12 = k12 * k12
         m = 6.
-        A = 1 / (s12 - m^2 + im * m * 0.1)
+        A = 1 / (s12 - 2 + im * m * 0.1)
 
         total = abs2(A) * fac * 0.389379e-3
 

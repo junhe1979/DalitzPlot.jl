@@ -1,3 +1,4 @@
+# module for quasipotential Bethe-Salpeter equation
 module qBSE
 using FastGaussQuadrature, StaticArrays, WignerD, LinearAlgebra, Printf
 using ..Xs, ..FR
@@ -7,19 +8,23 @@ struct structSys #SYS
     Sys::String # label of system
     kv::Vector{Float64} #momenta of discreting
     wv::Vector{Float64} #weights of discreting
+    xv::Vector{Float64} #cos theta of discreting
+    wxv::Vector{Float64} #weights of discreting
     d::Vector{Matrix{Float64}}   #Wignerd
-    sp::Vector{Float64}
-    cp::Vector{Float64}
+    pv::Vector{Float64} #phi of discreting
+    wpv::Vector{Float64} #weights of discreting
+    sp::Vector{Float64} #sin phi
+    cp::Vector{Float64} #cos phi
 end
 # store the information of a interaction
 struct structInterAction #IA[]
     Nex::Int64  #total number of exchanges
     name_ex::Vector{String}  #exchange
-    key_ex::Vector{Int64}
-    J_ex::Vector{Int64}
-    Jh_ex::Vector{Int64}
-    P_ex::Vector{Int64}
-    m_ex::Vector{Float64}  
+    key_ex::Vector{Int64} #label
+    J_ex::Vector{Int64}  #J for integral spin, 2J for half  integral spin
+    Jh_ex::Vector{Int64} #1 for integral spin, 2 for half  integral spin
+    P_ex::Vector{Int64} #parity
+    m_ex::Vector{Float64} #mass
     dc::Vector{Int64}  #direct or cross
     CC::Vector{Float64}  #flavor factors
 end
@@ -56,7 +61,7 @@ mutable struct structDimension #Dim[]
 end
 #*******************************************************************************************
 # momenta of partilces of a 2-2 interaction.
-mutable struct structMomentum 
+mutable struct structMomentum
     i1::SVector{5,ComplexF64} #initial 1
     f1::SVector{5,ComplexF64} #final 1
     i2::SVector{5,ComplexF64}
@@ -105,14 +110,13 @@ end
 const p = structParticle[] #store of information of particles in this global vector
 const pkey = Dict{String,Int64}() #store the dictionary for key and the number of particles
 #*******************************************************************************************
-function ch(pf,pin,amps)
-    mf=[qBSE.p[qBSE.pkey[p]].m  for p in pf]
-    namef= ["\\"*qBSE.p[qBSE.pkey[p]].nameL  for p in pf]
-    mi=[qBSE.p[qBSE.pkey[p]].m  for p in pin]
-    namei= ["\\"*qBSE.p[qBSE.pkey[p]].nameL  for p in pin]
-    ch=(pf=pf,namef=namef,mf=mf,pin=pin,namei=namei,mi=mi,amps=amps)
+function ch(pf, pin, amps)
+    mf = [qBSE.p[qBSE.pkey[p]].m for p in pf]
+    namef = ["\\" * qBSE.p[qBSE.pkey[p]].nameL for p in pf]
+    mi = [qBSE.p[qBSE.pkey[p]].m for p in pin]
+    namei = ["\\" * qBSE.p[qBSE.pkey[p]].nameL for p in pin]
+    ch = (pf=pf, namef=namef, mf=mf, pin=pin, namei=namei, mi=mi, amps=amps)
 end
-
 #*******************************************************************************************
 # Calculate the \sum|M|^2 for all channels 
 function M2_channel(T, CH, IH)
@@ -138,20 +142,38 @@ end
     l = (m1_sq - m2_plus_m3 * m2_plus_m3) * (m1_sq - m2_minus_m3 * m2_minus_m3)
     return l > 0.0 ? sqrt(l) : 0.0
 end
+# Frame transition from the static frame of total system  to  cms of two partilce.
+function LorentzBoostRotation(k, tecm, p1, p2)
+    kij = k[p1] + k[p2]
+    sij = kij * kij
+    P = @SVector [0.0, 0.0, 0.0, tecm, tecm]
+    pLB = @SVector [-kij[1], -kij[2], -kij[3], kij[4], sqrt(sij)]
+    knew = Xs.LorentzBoost(k, pLB)
+    Pnew = Xs.LorentzBoost(P, pLB)
+    ct, st, cp, sp = FR.kph(knew[p2])
+    Pnew = Xs.Rotation(Pnew, ct, st, cp, sp)
+    knew = Xs.Rotation(knew, ct, st, cp, sp)
+    return knew, Pnew
+end
 # Calculate cross section for all channels , only for 2-2 process
-function simpleXsection(xx, M2, CH; Ep="cm")
+function simpleXsection(xx, M2, CH, qn; Ep="cm")
     Xsection = Matrix{Float64}[]
     NCH = length(CH)
     N = length(xx)
-    const_factor = 0.3894 / (256.0 * pi^3)  # 预先计算不变的常数部分
+    cons = 0.3894 / (256.0 * pi^3)  # 预先计算不变的常数部分
 
     for i in 1:N
         Xs0 = zeros(size(M2[1]))  # 提前分配 `Xs0`，每次循环覆盖而非重新分配
         W = xx[i]
 
         for iM2 in 1:NCH
-            mi1 = p[CH[iM2].p[1]].m
-            mi2 = p[CH[iM2].p[2]].m
+            pi1 = p[CH[iM2].p[1]]
+            pi2 = p[CH[iM2].p[2]]
+            mi1 = pi1.m
+            mi2 = pi2.m
+            jitilde = (2.0 * pi1.J + 1.0) * (2.0 * pi2.J + 1.0)
+            fac2mi1 = (pi1.Jh == 1) ? 1 : 2.0 * mi1
+            fac2mi2 = (pi2.Jh == 1) ? 1 : 2.0 * mi2
 
             # 检查 Ep 是否为 "L"，只在需要时重新计算 W
             if Ep == "L"
@@ -159,10 +181,16 @@ function simpleXsection(xx, M2, CH; Ep="cm")
             end
 
             for fM2 in 1:NCH
-                mf1 = p[CH[fM2].p[1]].m
-                mf2 = p[CH[fM2].p[2]].m
-                lambda_factor = lambda(W, mf1, mf2) / lambda(W, mi1, mi2) / W^2
-                fac = lambda_factor * (2.0 * mi2)^2 * const_factor
+                pf1 = p[CH[fM2].p[1]]
+                pf2 = p[CH[fM2].p[2]]
+                mf1 = pf1.m
+                mf2 = pf2.m
+                fac2mf1 = (pf1.Jh == 1) ? 1 : 2.0 * mf1
+                fac2mf2 = (pf2.Jh == 1) ? 1 : 2.0 * mf2
+
+                lam = lambda(W, mf1, mf2) / lambda(W, mi1, mi2) / W^2
+                fac2m = fac2mi1 * fac2mi2 * fac2mf1 * fac2mf2
+                fac = lam * fac2m * cons * (2.0 * qn.J + 1.0) / jitilde
 
                 @inbounds Xs0[iM2, fM2] = M2[i][iM2, fM2] * fac
             end
@@ -175,7 +203,7 @@ function simpleXsection(xx, M2, CH; Ep="cm")
 end
 #得到log|1-VG|以寻找极点。
 function res(Range, iER, qn, SYS, IA, CH, IH, fV)
-    resEct = ComplexF64[] #设置保存复的总能量Ec=ER+EI*im的数组
+    Ect = ComplexF64[] #设置保存复的总能量Ec=ER+EI*im的数组
     reslogt = Float64[] #设置保存log|1-VG|的数组
     Dim = nothing
     TG = nothing
@@ -197,7 +225,7 @@ function res(Range, iER, qn, SYS, IA, CH, IH, fV)
         VGI = II - Vc * Gc
         detVGI = det(VGI)   # Compute determinant of (1 - VGc)，调用LinearAlgebra包det函数
         logdetVGI = log(abs(detVGI)^2)
-        push!(resEct, Ec)
+        push!(Ect, Ec)
         push!(reslogt, logdetVGI)
         if iEI == 0
             T = inv(VGI) * Vc
@@ -208,59 +236,83 @@ function res(Range, iER, qn, SYS, IA, CH, IH, fV)
     end
 
     if Range.Ep == "L"
-        resEct[1] = PL
+        Ect[1] = PL
     end
-    return resEct, reslogt, resM2, IH, Dim, TG
+    return Ect, reslogt, resM2, IH, Dim, TG
 end
-#用内插法从已经计算的T矩阵得到任意不变质量E处的T矩阵。
-function interpolation(E, Et, Range, Tt, IHt, Dimt)
+#*******************************************************************************************
+#获取对应该事例的IH和Dim。注意此处未同时做差值，因为会导致内存泄漏，原因未知。
+function IHDim(E, Et, Range, Tt, IHt, Dimt)
     ii = length(Et) - Xs.Nsij(E, Range.ERmin, Range.ERmax, length(Et) - 1)
     Emin, Emax = min(Et[ii], Et[ii+1]), max(Et[ii], Et[ii+1])
     Tmin, Tmax = Tt[ii], Tt[ii+1]
-    T, IH, Dim = nothing, nothing, nothing
 
     if size(Tmin) == size(Tmax)
-        ww = (E - Emin) / (Emax - Emin)
-        T = (1.0 - ww) * Tmin + ww * Tmax
-        IH = IHt[ii]
-        Dim = Dimt[ii]
+        return IHt[ii], Dimt[ii]
     else
-        mid = (Emin + Emax) / 2.0
-        if E >= mid
-            T = Tt[ii]
-            IH = IHt[ii]
-            Dim = Dimt[ii]
-        else
-            T = Tt[ii+1]
-            IH = IHt[ii+1]
-            Dim = Dimt[ii+1]
-        end
+        mid = 0.5 * (Emin + Emax)
+        idx = (E < mid) + 1  # 避免 if 分支
+        return IHt[ii+idx-1], Dimt[ii+idx-1]
+    end
+end
+#set the frame and other things for calculating TGA
+function setTGA(par, s14, k, tecm, i, j)
+    IHt, Dimt, TGt, Et, Range = par.IHt, par.Dimt, par.TGt, par.Et, par.Range
+    IH, Dim = qBSE.IHDim(sqrt(s14), Et, Range, TGt, IHt, Dimt)
+    kn, Pn = qBSE.LorentzBoostRotation(k, tecm, i, j) #reference frame thansformation
+    return (s=sqrt(s14), par=par, IH=IH, Dim=Dim, k=kn, P=Pn)
+end
+#calculate TGA
+function TGA(cfinal, cinter, Vert, para)
+
+    s, par, IH, Dim, k, P = para.s, para.par, para.IH, para.Dim, para.k, para.P
+    Et, TGt, qn,CH,SYS = par.Et, par.TGt, par.qn,par.CH,par.SYS
+
+    #差值,将差值放到这里是为了防止内存泄漏
+    ii = length(Et) - Xs.Nsij(s, par.Range.ERmin, par.Range.ERmax, length(Et) - 1)
+    Emin, Emax = Et[ii], Et[ii+1]
+    Tmin, Tmax = TGt[ii], TGt[ii+1]
+    if Emin>Emax
+    Emin, Emax = Emin, Emax
+    Tmin, Tmax = Tmax, Tmin
+    end
+    TeT = size(Tmin) == size(Tmax)
+    if TeT
+        inv_dE = 1.0 / (Emax - Emin)  
+        ww = (s - Emin) * inv_dE
+    else
+        mid = 0.5 * (Emin + Emax)
+        idx = (s < mid) + 1  
+        TG = TGt[ii+idx-1]
     end
 
-    return T, IH, Dim
-end
-#calculate the amplitude of rescattering process
-function rescattering(lfinal, linter, Vert, para)
-    TG, qn, SYS, CH, IH, Dim, k, P = para.TG, para.qn, para.SYS, para.CH, para.IH, para.Dim, para.k, para.P
+
     # Independent helicities for final states
-    IHb = CH[lfinal].IHb
-    IHe = CH[lfinal].IHe
+    IHb = CH[cfinal].IHb
+    IHe = CH[cfinal].IHe
     # Rank of dimensions for intermediate state
-    Dimb = IH[CH[linter].IHb].Dimb
-    Dime = IH[CH[linter].IHe].Dime
+    Dimb = IH[CH[cinter].IHb].Dimb
+    Dime = IH[CH[cinter].IHe].Dime
     lJJ = qn.J / qn.Jh
     NJ2d2 = (2.0 * lJJ + 1.0) / (8.0 * pi)
     TGAdic = Dict()
+    ndx = length(SYS.xv)
+    ndphi = length(SYS.pv)
+    dx = 2.0 / ndx
+    dphi = 2.0 * pi / ndphi
     #loop for all Independent helicities of final state
-    for il in IHb:IHe
+    @inbounds for il in IHb:IHe
         IHl = IH[il]
         l21 = IHl.hel[2] / IHl.helh[2] - IHl.hel[1] / IHl.helh[1]
         dl21 = Int64(lJJ + l21) + 1
         #loop for dimensions for intermediate state
         TGA = 0.0
         eta = 0.0
-        for iDim in Dimb:Dime
-            p20 = Dim[iDim].k
+        @inbounds for iDim in Dimb:Dime
+            p20 = real(Dim[iDim].k)
+            m1, m2 = CH[il].m[1], CH[il].m[2]
+            p20m1sq = sqrt(p20^2 + m1^2)
+            p20m2sq = sqrt(p20^2 + m2^2)
             IHp = IH[Dim[iDim].iIH]
             l21p = IHp.hel[2] / IHp.helh[2] - IHp.hel[1] / IHp.helh[1]
             CH0 = CH[IHp.iCH]
@@ -268,36 +320,37 @@ function rescattering(lfinal, linter, Vert, para)
             dl21pp = Int64(lJJ + l21p) + 1
             dl21pm = Int64(lJJ - l21p) + 1
             # loop for integration of angles
-            ndx = length(SYS.d)
-            ndphi = length(SYS.cp)
-            dx = 2.0 / ndx
-            dphi = 2.0 * pi / ndphi
             A = 0.0
             for i in 1:ndx
                 #theta
-                ct = -1.0 + dx * (i - 0.5)
+                ct = SYS.xv[i]
                 st = sqrt(1.0 - ct^2)
                 for j in 1:ndphi
                     #phi
-                    phi = (j - 1) * dphi
+                    phi = SYS.pv[j]
                     cosphi, sinphi = SYS.cp[j], SYS.sp[j]
                     #momentum for intermediate state. 
                     px, py, pz = p20 * st * cosphi, p20 * st * sinphi, p20 * ct
-                    m1, m2 = CH[il].m[1], CH[il].m[2]
-                    p1 = @SVector [-px, -py, -pz, sqrt(p20^2 + m1^2), m1]
-                    p2 = @SVector [px, py, pz, sqrt(p20^2 + m2^2), m2]
+                    p1 = SVector{5,Float64}(-px, -py, -pz, p20m1sq, m1)
+                    p2 = SVector{5,Float64}(px, py, pz, p20m2sq, m2)
 
-                    l1, l2 = IHp.hel[1], IHp.hel[2]
-                    Ap = Vert.Vert(p1, p2, l1, l2, Vert, k, P)
-                    Am = Vert.Vert(p1, p2, -l1, -l2, Vert, k, P)
+                    la, lb = IHp.hel[1], IHp.hel[2]
+                    Ap = Vert.Vert(p1, p2, la, lb, Vert, k, P)
+                    Am = Vert.Vert(p1, p2, -la, -lb, Vert, k, P)
                     Dp = SYS.d[i][dl21, dl21pp]
                     Dm = SYS.d[i][dl21, dl21pm] * etap
 
-                    A -= exp(-im * phi * l21) * (Dp * Ap + Dm * Am) * dx * dphi
+                    A -= exp(-im * phi * l21) * (Dp * Ap + Dm * Am) * SYS.wxv[i] * SYS.wpv[i]
                 end
             end
 
-            TGA += TG[IH[il].Dime, iDim] * A
+            if TeT
+                TG0 = Tmin[IH[il].Dime, iDim] * (1.0 - ww) + Tmax[IH[il].Dime, iDim] * ww #插值
+            else
+                TG0 = TG[IH[il].Dime, iDim]
+            end
+
+            TGA += A * TG0
         end
 
         h1, h2 = IHl.hel[1], IHl.hel[2]
@@ -313,19 +366,6 @@ function rescattering(lfinal, linter, Vert, para)
 
     end
     return TGAdic
-end
-# Frame transition from the static frame of total system  to  cms of two partilce.
-function LorentzBoostRotation(tecm, k, p1, p2)
-    kij = k[p1] + k[p2]
-    s12 = kij * kij
-    P = @SVector [0.0, 0.0, 0.0, tecm, tecm]
-    pLB = @SVector [-kij[1], -kij[2], -kij[3], kij[4], sqrt(s12)]
-    knew = Xs.LorentzBoost(k, pLB)
-    Pnew = Xs.LorentzBoost(P, pLB)
-    ct, st, cp, sp = FR.kph(knew[p2])
-    Pnew = Xs.Rotation(Pnew, ct, st, cp, sp)
-    knew = Xs.Rotation(knew, ct, st, cp, sp)
-    return knew, Pnew
 end
 #*******************************************************************************************
 #显示
@@ -352,18 +392,18 @@ function showSYSInfo(Range, qn, IA, CH, IH)
     println("ER=$(Range.ERmax) to $(Range.ERmin) GeV, NER=$(Range.NER)  ;   EI=$(Range.EIt*1e3) MeV, NEI=$(Range.NEI)")
     println(dashline)
 end
-function showPoleInfo(qn, resEc, reslog, filename)
+function showPoleInfo(qn, Ec, reslog, filename)
     Ampmin, Ampminx, Ampminy = 0.0, 0.0, 0.0
-    for i in eachindex(resEc)
-        Ec = resEc[i]
+    for i in eachindex(Ec)
+        Eci = Ec[i]
         logdetVGI = reslog[i]
         open(filename, "a") do file
-            write(file, @sprintf("%.4f %.4f %.4f\n", real(Ec), imag(Ec) * 1e3, logdetVGI))
+            write(file, @sprintf("%.4f %.4f %.4f\n", real(Eci), imag(Eci) * 1e3, logdetVGI))
         end
         if Ampmin > logdetVGI
             Ampmin = logdetVGI
-            Ampminx = real(Ec)
-            Ampminy = imag(Ec) * 1e3
+            Ampminx = real(Eci)
+            Ampminy = imag(Eci) * 1e3
         end
     end
 
@@ -376,7 +416,7 @@ function showPoleInfo(qn, resEc, reslog, filename)
 end
 #*******************************************************************************************
 #form factors
-function propFF(k, ex, L, LLi, LLf; lregu=1, lFFex=0) 
+function propFF(k, ex, L, LLi, LLf; lregu=1, lFFex=0)
     m = p[ex].m
     if lFFex >= 10
         L = m + 0.22 * L
@@ -424,7 +464,7 @@ function propFF(k, ex, L, LLi, LLf; lregu=1, lFFex=0)
     return prop * FFex * exp(FFre)
 
 end
-#potential kernle
+#potential kernel
 function kernel(kf, ki, Ec, qn, SYS, IA, CH, IHf, IHi, fV)::ComplexF64 # Calculating kernel
     ichi = IHi.iCH # channel
     ichf = IHf.iCH
@@ -461,11 +501,10 @@ function kernel(kf, ki, Ec, qn, SYS, IA, CH, IHf, IHi, fV)::ComplexF64 # Calcula
     l21i = -l.i2 / l.i2h + l.i1 / l.i1h
     l21f = l.f2 / l.f2h - l.f1 / l.f1h
     lf = Int64(lJJ + l21f) + 1
-    ndx = length(SYS.d)
-    dx = 2.0 / ndx
+    ndx = length(SYS.xv)
     Ker0 = 0 + 0im
     for i in 1:ndx
-        x = -1.0 + dx * (i - 0.5)
+        x = SYS.xv[i]
         sqrt1_x2 = sqrt(1 - x^2)
         ki1 = @SVector [0.0 + 0im, 0.0 + 0im, -ki + 0im, ki10 + 0im, mi1 + 0im]
         kf1 = @SVector [-kf * sqrt1_x2 + 0im, 0.0 + 0im, -kf * x + 0im, kf10 + 0im, mf1 + 0im]
@@ -481,7 +520,7 @@ function kernel(kf, ki, Ec, qn, SYS, IA, CH, IHf, IHi, fV)::ComplexF64 # Calcula
         l.i1, l.f1 = -l.i1, -l.f1
         Kerp1 = fV(k, l, SYS, IA0, CHf, CHi) * SYS.d[i][Int64(lJJ - l21i)+1, lf]
         l.i1, l.f1 = -l.i1, -l.f1
-        Ker0 += (Kerp1 + Kerm1) * dx
+        Ker0 += (Kerp1 + Kerm1) * SYS.wxv[i]
     end
 
     kernel = Ker0 * 2pi
@@ -647,7 +686,7 @@ function workSpace(Ec, lRm, Np, SYS, CH, IH)
     return SYS, IH, Dim
 end
 #*******************************************************************************************
-function preprocessing(Sys, channels, CC, qn; Np=10, Nx=50, Nphi=100)
+function preprocessing(Sys, channels, CC, qn; Np=10, Nx=10, Nphi=10)
     #store the channel information, interaction information in CH,IH,IA
     CH = structChannel[]
     IH = structIndependentHelicity[]
@@ -761,19 +800,24 @@ function preprocessing(Sys, channels, CC, qn; Np=10, Nx=50, Nphi=100)
     end
     kv, wv = gausslaguerre(Np)
     wv = wv .* exp.(kv)
-    kv = [2.0496633800321580e-002, 0.10637754206664184, 0.25725070911685544,
-        0.47691569315652682, 0.78977094890173449, 1.2661898317497706, 2.0968065118988930,
-        3.8872580463677919, 9.4004780129091756, 48.788435306583473]
-    wv = [5.2385549033825828e-002, 0.11870709308644416, 0.18345726134358431,
-        0.25958276865541480, 0.37687641122072230, 0.60422211564747619, 1.1412809934307626,
-        2.7721814583372204, 10.490025610274076, 124.69392072758504]
+    #kv = [2.0496633800321580e-002, 0.10637754206664184, 0.25725070911685544,
+    #    0.47691569315652682, 0.78977094890173449, 1.2661898317497706, 2.0968065118988930,
+    #    3.8872580463677919, 9.4004780129091756, 48.788435306583473]
+    #wv = [5.2385549033825828e-002, 0.11870709308644416, 0.18345726134358431,
+    #    0.25958276865541480, 0.37687641122072230, 0.60422211564747619, 1.1412809934307626,
+    #    2.7721814583372204, 10.490025610274076, 124.69392072758504]
+    xv, wxv = gausslegendre(Nx)
 
-    wd = [wignerd(qn.J / qn.Jh, acos(-1.0 + 2.0 / Nx * (i - 0.5))) for i in 1:Nx]
+    wd = [wignerd(qn.J / qn.Jh, acos(xv[i])) for i in 1:Nx]
+
+    pv, wpv = gausslegendre(Nphi)
+    pv = pi * (pv .+ 1.0)   # 将节点映射到 [0, 2π]
+    wpv = wpv * pi  # 调整权重
 
     dphi = 2.0 * pi / Nphi
-    sp = [sin((i - 1) * dphi) for i in 1:Nphi]
-    cp = [cos((i - 1) * dphi) for i in 1:Nphi]
-    SYS = structSys(Sys, kv, wv, wd, sp, cp)
+    sp = [sin(pv[i]) for i in 1:Nphi]
+    cp = [cos(pv[i]) for i in 1:Nphi]
+    SYS = structSys(Sys, kv, wv, xv, wxv, wd, pv, wpv, sp, cp)
 
     return SYS, IA, CH, IH
 end
