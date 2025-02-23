@@ -1,6 +1,6 @@
 # module for quasipotential Bethe-Salpeter equation
 module qBSE
-using FastGaussQuadrature, StaticArrays, WignerD, LinearAlgebra, Printf
+using Distributed, FastGaussQuadrature, StaticArrays, WignerD, LinearAlgebra, Printf
 using ..Xs, ..FR
 #*******************************************************************************************
 #store informations about system 
@@ -209,7 +209,11 @@ function res(Range, iER, qn, SYS, IA, CH, IH, fV)
     TG = nothing
     NCH = length(CH)
     resM2 = zeros(Float64, NCH, NCH)
-    ER = Range.ERmax - iER * (Range.ERmax - Range.ERmin) / Range.NER #计算ER
+    ER = Range.ERmax - iER * (Range.ERmax - Range.ERmin) / (Range.NER - 1) #计算ER
+    #if myid() == 1 
+    #@show iER,ER, Range.ERmin, Range.ERmax,nprocs() - 1
+    #end
+
     EI = 0.0
     if Range.Ep == "L" #here, we use the pL, so should be transfered to ER
         PL = Range.ERmax - iER * (Range.ERmax - Range.ERmin) / Range.NER #计算ER
@@ -243,9 +247,9 @@ end
 #*******************************************************************************************
 #获取对应该事例的IH和Dim。注意此处未同时做差值，因为会导致内存泄漏，原因未知。
 function IHDim(E, Et, Range, Tt, IHt, Dimt)
-    ii = length(Et) - Xs.Nsij(E, Range.ERmin, Range.ERmax, length(Et) - 1)
-    Emin, Emax = min(Et[ii], Et[ii+1]), max(Et[ii], Et[ii+1])
-    Tmin, Tmax = Tt[ii], Tt[ii+1]
+    ii = Range.NER - Xs.Nsij(E, Range.ERmin, Range.ERmax, Range.NER - 1)
+    Emin, Emax = Et[ii+1], Et[ii]
+    Tmin, Tmax = Tt[ii+1], Tt[ii]
 
     if size(Tmin) == size(Tmax)
         return IHt[ii], Dimt[ii]
@@ -260,29 +264,30 @@ function setTGA(par, s14, k, tecm, i, j)
     IHt, Dimt, TGt, Et, Range = par.IHt, par.Dimt, par.TGt, par.Et, par.Range
     IH, Dim = qBSE.IHDim(sqrt(s14), Et, Range, TGt, IHt, Dimt)
     kn, Pn = qBSE.LorentzBoostRotation(k, tecm, i, j) #reference frame thansformation
-    return (s=sqrt(s14), par=par, IH=IH, Dim=Dim, k=kn, P=Pn)
+    return (E=sqrt(s14), par=par, IH=IH, Dim=Dim, k=kn, P=Pn)
 end
 #calculate TGA
 function TGA(cfinal, cinter, Vert, para)
 
-    s, par, IH, Dim, k, P = para.s, para.par, para.IH, para.Dim, para.k, para.P
-    Et, TGt, qn,CH,SYS = par.Et, par.TGt, par.qn,par.CH,par.SYS
+    E, par, IH, Dim, k, P = para.E, para.par, para.IH, para.Dim, para.k, para.P
+    Et, TGt, qn, CH, SYS = par.Et, par.TGt, par.qn, par.CH, par.SYS
 
     #差值,将差值放到这里是为了防止内存泄漏
-    ii = length(Et) - Xs.Nsij(s, par.Range.ERmin, par.Range.ERmax, length(Et) - 1)
-    Emin, Emax = Et[ii], Et[ii+1]
-    Tmin, Tmax = TGt[ii], TGt[ii+1]
-    if Emin>Emax
-    Emin, Emax = Emin, Emax
-    Tmin, Tmax = Tmax, Tmin
+    ii = par.Range.NER - Xs.Nsij(E, par.Range.ERmin, par.Range.ERmax, par.Range.NER - 1)
+    Emin, Emax = Et[ii+1], Et[ii]
+    Tmin, Tmax = TGt[ii+1], TGt[ii]
+    if Emin > Emax
+        Emin, Emax = Emax, Emin
+        Tmin, Tmax = Tmax, Tmin
     end
     TeT = size(Tmin) == size(Tmax)
     if TeT
-        inv_dE = 1.0 / (Emax - Emin)  
-        ww = (s - Emin) * inv_dE
+        inv_dE = 1.0 / (Emax - Emin)
+        ww = (E - Emin) * inv_dE
+
     else
         mid = 0.5 * (Emin + Emax)
-        idx = (s < mid) + 1  
+        idx = (E < mid) + 1
         TG = TGt[ii+idx-1]
     end
 
@@ -302,6 +307,7 @@ function TGA(cfinal, cinter, Vert, para)
     dphi = 2.0 * pi / ndphi
     #loop for all Independent helicities of final state
     @inbounds for il in IHb:IHe
+        m1, m2 = CH[il].m[1], CH[il].m[2]
         IHl = IH[il]
         l21 = IHl.hel[2] / IHl.helh[2] - IHl.hel[1] / IHl.helh[1]
         dl21 = Int64(lJJ + l21) + 1
@@ -310,7 +316,6 @@ function TGA(cfinal, cinter, Vert, para)
         eta = 0.0
         @inbounds for iDim in Dimb:Dime
             p20 = real(Dim[iDim].k)
-            m1, m2 = CH[il].m[1], CH[il].m[2]
             p20m1sq = sqrt(p20^2 + m1^2)
             p20m2sq = sqrt(p20^2 + m2^2)
             IHp = IH[Dim[iDim].iIH]
@@ -321,26 +326,25 @@ function TGA(cfinal, cinter, Vert, para)
             dl21pm = Int64(lJJ - l21p) + 1
             # loop for integration of angles
             A = 0.0
-            for i in 1:ndx
-                #theta
-                ct = SYS.xv[i]
-                st = sqrt(1.0 - ct^2)
-                for j in 1:ndphi
-                    #phi
-                    phi = SYS.pv[j]
-                    cosphi, sinphi = SYS.cp[j], SYS.sp[j]
+            la, lb = IHp.hel[1], IHp.hel[2]
+            for j in 1:ndphi
+                #phi
+                phi = SYS.pv[j]
+                cosphi, sinphi = SYS.cp[j], SYS.sp[j]
+                exppl = exp(-im * phi * l21)
+                for i in 1:ndx
+                    #theta
+                    ct = SYS.xv[i]
+                    st = sqrt(1.0 - ct^2)
                     #momentum for intermediate state. 
                     px, py, pz = p20 * st * cosphi, p20 * st * sinphi, p20 * ct
                     p1 = SVector{5,Float64}(-px, -py, -pz, p20m1sq, m1)
                     p2 = SVector{5,Float64}(px, py, pz, p20m2sq, m2)
-
-                    la, lb = IHp.hel[1], IHp.hel[2]
                     Ap = Vert.Vert(p1, p2, la, lb, Vert, k, P)
                     Am = Vert.Vert(p1, p2, -la, -lb, Vert, k, P)
                     Dp = SYS.d[i][dl21, dl21pp]
                     Dm = SYS.d[i][dl21, dl21pm] * etap
-
-                    A -= exp(-im * phi * l21) * (Dp * Ap + Dm * Am) * SYS.wxv[i] * SYS.wpv[i]
+                    A -= exppl * (Dp * Ap + Dm * Am) * SYS.wxv[i] * SYS.wpv[i]
                 end
             end
 
@@ -686,7 +690,7 @@ function workSpace(Ec, lRm, Np, SYS, CH, IH)
     return SYS, IH, Dim
 end
 #*******************************************************************************************
-function preprocessing(Sys, channels, CC, qn; Np=10, Nx=10, Nphi=10)
+function preprocessing(Sys, channels, CC, qn; Np=10, Nx=5, Nphi=5)
     #store the channel information, interaction information in CH,IH,IA
     CH = structChannel[]
     IH = structIndependentHelicity[]

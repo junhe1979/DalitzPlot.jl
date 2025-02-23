@@ -6,7 +6,7 @@ using ..GEN
 
 function LorentzBoost(k::SVector{5,Float64}, p::SVector{5,Float64})
     kp = k[1] * p[1] + k[2] * p[2] + k[3] * p[3]  # 点积 k ⋅ p
-    p5=sqrt(p[4]^2-p[1]^2-p[2]^2-p[3]^2)
+    p5 = sqrt(p[4]^2 - p[1]^2 - p[2]^2 - p[3]^2)
     beta_factor = kp / (p[4] + p5) + k[4]       # β-related factor
     inv_p5 = 1.0 / p5  # 预计算倒数，提高计算效率
 
@@ -61,12 +61,14 @@ function binrange(laxes::Vector{Vector{Vector{Int64}}}, tecm, ch, stype; Range=[
 
         # 如果用户传入了min和max参数，覆盖默认计算值
         if !isempty(Range)
-            if !ismissing(Range[i][1])
-                min0 .= Range[i][1]
-            end
+            if !isempty(Range[i])
+                if !ismissing(Range[i][1])
+                    min0 .= Range[i][1]
+                end
 
-            if !ismissing(Range[i][2])
-                max0 .= Range[i][2]
+                if !ismissing(Range[i][2])
+                    max0 .= Range[i][2]
+                end
             end
         end
         push!(minn, min0)  # 将结果添加到minn
@@ -184,7 +186,7 @@ function Xsection(tecm, ch, callback; axes=[], Range=[], nevtot=Int64(1e6),
             Nsij, sij = Nsum3(laxes, bin, kf, stype)
 
         end
-  
+
         #if all(min .<= sij .<= max)
         if all([any(min[i] .<= sij[i] .&& sij[i] .<= max[i]) for i in eachindex(min)])
 
@@ -250,7 +252,7 @@ function Xsection(tecm, ch; axes=[23, 21], Range=[], nevtot=Int64(1e6), Nbin=100
     zsumd = nothing
 
     for res in results
-        zsum += res.cs0 
+        zsum += res.cs0
         if isnothing(zsumt)
             zsumt = res.cs1
         else
@@ -265,9 +267,9 @@ function Xsection(tecm, ch; axes=[23, 21], Range=[], nevtot=Int64(1e6), Nbin=100
         end
     end
 
-    cs0 = zsum/num_workers 
-    cs1 = zsumt/num_workers 
-    cs2 = isnothing(zsumd) ? nothing : zsumd/num_workers 
+    cs0 = zsum / num_workers
+    cs1 = zsumt / num_workers
+    cs2 = isnothing(zsumd) ? nothing : zsumd / num_workers
 
     return (cs0=cs0, cs1=cs1, cs2=cs2, axesV=results[1].axesV, laxes=results[1].laxes, ch=ch)
 end
