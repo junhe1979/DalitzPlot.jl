@@ -250,7 +250,6 @@ function IHDim(E, Et, Range, Tt, IHt, Dimt)
     ii = Range.NER - Xs.Nsij(E, Range.ERmin, Range.ERmax, Range.NER - 1)
     Emin, Emax = Et[ii+1], Et[ii]
     Tmin, Tmax = Tt[ii+1], Tt[ii]
-
     if size(Tmin) == size(Tmax)
         return IHt[ii], Dimt[ii]
     else
@@ -276,10 +275,6 @@ function TGA(cfinal, cinter, Vert, para)
     ii = par.Range.NER - Xs.Nsij(E, par.Range.ERmin, par.Range.ERmax, par.Range.NER - 1)
     Emin, Emax = Et[ii+1], Et[ii]
     Tmin, Tmax = TGt[ii+1], TGt[ii]
-    if Emin > Emax
-        Emin, Emax = Emax, Emin
-        Tmin, Tmax = Tmax, Tmin
-    end
     TeT = size(Tmin) == size(Tmax)
     if TeT
         inv_dE = 1.0 / (Emax - Emin)
