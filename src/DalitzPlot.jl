@@ -14,9 +14,11 @@ include("Xs.jl")
 include("FR.jl")
 include("qBSE.jl")
 include("PLOT.jl")
+include("AUX.jl")
 using .GEN
 using .Xs
 using .FR
 using .qBSE
 using .PLOT
+using .AUX
 end

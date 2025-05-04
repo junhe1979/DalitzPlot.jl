@@ -282,8 +282,8 @@ function TGA(cfinal, cinter, Vert, para)
 
     else
         mid = 0.5 * (Emin + Emax)
-        idx = (E < mid) + 1
-        TG = TGt[ii+idx-1]
+        idx = (E < mid) 
+        TG = TGt[ii+idx]
     end
 
 

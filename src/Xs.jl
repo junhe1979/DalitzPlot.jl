@@ -151,7 +151,7 @@ function pcm(tecm::Float64, mi::Vector{Float64})
 end
 #############################################################################
 function Xsection(tecm, ch, callback; axes=[], Range=[], nevtot=Int64(1e6),
-    Nbin=1000, para=(l = 1.0), stype=1)
+    Nbin=1000, para=(l = 1.0), p0=[], stype=1)
     Nf = length(ch.pf)
     laxes = Vector{Vector{Int64}}[]
     for axis in axes
@@ -192,13 +192,20 @@ function Xsection(tecm, ch, callback; axes=[], Range=[], nevtot=Int64(1e6),
 
             #@show Nsij
 
-            amp0 = ch.amps(tecm, kf, ch, para)
+            amp0 = ch.amps(tecm, kf, ch, para, p0)
             wt = wt * amp0
             if Nf > 2
                 for i in 1:Naxes
                     for isij in Nsij[i]
                         if 1 < isij <= Nbin
-                            zsumt[i, isij] += wt
+                            if i == 2
+                                #if sij[1][1] > 1.3922 || sij[1][1] < 1.3822
+                                zsumt[i, isij] += wt
+                                #end
+                            else
+                                zsumt[i, isij] += wt
+                            end
+
                         end
                     end
                 end
@@ -223,28 +230,31 @@ function Xsection(tecm, ch, callback; axes=[], Range=[], nevtot=Int64(1e6),
     return res
 end
 
-function worker_Xsection(tecm, ch, axes, Range, nevt, Nbin, para, stype)
+function worker_Xsection(tecm, ch, axes, Range, nevt, Nbin, para, p0, stype, progressbar)
     # 定义进度条更新函数
     function progress_callback(pb)
         ProgressBars.update(pb)  # 更新进度条
     end
     # 检查是否是主进程
-    if myid() == 2  # 仅第一个进程显示进度条
+    if myid() == 2 && progressbar# 仅第一个进程显示进度条
         pb = ProgressBar(1:nevt)  # 创建进度条，范围从1到n
         callback = i -> progress_callback(pb)   # 回调函数更新进度条
     else
         callback = _ -> nothing  # 其他进程不显示进度条
     end
-    return Xsection(tecm, ch, callback, axes=axes, Range=Range, nevtot=nevt, Nbin=Nbin, para=para, stype=stype)
+    return Xsection(tecm, ch, callback, axes=axes, Range=Range, nevtot=nevt, Nbin=Nbin, para=para, p0=p0, stype=stype)
 end
 
-function Xsection(tecm, ch; axes=[23, 21], Range=[], nevtot=Int64(1e6), Nbin=100, para=(l = 1.0), stype=1)
+function Xsection(tecm, ch; axes=[23, 21], Range=[], nevtot=Int64(1e6), Nbin=100, para=(l = 1.0), p0=[], stype=1, progressbar=true)
     num_workers = nworkers()
     nevt_per_worker = div(nevtot, num_workers)
     ranges = [(i * nevt_per_worker + 1, Base.min((i + 1) * nevt_per_worker, nevtot)) for i in 0:(num_workers-1)]
-
+    GC.gc(false)
     # 使用 pmap 执行任务并获取结果
-    results = pmap(r -> worker_Xsection(tecm, ch, axes, Range, r[2] - r[1] + 1, Nbin, para, stype), ranges)
+    results = pmap(r -> worker_Xsection(tecm, ch, axes, Range, r[2] - r[1] + 1, Nbin, para, p0, stype, progressbar), ranges)
+    #results = @distributed (vcat) for r in ranges
+    #    worker_Xsection(tecm, ch, axes, Range, r[2] - r[1] + 1, Nbin, para, p0, stype, progressbar)
+    #end
 
     # 汇总结果
     zsum = 0.0

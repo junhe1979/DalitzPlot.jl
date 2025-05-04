@@ -72,6 +72,8 @@ using DalitzPlot.Xs
 using DalitzPlot.GEN
 using DalitzPlot.FR
 using DalitzPlot.qBSE
+using DalitzPlot.PLOT
+using DalitzPlot.AUX
 ```
 
 # Xs Package: for cross section and Dalitz plot
@@ -95,7 +97,7 @@ Users are required to supply amplitudes with factors $(2\pi)^{4-3n}F|{\mathcal M
 We can take it as 1.
 
 ```julia
-amp(tecm, kf, ch, para)=1.
+amp(tecm, kf, ch, para, p0)=1.
 ```
 
 Define more intricate amplitudes for a 2->3 process.
@@ -106,14 +108,16 @@ This function, named `amp`, calculates amplitudes with factors for a 2->3 proces
 - `kf`: Final momenta generated.
 - `ch`: Information about the process (to be defined below).
 - `para`: Additional parameters.
+- `p0`: Additional parameters for possible fitting.
 
 Users are expected to customize the amplitudes within this function according to their specific requirements.
 
 ```julia
-function amp(tecm, kf, ch, para)
+
+function amps(tecm, kf, ch, para, p0)
 
     # get kf as momenta in the center-of-mass ,
-    #k1,k2,k3=getkf(kf)   
+    #k1,k2,k3=kf   
     #get kf as momenta in laboratory frame
     k1, k2, k3 = Xs.getkf(para.p, kf, ch)
 
@@ -129,7 +133,7 @@ function amp(tecm, kf, ch, para)
 
     k12 = k1 + k2
     s12 = k12 * k12
-    m = 10.
+    m = 6.0
     A = 1 / (s12 - m^2 + im * m * 0.1)
 
     total = abs2(A) * fac * 0.389379e-3
