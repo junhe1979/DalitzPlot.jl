@@ -1,5 +1,4 @@
-module AUX
-using Statistics
+module AUXusing Statistics
 # 定义一个包装函数，自动根据掩码将固定参数和自由参数合并，
 # 并提取自由参数的下界和上界
 function create_fixed_obj_from_mask(original_obj, lower, upper, full_initial, mask)
