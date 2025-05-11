@@ -2,8 +2,8 @@
 
 <!-- toc -->
 
-- [Outline](#outline)
-- [DalitzPlot](#dalitzplot)
+
+- [DalitzPlot.jl](#dalitzplot.jl)
   - [Installation](#installation)
   - [Usage](#usage)
 - [Xs Package: for cross section and Dalitz plot](#xs-package-for-cross-section-and-dalitz-plot)
@@ -25,9 +25,9 @@
 
 <!-- tocstop -->
 
-# DalitzPlot
+# DalitzPlot.jl
 
-This Julia package is designed for high-energy physics applications, originally in visualizing and analyzing particle decays. It consists of the following subpackages (after v0.1.8, the package was divided into several subpackages):
+This Julia package is designed for high-energy physics applications. It was originally developed for visualizing and analyzing particle decays using Dalitz plots, but its functionality has since expanded beyond Dalitz plots to support a wide range of features. It consists of the following subpackages (after v0.1.8, the package was divided into several subpackages):
 
 - `Xs`: Provides tools for calculation cross section and creating Dalitz plots, which are essential for visualizing three-body - decays of particles. Users can specify amplitudes to generate these plots.
 - `GEN`: Stands for General Event Generation. This subpackage is used for generating events, allowing users to simulate particle interactions and decays.
@@ -223,7 +223,8 @@ PCM, WT=GEN.GENEV(tecm,EM)
 
 # Basic conventions.
 
-Since arrays in Julia are 1-indexed, a covariant 4-vector is represented as an `SVector{5, Type}(v1, v2, v3, v0, v5)`. The first three elements correspond to a 3-vector, the fourth element represents the time component (or the 0th component), and the fifth element represents mass in the case of momentum, but it is typically meaningless in most other contexts. The addition of the fifth element serves to distinguish it from the four-dimensional Dirac gamma matrices. Since the index of array in Julia is from 1, a covariant 4-vector is denoted as a `SVector{5, Type}(v1,v2,v3,v0,v5)` The first three elements are for 3-vector, the fourth one is for the zero. The fifth one is the mass for a momentum, and meaningless for most other cases. Add the fifth elements is to distinguish from the four-dimension Dirac gamma matrices
+Since arrays in Julia are 1-indexed, a covariant 4-vector is represented as an `SVector{5, Type}(v1, v2, v3, v0, v5)`. The first three elements correspond to a 3-vector, the fourth element represents the time component (or the 0th component), and the fifth element represents mass in the case of momentum, but it is typically meaningless in most other contexts. The addition of the fifth element serves to distinguish it from the four-dimensional Dirac gamma matrices.
+
 For example, a momentum is `SVector{5, Type}(kx,ky,kz,k0,m)`.
 
 Minkowski metric is chosen as $g^{\mu\nu}=diag(1,-1,-1,-1)$. In the code, we still adopt above convention as
