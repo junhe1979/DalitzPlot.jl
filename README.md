@@ -29,12 +29,12 @@
 
 This Julia package is designed for high-energy physics applications. It was originally developed for visualizing and analyzing particle decays using Dalitz plots, but its functionality has since expanded beyond Dalitz plots to support a wide range of features. It consists of the following subpackages (after v0.1.8, the package was divided into several subpackages):
 
-- `Xs`: Provides tools for calculation cross section and creating Dalitz plots, which are essential for visualizing three-body - decays of particles. Users can specify amplitudes to generate these plots.
-- `GEN`: Stands for General Event Generation. This subpackage is used for generating events, allowing users to simulate particle interactions and decays.
+- `Xs`: A module that provides utilities for cross section calculations and the generation of Dalitz or Dalitz-like plots, which are crucial for visualizing three-body and multi-body decays (up to 10 particles). Users can specify amplitudes to generate these plots.
+- `GEN`: Stands for Event Generation. This subpackage is responsible for generating events, which users can then utilize for tasks such as cross section calculations or decay analysis. It is used internally by `Xs`.
 - `FR`: Focuses on Feynman rules. This subpackage includes functions for calculating spinor or polarized vectors with momentum and spin, gamma matrices, and other related calculations.
 - `qBSE`: Refers to the Quasipotential Bethe-Salpeter Equation. This subpackage provides tools for solving the Bethe-Salpeter equation, which is used in the study of bound states in quantum field theory. This is a specific theoretical model, and those not interested can disregard it. For those interested, please refer to `doc/qBSE.md`.
-
-Note: This package is designed for phenomenological studies on the theoretical side. For experimental data analysis, please refer to other tools.
+- `AUXs`: A collection of auxiliary functions designed to support and enhance the functionality of the main subpackages.
+> **Note**: This package is primarily intended for theoretical and phenomenological studies. For experimental data analysis, please consider using specialized tools designed for that purpose.
 
 ## Installation
 
