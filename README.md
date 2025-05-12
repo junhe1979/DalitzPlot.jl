@@ -94,7 +94,7 @@ For decay width, the flux factor is modified to $F = \frac{1}{2E}$.
 
 Users are required to supply amplitudes with factors $(2\pi)^{4-3n}F|{\mathcal M}|^2\frac{1}{S}$ within the function, named `amp` here.
 
-We can take it as 1.
+The simplest case is to assume it equals 1.
 
 ```julia
 amp(tecm, kf, ch, para, p0)=1.
