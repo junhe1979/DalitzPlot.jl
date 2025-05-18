@@ -1,5 +1,5 @@
 module AUXs
-using Statistics
+using Statistics,JLD2,Distributed
 # 定义一个包装函数，自动根据掩码将固定参数和自由参数合并，
 # 并提取自由参数的下界和上界
 function create_fixed_obj_from_mask(original_obj, lower, upper, full_initial, mask)
@@ -81,6 +81,23 @@ function uncertainty(f, x_opt; Δf=1.0, ε=1e-2, M=5, max_iter=20, tol=0.1)
     return unc
 end
 
-
+function broadcast_variable(varname::Symbol, value; filename="temp.jld2", cleanup=true)
+    @time begin
+        JLD2.jldopen(filename, "w") do f
+            f[string(varname)] = value
+        end
+    end
+    @time begin
+        @sync for pid in workers()
+            @async remotecall_wait(pid) do
+                data = JLD2.load(filename, string(varname))
+                if !isdefined(Main, varname)
+                    Core.eval(Main, :(const $(varname) = $data))
+                end
+            end
+        end
+    end
+    cleanup && rm(filename, force=true)
+end
 
 end
