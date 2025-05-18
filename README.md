@@ -2,8 +2,8 @@
 
 <!-- toc -->
 
-
-- [DalitzPlot.jl](#dalitzplot.jl)
+- [Outline](#outline)
+- [DalitzPlot.jl](#dalitzplotjl)
   - [Installation](#installation)
   - [Usage](#usage)
 - [Xs Package: for cross section and Dalitz plot](#xs-package-for-cross-section-and-dalitz-plot)
@@ -34,6 +34,7 @@ This Julia package is designed for high-energy physics applications. It was orig
 - `FR`: Focuses on Feynman rules. This subpackage includes functions for calculating spinor or polarized vectors with momentum and spin, gamma matrices, and other related calculations.
 - `qBSE`: Refers to the Quasipotential Bethe-Salpeter Equation. This subpackage provides tools for solving the Bethe-Salpeter equation, which is used in the study of bound states in quantum field theory. This is a specific theoretical model, and those not interested can disregard it. For those interested, please refer to `doc/qBSE.md`.
 - `AUXs`: A collection of auxiliary functions designed to support and enhance the functionality of the main subpackages.
+
 > **Note**: This package is primarily intended for theoretical and phenomenological studies. For experimental data analysis, please consider using specialized tools designed for that purpose.
 
 ## Installation
@@ -80,7 +81,7 @@ using DalitzPlot.AUX
 
 The cross section, denoted by $d\sigma$, can be expressed in terms of amplitudes, ${\mathcal M}$, as follows:
 
-$d\sigma=F|{\mathcal M}|^2\frac{1}{S}d\Phi=(2\pi)^{4-3n}F|{\mathcal M}|^2\frac{1}{S}dR$
+$d\sigma=F\frac{1}{S}|{\mathcal M}|^2d\Phi=(2\pi)^{4-3n}F\frac{1}{S}|{\mathcal M}|^2dR$
 
 Here, $dR = (2\pi)^{3n-4} d\Phi = \prod_{i}\frac{d^3k_i}{2E_i}\delta^4(\sum_{i}k_i-P)$ represents the Lorentz-invariant phase space for $n$ particles, and it is generated using the Monte-Carlo method described in Ref. [F. James, CERN 68-12].
 
@@ -185,10 +186,16 @@ end
 nevtot=Int64(1e7)
 pb = ProgressBar(1:nevtot)  
 callback = i -> progress_callback(pb)  
-res = Xs.Xsection(tecm, ch, callback,axes=[["p2","p3"], ["p1","p2"]], nevtot=Int64(1e7), Nbin=500, para=(p=p_lab, l=1.0))
+res = Xs.Xsection(tecm, ch, callback,axes=[["p2","p3"], ["p1","p2"]], nevtot=Int64(1e7), Nbin=500, para=(p=p_lab, l=1.0),stype=2)
 ```
 
-The results are stored in the variable `res` as a `NamedTuple`. Specifically, `res.cs0` corresponds to the total cross section, `res.cs1` represents the invariant mass spectrum, and `res.cs2` captures the data for the Dalitz plot.
+The calculation results are stored in the variable `res` as a `NamedTuple` with the following fields:
+
+- `res.cs0`: The total cross section or decay width, computed as $\int \text{amp} \, dR$.
+- `res.cs1`: The invariant mass spectrum, given by $d\int \text{amp} \, dR/dx$, where $x$ is the invariant mass $m_{ij}$ of the first two particles (`stype=1`) or the squared invariant mass $s_{ij} = m_{ij}^2$ (`stype=2`). The spectrum is binned according to the specified range and number of bins (`Nbin`).
+- `res.cs2`: The Dalitz plot as $d\int \text{amp} \, dR/dxdy$.
+
+These results allow you to analyze the total cross section, invariant mass distributions, and Dalitz plot for your process.
 
 ## Plot Dalitz Plot
 
@@ -204,7 +211,7 @@ The GEN package is used for generating events for cross-section calculations and
 
 $dR = (2\pi)^{3n-4} d\Phi = \prod_{i}\frac{d^3k_i}{2E_i}\delta^4(\sum_{i}k_i-P)$
 
-for $n$ particles. The events are generated using the Monte-Carlo method described in Ref. [F. James, CERN 68-12].
+for $n$ particles. The events are generated using the Monte-Carlo method described in Ref. [F. James, CERN 68-15].
 
 The primary function provided by this package is `GENEV`, which can be used as follows:
 

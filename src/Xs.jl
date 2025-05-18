@@ -174,9 +174,7 @@ function Xsection(tecm, ch, callback; axes=[], Range=[], nevtot=Int64(1e6),
     end
     zsum = 0e0
     zsumt = zeros(Float64, Naxes, Nbin)
-    if Naxes >= 2
-        zsumd = zeros(Float64, Nbin, Nbin)
-    end
+    zsumd = zeros(Float64, Nbin, Nbin)
 
     for ine in 1:nevtot
 
@@ -185,38 +183,42 @@ function Xsection(tecm, ch, callback; axes=[], Range=[], nevtot=Int64(1e6),
         if Nf > 2
             Nsij, sij = Nsum3(laxes, bin, kf, stype)
 
-        end
 
-        #if all(min .<= sij .<= max)
-        if all([any(min[i] .<= sij[i] .&& sij[i] .<= max[i]) for i in eachindex(min)])
 
-            #@show Nsij
+            #if all(min .<= sij .<= max)
+            if all([any(min[i] .<= sij[i] .&& sij[i] .<= max[i]) for i in eachindex(min)])
 
-            amp0 = ch.amps(tecm, kf, ch, para, p0)
-            wt = wt * amp0
-            if Nf > 2
-                for i in 1:Naxes
-                    for isij in Nsij[i]
-                        if 1 < isij <= Nbin
-                            if i == 2
-                                #if sij[1][1] > 1.3922 || sij[1][1] < 1.3822
-                                zsumt[i, isij] += wt
-                                #end
-                            else
-                                zsumt[i, isij] += wt
+                #@show Nsij
+
+                amp0 = ch.amps(tecm, kf, ch, para, p0)
+                wt = wt * amp0
+                if Nf > 2
+                    for i in 1:Naxes
+                        for isij in Nsij[i]
+                            if 1 < isij <= Nbin
+                                if i == 2
+                                    #if sij[1][1] > 1.3922 || sij[1][1] < 1.3822
+                                    zsumt[i, isij] += wt
+                                    #end
+                                else
+                                    zsumt[i, isij] += wt
+                                end
+
                             end
-
                         end
                     end
-                end
-                if Naxes >= 2
-                    for isij in Nsij[1], jsij in Nsij[2]
-                        if 1 < isij <= Nbin && 1 < jsij <= Nbin
-                            zsumd[isij, jsij] += wt
+                    if Naxes >= 2
+                        for isij in Nsij[1], jsij in Nsij[2]
+                            if 1 < isij <= Nbin && 1 < jsij <= Nbin
+                                zsumd[isij, jsij] += wt
+                            end
                         end
                     end
                 end
             end
+        elseif Nf == 2
+            amp0 = ch.amps(tecm, kf, ch, para, p0)
+            wt = wt * amp0
         end
 
         zsum += wt
