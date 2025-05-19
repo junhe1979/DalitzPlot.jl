@@ -2,7 +2,6 @@
 
 <!-- toc -->
 
-- [Outline](#outline)
 - [DalitzPlot.jl](#dalitzplotjl)
   - [Installation](#installation)
   - [Usage](#usage)
@@ -47,9 +46,9 @@ Using the Julia REPL
 Pkg.add("DalitzPlot")
 ```
 
-Alternatively, if you want to install it directly from the GitHub repository:
+Alternatively, to install the latest development version directly from the GitHub repository, use:
 
-Using the Julia REPL:
+At the Julia REPL:
 
 ```julia
 import Pkg
@@ -77,7 +76,7 @@ using DalitzPlot.PLOT
 using DalitzPlot.AUX
 ```
 
-# Xs Package: for cross section and Dalitz plot
+# Xs Package: for decay width, cross section, invariant mass spectrum, and Dalitz plot
 
 The cross section, denoted by $d\sigma$, can be expressed in terms of amplitudes, ${\mathcal M}$, as follows:
 
@@ -85,15 +84,13 @@ $d\sigma=F\frac{1}{S}|{\mathcal M}|^2d\Phi=(2\pi)^{4-3n}F\frac{1}{S}|{\mathcal M
 
 The decay width in CMS is given as
 
-$\Gamma = \frac{1}{2M}\int d\Phi |{\mathcal M}|^2=\frac{ (2\pi)^{4-3n}}{2M}\int dR |{\mathcal M}|^2$.
+$d\Gamma = \frac{1}{2M} |{\mathcal M}|^2 d\Phi=\frac{ (2\pi)^{4-3n}}{2M}  |{\mathcal M}|^2 dR$.
 
-Here, $dR = (2\pi)^{3n-4} d\Phi = \prod_{i}\frac{d^3k_i}{2E_i}\delta^4(\sum_{i}k_i-P)$ represents the Lorentz-invariant phase space for $n$ particles, and it is generated using the Monte-Carlo method described in Ref. [F. James, CERN 68-12].
+Here, $dR = (2\pi)^{3n-4} d\Phi = \prod_{i}\frac{d^3k_i}{2E_i}\delta^4(\sum_{i}k_i-P)$ represents the Lorentz-invariant phase space for $n$ particles, and it is generated using the Monte-Carlo method described in Ref. [F. James, CERN 68-15].
 
 The flux factor $F$ for the cross section is given by: $F=\frac{1}{2E2E'v_{12}}=\frac{1}{4[(p_1\cdot p_2)^2-m_1^2m_2^2]^{1/2}}    \frac{|p_1\cdot p_2|}{p_1^0p_2^0}$. In the laboratory or center of mass frame, the relation $\vec{p}_1^2 \vec{p}_2^2 = (\vec{p}_1 \cdot \vec{p}_2)^2$ is utilized. In the laboratory frame, the term $\frac{|p_1\cdot p_2|}{p_1^0 p_2^0}$ simplifies to 1.
 Additionally, if a boson or zero-mass spinor particle is replaced with a non-zero mass spinor particle, the factor $1/2$ is replaced with the mass of the particle, $m$.
 The total symmetry factor $S$ is given by $\prod_i m_i!$ if there are $m_i$ identical particles.
-
-For decay width, the flux factor is modified to $F = \frac{1}{2E}$.
 
 ## Define amplitudes with factors for the calculation
 
