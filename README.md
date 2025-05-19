@@ -260,7 +260,7 @@ This function takes an array of 5-component momentum vectors `momenta` and appli
 ### Bin
 
 `function binx(i::Int64, bin, iaxis::Int64)::Float64`
-
+ 
 The function `binx` takes three arguments: `i`, which is an integer index, `bin`, which is a vector of bin edges, and `iaxis`, which is an integer representing the axis of the binning. The function returns the value of the bin corresponding to the index `i` for the specified axis.
 
 `function binrange(laxes::Vector{Vector{Int64}}, tecm, ch, stype)`
