@@ -5,22 +5,34 @@
 - [DalitzPlot.jl](#dalitzplotjl)
   - [Installation](#installation)
   - [Usage](#usage)
-- [Xs Package: for cross section and Dalitz plot](#xs-package-for-cross-section-and-dalitz-plot)
+- [Xs Package: for decay width, cross section, invariant mass spectrum, and Dalitz plot](#xs-package-for-decay-width-cross-section-invariant-mass-spectrum-and-dalitz-plot)
   - [Define amplitudes with factors for the calculation](#define-amplitudes-with-factors-for-the-calculation)
   - [Define the masses of initial and final particles](#define-the-masses-of-initial-and-final-particles)
   - [Define the momentum or total energy](#define-the-momentum-or-total-energy)
   - [Calculate](#calculate)
   - [Plot Dalitz Plot](#plot-dalitz-plot)
+  - [other functions](#other-functions)
+    - [Lorentz boost](#lorentz-boost)
+    - [Rotation](#rotation)
+    - [Bin](#bin)
+    - [Frame Transformation](#frame-transformation)
 - [GEN Package: for Generating Events](#gen-package-for-generating-events)
 - [FR Package: for Numerical Calculation of Feynman Rules](#fr-package-for-numerical-calculation-of-feynman-rules)
-- [Basic conventions.](#basic-conventions)
-  - [Dirac Gamma matrices.](#dirac-gamma-matrices)
-  - [Functions for particles with different spins](#functions-for-particles-with-different-spins)
-    - [Spinor for $S=1/2$](#spinor-for-s12)
-    - [Polarized vector for $S=1$](#polarized-vector-for-s1)
-    - [Rarita-Schwinger Spinor for $S=3/2$](#rarita-schwinger-spinor-for-s32)
-    - [Levi-Civita tensor](#levi-civita-tensor)
-  - [Additional defintions to \*](#additional-defintions-to-)
+  - [Basic conventions.](#basic-conventions)
+    - [Dirac Gamma matrices.](#dirac-gamma-matrices)
+    - [Functions for particles with different spins](#functions-for-particles-with-different-spins)
+      - [Spinor for $S=1/2$](#spinor-for-s12)
+      - [Polarized vector for $S=1$](#polarized-vector-for-s1)
+      - [Rarita-Schwinger Spinor for $S=3/2$](#rarita-schwinger-spinor-for-s32)
+      - [Levi-Civita tensor](#levi-civita-tensor)
+    - [Additional defintions to */+/- operations](#additional-defintions-to-operations)
+    - [Get the azimuthal angle trigonometric functions of a momentum](#get-the-azimuthal-angle-trigonometric-functions-of-a-momentum)
+- [PLOT Package: for plotting](#plot-package-for-plotting)
+  - [Plotting the invariant mass spectrum and Daltiz plot](#plotting-the-invariant-mass-spectrum-and-daltiz-plot)
+  - [Read the data from a file](#read-the-data-from-a-file)
+- [AUXs Package: for Auxiliary functions](#auxs-package-for-auxiliary-functions)
+  - [Fitting](#fitting)
+  - [Variable Broadcasting](#variable-broadcasting)
 
 <!-- tocstop -->
 
@@ -92,9 +104,11 @@ The flux factor $F$ for the cross section is given by: $F=\frac{1}{2E2E'v_{12}}=
 Additionally, if a boson or zero-mass spinor particle is replaced with a non-zero mass spinor particle, the factor $1/2$ is replaced with the mass of the particle, $m$.
 The total symmetry factor $S$ is given by $\prod_i m_i!$ if there are $m_i$ identical particles.
 
+
+
 ## Define amplitudes with factors for the calculation
 
-Users are required to supply amplitudes with factors $(2\pi)^{4-3n}F|{\mathcal M}|^2\frac{1}{S}$ within the function, named `amp` here.
+Users should provide the amplitude function, named `amp`, which returns the full expression $(2\pi)^{4-3n}F\frac{1}{S}|{\mathcal M}|^2$ needed for the cross section calculation. Alternatively, you may define `amp` to return only $|{\mathcal M}|^2$, and then multiply by the factor $(2\pi)^{4-3n}F\frac{1}{S}$ separately during the calculation.
 
 The simplest case is to assume it equals 1.
 
@@ -107,7 +121,7 @@ Define more intricate amplitudes for a 2->3 process.
 This function, named `amp`, calculates amplitudes with factors for a 2->3 process. The input parameters are:
 
 - `tecm`: Total energy in the center-of-mass frame.
-- `kf`: Final momenta generated.
+- `kf`: Final momenta generated internally by `GEN`.
 - `ch`: Information about the process (to be defined below).
 - `para`: Additional parameters.
 - `p0`: Additional parameters for possible fitting.
@@ -146,7 +160,7 @@ end
 
 ## Define the masses of initial and final particles
 
-The mass of initial and final particles is specified in a NamedTuple (named `ch` here) with fields `mi` and `mf`.
+The masses of initial and final particles are specified in a NamedTuple (named `ch` here) with fields `mi` and `mf`.
 Particle names can also be provided for PlotD as `namei` and `namef`.
 
 The function for amplitudes with factors is saved as `amp`.
@@ -157,7 +171,7 @@ Example usage:
 ch = (pf=["p1","p2","p3"],mi=[mass_i_1, mass_i_2], mf=[mass_f_1, mass_f_2, mass_f_3], namei=["p^i_{1}", "p^i_{2}"], namef=["p^f_{1}", "p^f_{2}", "p^f_{3}"], amp=amp)
 ```
 
-Make sure to replace `mass_i_1`, `mass_i_2`, `mass_f_1`, `mass_f_2`, and `mass_f_3` with the actual masses of the particles (1.0, 1.0, 1.0, 2.0, 3.0 here).
+Make sure to replace `mass_i_1`, `mass_i_2`, `mass_f_1`, `mass_f_2`, and `mass_f_3` with the actual masses of the particles (such as `1.0, 1.0, 1.0, 2.0, 3.0`).
 
 ## Define the momentum or total energy
 
@@ -170,12 +184,11 @@ p_lab = 20.0
 tecm = Xs.pcm(p_lab, ch.mi)
 tecm=10.
 ```
+Here the momentum of the incoming particle in the Laboratory frame is set to `20.0` GeV, and the center-of-mass energy is calculated using the `Xs.pcm` function. The value of `tecm` can be set directly to `10.0` GeV if desired.
 
 ## Calculate
 
-Calculate the cross section and related spectra using the GENEV function.
-
-The function `Xsection` takes the momentum of the incoming particle in the Laboratory frame (`p_lab`), the information about the particles (`ch`), the axes representing invariant masses (`axes`), the total number of events (`nevtot`), the number of bins (`Nbin`), and additional parameters (`para`). The function uses the plab2pcm function to transform the momentum from the Laboratory frame to the center-of-mass frame.
+The function `Xsection` takes the momentum in CMS (`tecm`), the information about the particles (`ch`), the axes representing invariant masses (`axes`), the total number of events (`nevtot`), the number of bins (`Nbin`), and additional parameters (`para`). The function uses the plab2pcm function to transform the momentum from the Laboratory frame to the center-of-mass frame.
 
 Example usage:
 
@@ -198,6 +211,22 @@ The calculation results are stored in the variable `res` as a `NamedTuple` with 
 
 These results allow you to analyze the total cross section, invariant mass distributions, and Dalitz plot for your process.
 
+If you want to use the `Xs.Xsection` function in parallel, you can use the `Distributed` package and remove `callback`. Here is an example of how to do this:
+```julia
+using Distributed
+addprocs(1; exeflags="--project")
+@everywhere using DalitzPlot.qBSE, DalitzPlot.FR, DalitzPlot.Xs, DalitzPlot.GEN, DalitzPlot.PLOT, DalitzPlot.AUXs
+Ecm = 20.0
+nevtot = Int64(1e7)
+@everywhere amps(tecm, kf, ch, para, p0) = 1.
+ch = (pf=["p1", "p2", "p3"],
+    mi=[1.0, 1.0], mf=[2.0 for i in 1:3],
+    namei=["p^i_{1}", "p^i_{2}"], namef=["p^f_{1}", "p^f_{2}", "p^f_{3}"],
+    amps=amps)
+res = Xs.Xsection(10.0, ch, axes=[["p2", "p3"], ["p1", "p2"]], nevtot=nevtot, Nbin=1000,
+    para=(p=8000.0, l=1.0), stype=2)
+```
+
 ## Plot Dalitz Plot
 
 ```julia
@@ -205,6 +234,78 @@ DalitzPlot.PLOT.plotD(res)
 ```
 
 <img src="test/DP.png" alt="描述文字" width="500" height="500">
+
+## other functions
+
+### Lorentz boost
+
+`function LorentzBoost(k::SVector{5,Float64}, p::SVector{5,Float64})`
+
+The function `LorentzBoost` takes two arguments: `k`, which is a 5-component momentum vector, and `p`, which is a 4-component momentum vector. The function performs a Lorentz boost on the momentum vector `k` using the momentum vector `p`.
+
+`function LorentzBoost(momenta::Vector{SVector{5,Float64}}, p::SVector{5,Float64})`
+
+Here the momenta is a vector of 5-component momentum vectors. The function applies the Lorentz boost to each momentum vector in the array `momenta` using the momentum vector `p`.
+
+### Rotation
+
+`function Rotation(k::SVector{5,Float64}, ct::Float64, st::Float64, cp::Float64, sp::Float64)`
+
+The function `Rotation` takes a 5-component momentum vector `k` and performs a rotation on it using the provided cosine and sine values for the polar and azimuthal angles. The rotation is applied to the momentum vector `k`, resulting in a new momentum vector that has been rotated according to the specified angles.
+
+`function Rotation(momenta::Vector{SVector{5,Float64}}, ct::Float64, st::Float64, cp::Float64, sp::Float64)`
+
+This function takes an array of 5-component momentum vectors `momenta` and applies the same rotation to each momentum vector in the array using the provided cosine and sine values for the polar and azimuthal angles. The result is a new array of rotated momentum vectors.
+
+### Bin
+
+`function binx(i::Int64, bin, iaxis::Int64)::Float64`
+
+The function `binx` takes three arguments: `i`, which is an integer index, `bin`, which is a vector of bin edges, and `iaxis`, which is an integer representing the axis of the binning. The function returns the value of the bin corresponding to the index `i` for the specified axis.
+
+`function binrange(laxes::Vector{Vector{Int64}}, tecm, ch, stype)`
+
+based on the axes of the binning, the function `binrange` calculates the range of values for each axis. The function takes three arguments: `laxes`, which is a vector of vectors representing the axes of the binning, `tecm`, which is the total energy in the center-of-mass frame, and `ch`, which contains information about the particles. The function returns a vector of ranges for each axis.
+
+`function binrange(laxes::Vector{Vector{Vector{Int64}}}, tecm, ch, stype; Range=[])`
+
+This function is similar to the previous one but for a vector of momenta. Range is a vector of vectors representing the given ranges for each axis. 
+
+`function Nsij(kijs, min, max, Nbin)`
+
+The function `Nsij` takes three arguments: `kijs`, which is a momentum, `min`, which is the minimum value for the binning, and `max`, which is the maximum value for the binning. The function returns the number of bins for each axis based on the specified ranges.
+
+`function Nsum3(laxes::Vector{Vector{Int64}}, i, bin::NamedTuple, kf, stype)`
+
+The function `Nsum3` takes four arguments: `laxes`, which is a vector of vectors representing the axes of the binning, `i`, which is an integer index, `bin`, which is a NamedTuple containing information about the bins, and `kf`, which is a momentum. The function returns the sum of the values for each axis based on the specified ranges.
+
+`function Nsum3(laxes::Vector{Vector{Vector{Int64}}}, bin::NamedTuple, kf, stype)`
+
+This function is similar to the previous one but for a vector of momenta. The function returns the sum of the values for each axis based on the specified ranges.
+
+### Frame Transformation
+
+The package provides utilities for transforming kinematic variables between different reference frames, such as the laboratory frame and the center-of-mass (CMS) frame. This is essential for analyzing particle collisions and decays, as calculations and measurements are often performed in different frames.
+
+Key functions include:
+
+`function plab2pcm(p::Float64, mi::Vector{Float64})`: 
+
+Converts the momentum of the incoming particle in the laboratory frame (`p`) and the masses of the initial particles (`mi`) to the total energy in the CMS frame.
+
+`function getkf(p, kf, ch)`
+
+ Retrieves the final state momenta in the desired frame, based on the process information `ch` and input parameters.
+
+`function plab(p, mi)`
+
+Computes the momenta of the incoming particles in the laboratory frame given the momentum `p` and the masses `mi`.
+
+`function pcm(tecm::Float64, mi::Vector{Float64})`
+
+Calculates the momentum of the incoming particles in the center-of-mass frame given the total energy `tecm` and the masses `mi`.
+
+These functions help ensure consistency when switching between frames for event generation, amplitude calculation, and plotting.
 
 # GEN Package: for Generating Events
 
@@ -234,6 +335,8 @@ PCM, WT=GEN.GENEV(tecm,EM)
 Since arrays in Julia are 1-indexed, a covariant 4-vector is represented as an `SVector{5, Type}(v1, v2, v3, v0, v5)`. The first three elements correspond to a 3-vector, the fourth element represents the time component (or the 0th component), and the fifth element represents mass in the case of momentum, but it is typically meaningless in most other contexts. The addition of the fifth element serves to distinguish it from the four-dimensional Dirac gamma matrices.
 
 For example, a momentum is `SVector{5, Type}(kx,ky,kz,k0,m)`.
+
+Note that the fifth element represents the mass of the particle. After performing a `+/-` operation on two momentum vectors, the fifth element of the resulting vector no longer has physical meaning. If the summed momentum `p` is intended to represent a physical particle, its mass should be explicitly set using `setindex(p, m, 5)`, where `m` is the correct mass value.
 
 Minkowski metric is chosen as $g^{\mu\nu}=diag(1,-1,-1,-1)$. In the code, we still adopt above convention as
 
@@ -290,7 +393,7 @@ A function `FR.GS` is provided for calculate $\gamma \cdot k$ as `function GS(k:
 
 `function LC(a::SVector, b::SVector, c::SVector, d::SVector)`: $\epsilon_{\mu\nu\rho\lambda}a^\mu b^\nu c^\rho d^\lambda$.
 
-## Additional defintions to *
+## Additional defintions to operations
 
 More methods are added for multiplying of polarized vector, spinor, and gamma matrices.
 
@@ -304,8 +407,97 @@ $Q\cdot W$, the dot product of two four-vectors $Q$ and $W$  (for momentum, pola
 
 `function *(Q::SVector{5,ComplexF64}, W::SVector{5,ComplexF64})::ComplexF64`.
 
+  
 $AM$, A row vector $A$ multiplied by a matrix $M$ (for spinor and gamma matrices)：
+
 `function *(A::SVector{4, ComplexF64}, M::SMatrix{4, 4, ComplexF64, 16})`
 
 $AB$, A row vector $A$ multiplied by a column vector $B$ (for spinor and gamma matrices)：
+
 `function *(A::SVector{4, ComplexF64}, B::SVector{4, ComplexF64})`
+
+
+$A\pm B$, the sum of a scalar and a matrix:
+
+`function -(A::T, B::SMatrix{4,4,ComplexF64,16}) where {T <: Number}`
+
+`function -(B::SMatrix{4,4,ComplexF64,16},A::T) where {T <: Number}`
+
+`function +(A::T, B::SMatrix{4,4,ComplexF64,16}) where {T <: Number}`
+
+`function +(B::SMatrix{4,4,ComplexF64,16},A::T) where {T <: Number}`
+
+## Get the azimuthal angle trigonometric functions of a momentum
+
+The function
+
+```julia
+ct, st, cp, sp, expp, zk0, zm, zkk = kph(k::SVector{5,ComplexF64})
+```
+
+returns several useful quantities for a given momentum vector `k` (with type `SVector{5,ComplexF64}`):
+
+- `ct`: $\cos\theta$ — cosine of the polar angle
+- `st`: $\sin\theta$ — sine of the polar angle
+- `cp`: $\cos\phi$ — cosine of the azimuthal angle
+- `sp`: $\sin\phi$ — sine of the azimuthal angle
+- `expp`: $e^{i\phi}$ — complex exponential of the azimuthal angle
+- `zk0`: $k^0$ — energy component of the momentum
+- `zm`: $m$ — mass (fifth component of `k`)
+- `zkk`: $|{\bf k}|$ — magnitude of the three-momentum
+
+This function is useful for extracting angular and kinematic information from a momentum vector in calculations involving spherical coordinates.
+
+# PLOT Package: for plotting
+
+The PLOT package is used for plotting the results of the calculations. It provides functions to visualize the invariant mass spectrum and Dalitz plots.
+
+## Plotting the invariant mass spectrum and Daltiz plot
+
+`function plotD(res; cg=cgrad([:white, :green, :blue, :red], [0, 0.01, 0.1, 0.5, 1.0]), xx=[], xy=[], yx=[], yy=[])`
+
+This function takes the results of the calculation (`res`) and generates a plot. The optional parameters `cg`, `xx`, `xy`, `yx`, and `yy` allow customization of the plot's appearance, including color gradients and axis labels.
+
+## Read the data from a file
+
+`function readdata(filename)`
+
+This function reads data from a file specified by `filename`. The data is expected to be in a specific format, and the function returns the data in a structured format for further analysis or plotting.
+
+The data should be in the following format:
+
+```julia
+## J.Ciborowsji JPG8(1982)13
+#0 K-p->K-p
+0.163 88 8 
+0.182 72 6
+
+
+#1 K- P --> KBAR0 N
+0.110 47  8
+0.150 25  4
+```
+
+# AUXs Package: for Auxiliary functions
+
+## Fitting 
+
+
+`function create_fixed_obj_from_mask(original_obj, lower, upper, full_initial, mask)`
+
+Define a wrapper function that automatically merges fixed and free parameters according to a `mask`, and extracts the `lower` and `upper` bounds for the free parameters.
+
+`function get_full_parameters(result, initial, mask)`
+
+Define a function that extracts the full parameters from the result of the fit, using the `mask` to determine which parameters are fixed and which are free.
+
+## Variable Broadcasting
+
+`function broadcast_variable(varname::Symbol, value; filename="temp.jld2", cleanup=true)`
+
+This function allows you to broadcast a variable across multiple processes in Julia. It takes the variable name (`varname`), its value (`value`), and optional parameters for the filename and cleanup. The function uses the JLD2 package to save the variable to a file, which can then be accessed by other processes.
+
+The variable named `string(varname)` is a global variable and can be accessed throughout the entire code.
+
+
+

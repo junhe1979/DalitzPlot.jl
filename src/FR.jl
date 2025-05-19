@@ -50,9 +50,6 @@ const GA = [SMatrix{4,4,ComplexF64}([
         k1_im_k2 -k[3] 0 -k[4]
     ]
 end
-
-
-
 #############################################################################
 @inline function kph(k::SVector{5,ComplexF64})
     zkx, zky, zkz, zk0, zm = real(k[1]), real(k[2]), real(k[3]), k[4], real(k[5])
