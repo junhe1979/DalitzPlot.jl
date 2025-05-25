@@ -26,7 +26,7 @@ struct structInterAction #IA[]
     P_ex::Vector{Int64} #parity
     m_ex::Vector{Float64} #mass
     dc::Vector{Int64}  #direct or cross
-    CC::Vector{Float64}  #flavor factors
+    Ff::Vector{Float64}  #flavor factors
 end
 # store the information of a channel.
 struct structChannel #CH[] 
@@ -156,15 +156,15 @@ function LorentzBoostRotation(k, tecm, p1, p2)
     return knew, Pnew
 end
 # Calculate cross section for all channels , only for 2-2 process
-function simpleXsection(xx, M2, CH, qn; Ep="cm")
+function simpleXsection(ER, M2, CH, qn; Ep="cm")
     Xsection = Matrix{Float64}[]
     NCH = length(CH)
-    N = length(xx)
+    N = length(ER)
     cons = 0.3894 / (256.0 * pi^3)  # 预先计算不变的常数部分
 
     for i in 1:N
         Xs0 = zeros(size(M2[1]))  # 提前分配 `Xs0`，每次循环覆盖而非重新分配
-        W = xx[i]
+        W = ER[i]
 
         for iM2 in 1:NCH
             pi1 = p[CH[iM2].p[1]]
@@ -259,11 +259,11 @@ function IHDim(E, Et, Range, Tt, IHt, Dimt)
     end
 end
 #set the frame and other things for calculating TGA
-function setTGA(par, s14, k, tecm, i, j)
+function setTGA(par, sij, k, tecm, i, j)
     IHt, Dimt, TGt, Et, Range = par.IHt, par.Dimt, par.TGt, par.Et, par.Range
-    IH, Dim = qBSE.IHDim(sqrt(s14), Et, Range, TGt, IHt, Dimt)
+    IH, Dim = qBSE.IHDim(sqrt(sij), Et, Range, TGt, IHt, Dimt)
     kn, Pn = qBSE.LorentzBoostRotation(k, tecm, i, j) #reference frame thansformation
-    return (E=sqrt(s14), par=par, IH=IH, Dim=Dim, k=kn, P=Pn)
+    return (E=sqrt(sij), par=par, IH=IH, Dim=Dim, k=kn, P=Pn)
 end
 #calculate TGA
 function TGA(cfinal, cinter, Vert, para)
@@ -282,8 +282,8 @@ function TGA(cfinal, cinter, Vert, para)
 
     else
         mid = 0.5 * (Emin + Emax)
-        idx = (E < mid) 
-        TG = TGt[ii+idx]
+        idx = (E < mid) + 1
+        TG = TGt[ii+idx-1]
     end
 
 
@@ -340,6 +340,7 @@ function TGA(cfinal, cinter, Vert, para)
                     Dp = SYS.d[i][dl21, dl21pp]
                     Dm = SYS.d[i][dl21, dl21pm] * etap
                     A -= exppl * (Dp * Ap + Dm * Am) * SYS.wxv[i] * SYS.wpv[i]
+
                 end
             end
 
@@ -434,11 +435,9 @@ function propFF(k, ex, L, LLi, LLf; lregu=1, lFFex=0)
         elseif lFFex == 2
             FFex *= (L^4 / ((m^2 - k.q2)^2 + L^4))^2 #type 2
         elseif lFFex == 3
-            FFex *= exp(-(m^2 - k.q2)^2 / L^4)
+            FFex *= exp(-2.0*(m^2 - k.q2)^2 / L^4)
         elseif lFFex == 4
             FFex *= ((L^4 + (k.qt - m^2)^2 / 4) / ((k.q2 - (qt + m^2) / 2)^2 + L^4))^2
-        elseif lFFex == 5
-            FFex *= exp(-(m^2 - k.q2)^2 / L^4)^2
         end
     end
 
@@ -685,7 +684,7 @@ function workSpace(Ec, lRm, Np, SYS, CH, IH)
     return SYS, IH, Dim
 end
 #*******************************************************************************************
-function preprocessing(Sys, channels, CC, qn; Np=10, Nx=5, Nphi=5)
+function preprocessing(Sys, channels, Ff, qn; Np=10, Nx=5, Nphi=5)
     #store the channel information, interaction information in CH,IH,IA
     CH = structChannel[]
     IH = structIndependentHelicity[]
@@ -764,18 +763,18 @@ function preprocessing(Sys, channels, CC, qn; Np=10, Nx=5, Nphi=5)
             chname = "$(chnamei[1])-->$(chnamef[1])"
 
             if i1 <= i2
-                if haskey(CC, chname) == true
-                    Nex = length(CC[chname])
+                if haskey(Ff, chname) == true
+                    Nex = length(Ff[chname])
                     IA0 = structInterAction(
                         Nex,
-                        [CC[chname][i][1][1] for i in 1:Nex],  #name
-                        [pkey[CC[chname][i][1][1]] for i in 1:Nex],  #key
-                        [p[pkey[CC[chname][i][1][1]]].J for i in 1:Nex],  #J
-                        [p[pkey[CC[chname][i][1][1]]].Jh for i in 1:Nex],  #Jh
-                        [p[pkey[CC[chname][i][1][1]]].P for i in 1:Nex],  #P
-                        [p[pkey[CC[chname][i][1][1]]].m for i in 1:Nex],  #m
-                        [CC[chname][i][1][2] for i in 1:Nex],  #dc
-                        [CC[chname][i][2] for i in 1:Nex]     #CC
+                        [Ff[chname][i][1][1] for i in 1:Nex],  #name
+                        [pkey[Ff[chname][i][1][1]] for i in 1:Nex],  #key
+                        [p[pkey[Ff[chname][i][1][1]]].J for i in 1:Nex],  #J
+                        [p[pkey[Ff[chname][i][1][1]]].Jh for i in 1:Nex],  #Jh
+                        [p[pkey[Ff[chname][i][1][1]]].P for i in 1:Nex],  #P
+                        [p[pkey[Ff[chname][i][1][1]]].m for i in 1:Nex],  #m
+                        [Ff[chname][i][1][2] for i in 1:Nex],  #dc
+                        [Ff[chname][i][2] for i in 1:Nex]     #Ff
                     )
                 else
                     Nex = 0
@@ -788,7 +787,7 @@ function preprocessing(Sys, channels, CC, qn; Np=10, Nx=5, Nphi=5)
                         [],  #P
                         [],  #m
                         [],  #dc
-                        []     #CC
+                        []     #Ff
                     )
                 end
                 IA[i1, i2] = IA0
