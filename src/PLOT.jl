@@ -32,7 +32,7 @@ function readdata(filename)
 end
 
 
-function plotD(res; cg=cgrad([:white, :green, :blue, :red], [0, 0.01, 0.1, 0.5, 1.0]), xx=[], xy=[], yx=[], yy=[])
+function plotD(res; cg=cgrad([:white, :green, :blue, :red], [0, 0.01, 0.1, 0.5, 1.0]), xx=[], xy=[], yx=[], yy=[],filename="DP.pdf")
     ENV["GKSwstype"] = "100"
     cs1 = res.cs1
     cs2 = res.cs2
@@ -87,7 +87,7 @@ function plotD(res; cg=cgrad([:white, :green, :blue, :red], [0, 0.01, 0.1, 0.5, 
         b{0.8w,0.8h} c]
     DP = Plots.plot(p1, p3, p2, layout=l, titleloc=:left, titlefont=10, size=(1000, 1000), left_margin=1mm, right_margin=1mm, bottom_margin=1mm, top_margin=1mm, link=:all)
 
-    Plots.savefig("DP.png")
+    Plots.savefig(filename)
     return DP
 end
 function plotWeb(res)
