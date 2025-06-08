@@ -1,5 +1,5 @@
 module AUXs
-using Statistics,JLD2,Distributed
+using Statistics,JLD2,Distributed,Distributions
 # 定义一个包装函数，自动根据掩码将固定参数和自由参数合并，
 # 并提取自由参数的下界和上界
 function create_fixed_obj_from_mask(original_obj, lower, upper, full_initial, mask)
@@ -98,6 +98,28 @@ function broadcast_variable(varname::Symbol, value; filename="temp.jld2", cleanu
         end
     end
     cleanup && rm(filename, force=true)
+end
+
+function significance(chi2_diff,ndf_diff::Int64)
+
+
+    # 使用高精度 BigFloat 类型
+    chi2_diff = BigFloat(chi2_diff)
+
+    # 创建自由度为 1 的卡方分布
+    chi2_dist = Chisq(ndf_diff)
+
+    # 计算 p-value (尾概率)
+    p_value = ccdf(chi2_dist, chi2_diff)
+
+    # 将 p-value 转换为显著性 (sigma) 
+    sigma = quantile(Normal(), 1 - p_value)
+
+    #println("高精度 p-value = ", p_value)
+    #println("显著性 (σ) = ", sigma)
+
+    return sigma
+
 end
 
 end

@@ -2,6 +2,7 @@
 
 <!-- toc -->
 
+- [Outline](#outline)
 - [DalitzPlot.jl](#dalitzplotjl)
   - [Installation](#installation)
   - [Usage](#usage)
@@ -18,21 +19,22 @@
     - [Frame Transformation](#frame-transformation)
 - [GEN Package: for Generating Events](#gen-package-for-generating-events)
 - [FR Package: for Numerical Calculation of Feynman Rules](#fr-package-for-numerical-calculation-of-feynman-rules)
-  - [Basic conventions.](#basic-conventions)
-    - [Dirac Gamma matrices.](#dirac-gamma-matrices)
-    - [Functions for particles with different spins](#functions-for-particles-with-different-spins)
-      - [Spinor for $S=1/2$](#spinor-for-s12)
-      - [Polarized vector for $S=1$](#polarized-vector-for-s1)
-      - [Rarita-Schwinger Spinor for $S=3/2$](#rarita-schwinger-spinor-for-s32)
-      - [Levi-Civita tensor](#levi-civita-tensor)
-    - [Additional defintions to */+/- operations](#additional-defintions-to-operations)
-    - [Get the azimuthal angle trigonometric functions of a momentum](#get-the-azimuthal-angle-trigonometric-functions-of-a-momentum)
+- [Basic conventions.](#basic-conventions)
+  - [Dirac Gamma matrices.](#dirac-gamma-matrices)
+  - [Functions for particles with different spins](#functions-for-particles-with-different-spins)
+    - [Spinor for $S=1/2$](#spinor-for-s12)
+    - [Polarized vector for $S=1$](#polarized-vector-for-s1)
+    - [Rarita-Schwinger Spinor for $S=3/2$](#rarita-schwinger-spinor-for-s32)
+    - [Levi-Civita tensor](#levi-civita-tensor)
+  - [Additional defintions to operations](#additional-defintions-to-operations)
+  - [Get the azimuthal angle trigonometric functions of a momentum](#get-the-azimuthal-angle-trigonometric-functions-of-a-momentum)
 - [PLOT Package: for plotting](#plot-package-for-plotting)
   - [Plotting the invariant mass spectrum and Daltiz plot](#plotting-the-invariant-mass-spectrum-and-daltiz-plot)
   - [Read the data from a file](#read-the-data-from-a-file)
 - [AUXs Package: for Auxiliary functions](#auxs-package-for-auxiliary-functions)
   - [Fitting](#fitting)
   - [Variable Broadcasting](#variable-broadcasting)
+- [Significance Calculation](#significance-calculation)
 
 <!-- tocstop -->
 
@@ -500,4 +502,8 @@ This function allows you to broadcast a variable across multiple processes in Ju
 The variable named `string(varname)` is a global variable and can be accessed throughout the entire code.
 
 
+# Significance Calculation
 
+`function significance(chi2_diff,ndf_diff::Int64)`
+
+This function calculates the significance of a difference in chi-squared values, given the difference (`chi2_diff`) and the difference in degrees of freedom (`ndf_diff`). 

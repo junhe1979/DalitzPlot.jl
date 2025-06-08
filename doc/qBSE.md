@@ -2,16 +2,18 @@
 
 <!-- toc -->
 
+- [Outline](#outline)
 - [Quasipotential approximation](#quasipotential-approximation)
 	- [Partial-wave expansion](#partial-wave-expansion)
 	- [Fixed parity](#fixed-parity)
 	- [Transformation to a matrix equation](#transformation-to-a-matrix-equation)
 	- [Code](#code)
+	- [Pole search](#pole-search)
 	- [Physical observable](#physical-observable)
 		- [The cross section for the channel considered](#the-cross-section-for-the-channel-considered)
 		- [Argand plot](#argand-plot)
 - [Three body decay](#three-body-decay)
-	- [Kinematics](#kinematics)
+	- [kinematics](#kinematics)
 		- [Lorentz boost](#lorentz-boost)
 	- [Amplitude](#amplitude)
 	- [Decay width](#decay-width)
@@ -32,20 +34,20 @@
 		- [`structHelicity`](#structhelicity)
 		- [`structParticle`](#structparticle)
 	- [Functions for the qBSE](#functions-for-the-qbse)
-		- [`preprocessing`](#function-preprocessingsys-channels-ff-qn-np10-nx5-nphi5)
-		- [`res`](#function-resrange-ier-qn-sys-ia-ch-ih-fv)
-		- [`fV`](#function-fvk-l-sys-ia0-chf-chi)
-		- [`propFF`](#function-propffk-ex-l-lli-llf-lregu1-lffex0)
-		- [`simpleXsection`](#function-simplexsectioner-resm2-ch-qn-epcm)
-		- [`lambda`](#function-lambdam1-m2-m3)
+		- [`function preprocessing(Sys, channels, Ff, qn; Np=10, Nx=5, Nphi=5)`](#function-preprocessingsys-channels-ff-qn-np10-nx5-nphi5)
+		- [`function res(Range, iER, qn, SYS, IA, CH, IH, fV)`](#function-resrange-ier-qn-sys-ia-ch-ih-fv)
+		- [`function fV(k, l, SYS, IA0, CHf, CHi)`](#function-fvk-l-sys-ia0-chf-chi)
+		- [`function propFF(k, ex, L, LLi, LLf; lregu=1, lFFex=0)`](#function-propffk-ex-l-lli-llf-lregu1-lffex0)
+		- [`function simpleXsection(ER, resM2, CH, qn; Ep="cm")`](#function-simplexsectioner-resm2-ch-qn-epcm)
+		- [`function lambda(m1, m2, m3)`](#function-lambdam1-m2-m3)
 	- [Decay](#decay)
-		- [`setTGA`](#function-settgapar-sij-k-tecm-i-j)
-		- [`TGA`](#tga)
-		- [`Vertex14`](#function-vertex14p1-p2-l1-l2-vert-k-p)
-		- [Auxiliary function](#auxiliary-function)
+		- [function setTGA(par, sij, k, tecm, i, j)](#function-settgapar-sij-k-tecm-i-j)
+		- [`TGA(cfinal, cinter, Vert, para)`](#tgacfinal-cinter-vert-para)
+		- [`function Vertex14(p1, p2, l1, l2, Vert, k, P)`](#function-vertex14p1-p2-l1-l2-vert-k-p)
+		- [auxiliary function](#auxiliary-function)
 	- [Additional functions](#additional-functions)
-		- [`ch`](#function-chpf-pin-amps)
-		- [`LorentzBoostRotation`](#function-lorentzboostrotationk-tecm-p1-p2)
+		- [`function ch(pf, pin, amps)`](#function-chpf-pin-amps)
+		- [`function LorentzBoostRotation(k, tecm, p1, p2)`](#function-lorentzboostrotationk-tecm-p1-p2)
 
 <!-- tocstop -->
 
@@ -318,7 +320,7 @@ Transition of ${\cal V}_{\lambda'-\lambda}({\bm k}',{\bm k})$ to ${\cal V}^{J^P}
 
 ## Transformation to a matrix equation
 
-Now We have a integral equation with singularity in $G_0=\frac{1}{2 E((s-E)^2-\omega^2)}$  at $W=E_1+E_2$. This singularity can be isolated as,
+Now We have a integral equation with singularity in $G_0=\frac{1}{2 E_2[(W-E_2)^2-E_1^2]}=\frac{1}{2 E_2[(W-E_2-E_1+i\epsilon)(W-E_2+E_1)]}$  at $W=E_1+E_2$. This singularity can be isolated as,
 
 $$
 \begin{align}
@@ -333,7 +335,7 @@ G_0{\cal M}^{J^P}-\pi i\int\frac{{\rm k}''^2d {\rm k}''}{(2\pi)^3}{\cal V}^{J^P}
 \end{align}
 $$
 
-with $\delta G_0=\frac{\delta(s-E-\omega))}{2E(s-E+\omega)}\theta(s-m_1-m_2)=\delta \bar{G}_0\delta({\rm k}''-\bar{{\rm k}''})=\frac{1}{4W\bar{{\rm k}''}}\delta({\rm k}''-\bar{{\rm k}''})\theta(s-m_1-m_2)$, $M=[{\rm k}''^2({\rm k}''^2-\bar{{\rm k}''}^2)G_0]_{{\rm k}''\to\bar{{\rm k}''}}\theta(s-m_1-m_2)=-\frac{\bar{{\rm k}''}^2}{2W}\theta(s-m_1-m_2)$.
+with $\delta G_0=\frac{\delta(W-E_2-E_1)}{2E(W-E_2+E_1)}\theta(s-m_1-m_2)=\delta \bar{G}_0\delta({\rm k}''-\bar{{\rm k}''})=\frac{1}{4W\bar{{\rm k}''}}\delta({\rm k}''-\bar{{\rm k}''})\theta(s-m_1-m_2)$, $M=[{\rm k}''^2({\rm k}''^2-\bar{{\rm k}''}^2)G_0]_{{\rm k}''\to\bar{{\rm k}''}}\theta(s-m_1-m_2)=-\frac{\bar{{\rm k}''}^2}{2W}\theta(s-m_1-m_2)$.
 
 We have
 
@@ -342,6 +344,9 @@ $$
 Im~G=-\rho/2=-\frac{\bar{{\rm k}''}}{32\pi^2 W}.
 \end{align}
 $$
+
+It should be noted that in the region $W < m_1 + m_2$, the potential remains real, since no imaginary component emerges in this energy range.
+
 
 It suggests the unitary is satisfied if the potential $i{\cal V}$ is real.
 
@@ -456,7 +461,7 @@ $$
 \end{align}
 $$
 
-## Physical observable
+## Pole search
 
 After extend the energy in the center of mass frame $W$ into complex energy plane as $z$, the pole can be found by variation of $z$ to satisfy
 
@@ -469,6 +474,24 @@ $$
 with $z=E_R+i\Gamma_R/2$.
 
 The $|1-V(z)G(z)|$ in complex enery plane is calculated in `qBSE.res` and the pole can be found with function `qBSE.showPoleInfo`.
+
+As shown above, the propagator acquires an imaginary part in the region $W > m_1 + m_2$, specifically $-i\rho/2$. According to the Schwarz reflection principle, if a function $f(z)$ is analytic in a region of the complex plane that includes a portion of the real axis where $f$ is real, then it satisfies $[f(z^*)]^* = f(z)$. Since the propagator $G$ satisfies these conditions, we have, for ${\rm Re}(z) > m_1 + m_2$,
+
+$$G(z - i\epsilon) = G^*(z + i\epsilon) = G(z + i\epsilon) + i\rho.$$
+
+The value of the propagator at the lower edge of the branch cut on the first Riemann sheet, $G^I(z - i\epsilon)$, coincides with the upper edge of the second Riemann sheet, $G^{II}(z + i\epsilon)$. Therefore,
+
+$$G^{II}(z + i\epsilon) = G^I(z - i\epsilon) = G^I(z + i\epsilon) + i\rho.$$
+
+Before analytically continuing into the complex plane, we adopt the convention that on the first Riemann sheet, the propagator is real for $W < m_1 + m_2$, and has an imaginary part $-i\rho/2$ for $W > m_1 + m_2$. The second Riemann sheet is defined as the region where the propagator has an imaginary part of $i\rho/2$, i.e., shifted by $i\rho$ relative to the first sheet.
+
+In our calculations, we use the first Riemann sheet for $W < m_1 + m_2$, and the second Riemann sheet for $W > m_1 + m_2$.
+
+**Attention**: Physical observables are computed on the first Riemann sheet—more precisely, along the real axis. Therefore, for $W < m_1 + m_2$, the treatment is consistent with that used in pole searches. However, for $W > m_1 + m_2$, the pole search is carried out on the second Riemann sheet, where the propagator has an imaginary part of $i\rho/2$, in contrast to $-i\rho/2$ on the first sheet. This leads to a relative phase difference between the two Riemann sheets along the real axis.
+
+## Physical observable
+
+
 
 With the obtained amplitude $M^{J^P}$, we can also calculate the physical observable. Note that all physical observable are at real axis, we choose the onshell momentum as
 
@@ -548,11 +571,15 @@ $$
 
 where $a^J=-\frac{|{\bm k}|}{8\pi\sqrt{s}}{\cal M}(|{\bm k}|)$, which can be displayed as a trajectory in an Argand plot.
 
+
+
+
+
 # Three body decay
 
 ## kinematics
 
-### ~~L~~orentz boost
+### Lorentz boost
 
 Here, we consider an process $Y\to m_1X\to m_1m_2m_3$.
 To study a $1\to3$ decay with the qBSE, we need consider the center of mass frame (CMS) of $Y$ (which is also the laboratory frame in this issue) and the $m_1m_2$ where the qBSE is applied. The momenta of initial and final particles in the CMS of $Y$, remarked as $lab$,  are

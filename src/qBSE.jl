@@ -435,7 +435,7 @@ function propFF(k, ex, L, LLi, LLf; lregu=1, lFFex=0)
         elseif lFFex == 2
             FFex *= (L^4 / ((m^2 - k.q2)^2 + L^4))^2 #type 2
         elseif lFFex == 3
-            FFex *= exp(-2.0*(m^2 - k.q2)^2 / L^4)
+            FFex *= exp(-2.0 * (m^2 - k.q2)^2 / L^4)
         elseif lFFex == 4
             FFex *= ((L^4 + (k.qt - m^2)^2 / 4) / ((k.q2 - (qt + m^2) / 2)^2 + L^4))^2
         end
@@ -534,15 +534,19 @@ function kernel(kf, ki, Ec, qn, SYS, IA, CH, IHf, IHi, fV)::ComplexF64 # Calcula
 end
 #*******************************************************************************************
 #propagator
-function propagator(k, kv, w, wv, Ec, Np, CH, IH, Dimo)
+function propagator(k, kv, w, wv, Ec, Np, CH, IH0, Dimo, lRm)
     propagator = Complex{Float64}(0, 0)
-    ich = IH.iCH
+    ich = IH0.iCH
     mi1, mi2 = CH[ich].m[1], CH[ich].m[2]
+    lRm0 = isa(lRm, Int) ? lRm :
+           isa(lRm, Tuple{Vararg{Int}}) ? lRm[ich] :
+           error("lRm should be Int or Tuple{Vararg{Int}}")
+    Rm = lRm0 == 1 ? -1 : 1
 
     # Compute mi2p2 based on helicity conditions
     mi2p2 = 1.0
-    mi2p2 *= (IH.helh[1] == 2) ? 2.0 * mi1 : 1.0
-    mi2p2 *= (IH.helh[2] == 2) ? 2.0 * mi2 : 1.0
+    mi2p2 *= (IH0.helh[1] == 2) ? 2.0 * mi1 : 1.0
+    mi2p2 *= (IH0.helh[2] == 2) ? 2.0 * mi2 : 1.0
 
     # Precompute constants
     pi_factor = (2 * pi)^3
@@ -565,11 +569,12 @@ function propagator(k, kv, w, wv, Ec, Np, CH, IH, Dimo)
         konc = sqrt(delta1 * delta2) / (2 * Ec)
         konc2 = delta1 * delta2 / (4 * Ec^2)
 
-        # Add imaginary component based on `konc` sign
-        if imag(konc) > 0
-            propagator += mi2p2 * konc * complex_factor
+        # Add imaginary component  and ensure correct sign
+        # + for II Riemann sheet, the sign for I sheet is added by Rm. 
+        if imag(konc) >= 0
+            propagator += mi2p2 * konc * complex_factor * Rm 
         else
-            propagator -= mi2p2 * konc * complex_factor
+            propagator -= mi2p2 * konc * complex_factor * Rm #conjugate 
         end
 
         # Loop over Np elements
@@ -582,55 +587,7 @@ function propagator(k, kv, w, wv, Ec, Np, CH, IH, Dimo)
 
     return propagator
 end
-# calculate V G I
-function VGI(Ec, qn, SYS, IA, CH, IH, fV; lRm=1)
-    # Determine the dimension of the work matrix. 
-    Np = length(SYS.kv)
-    SYS, IH, Dim, = workSpace(Ec, lRm, Np, SYS, CH, IH)
-    Nt = length(Dim)
 
-    # Initialize matrices
-    Vc = zeros(Complex{Float64}, Nt, Nt)
-    Gc = zeros(Complex{Float64}, Nt, Nt)
-    II = zeros(Float64, Nt, Nt)
-
-    # Populate Vc, Gc, and II
-    for i_f = 1:Nt
-        Dimf = Dim[i_f]
-        kf = Dimf.k
-
-        for i_i = i_f:Nt
-            Dimi = Dim[i_i]
-            ki = Dimi.k
-
-            # Compute Vc for upper triangular part
-            Vc[i_f, i_i] = kernel(kf, ki, Ec, qn, SYS, IA, CH, IH[Dimf.iIH], IH[Dimi.iIH], fV)::ComplexF64
-
-            # Compute Gc and II only on the diagonal
-            if i_i == i_f
-                Gc[i_f, i_i] = propagator(kf, SYS.kv, Dimf.w, SYS.wv, Ec, Np, CH, IH[Dimf.iIH], Dimf.Dimo)
-                II[i_f, i_i] = 1.0
-            end
-        end
-    end
-
-    # Populate lower triangular part of Vc based on conjugate symmetry
-    for i_f = 2:Nt
-        Dimf_IH = IH[Dim[i_f].iIH]
-
-        for i_i = 1:i_f-1
-            Dimi_IH = IH[Dim[i_i].iIH]
-
-            if Dimf_IH.iCH != Dimi_IH.iCH
-                Vc[i_f, i_i] = conj(Vc[i_i, i_f])
-            else
-                Vc[i_f, i_i] = Vc[i_i, i_f]
-            end
-        end
-    end
-
-    return Vc, Gc, II, IH, Dim
-end
 #*******************************************************************************************
 function workSpace(Ec, lRm, Np, SYS, CH, IH)
     #produce the dimensions in a independent helicity amplitudes, especially for the onshell dimension.
@@ -648,12 +605,18 @@ function workSpace(Ec, lRm, Np, SYS, CH, IH)
         IH[i1].Dimb = Nt + 1
         mass1 = p[CH[IH[i1].iCH].p[1]].m
         mass2 = p[CH[IH[i1].iCH].p[2]].m
-        Rm = false
-        if lRm == 1 #for first Reimann sheet
-            Rm = real(Ec) > (mass1 + mass2)
-        elseif lRm == 2
-            Rm = true
+
+        lRm0 = if isa(lRm, Int)
+            lRm
+        elseif isa(lRm, Tuple{Vararg{Int}})
+            lRm[IH[i1].iCH]
+        else
+            error("lRm should be Int or Tuple of Int")
         end
+
+        temp = real(Ec) < (mass1 + mass2)
+        Rm = !((lRm0 == 0 || lRm0 == 1) && temp)  
+
         if Rm
             kon = sqrt((Ec^2 - (mass1 + mass2)^2) * (Ec^2 - (mass1 - mass2)^2)) / (2.0 * Ec)
             IH[i1].Dimo = 1
@@ -682,6 +645,56 @@ function workSpace(Ec, lRm, Np, SYS, CH, IH)
 
 
     return SYS, IH, Dim
+end
+
+# calculate V G I
+function VGI(Ec, qn, SYS, IA, CH, IH, fV; lRm=0)
+    # Determine the dimension of the work matrix. 
+    Np = length(SYS.kv)
+    SYS, IH, Dim, = workSpace(Ec, lRm, Np, SYS, CH, IH)
+    Nt = length(Dim)
+
+    # Initialize matrices
+    Vc = zeros(Complex{Float64}, Nt, Nt)
+    Gc = zeros(Complex{Float64}, Nt, Nt)
+    II = zeros(Float64, Nt, Nt)
+
+    # Populate Vc, Gc, and II
+    for i_f = 1:Nt
+        Dimf = Dim[i_f]
+        kf = Dimf.k
+
+        for i_i = i_f:Nt
+            Dimi = Dim[i_i]
+            ki = Dimi.k
+
+            # Compute Vc for upper triangular part
+            Vc[i_f, i_i] = kernel(kf, ki, Ec, qn, SYS, IA, CH, IH[Dimf.iIH], IH[Dimi.iIH], fV)::ComplexF64
+
+            # Compute Gc and II only on the diagonal
+            if i_i == i_f
+                Gc[i_f, i_i] = propagator(kf, SYS.kv, Dimf.w, SYS.wv, Ec, Np, CH, IH[Dimf.iIH], Dimf.Dimo, lRm)
+                II[i_f, i_i] = 1.0
+            end
+        end
+    end
+
+    # Populate lower triangular part of Vc based on conjugate symmetry
+    for i_f = 2:Nt
+        Dimf_IH = IH[Dim[i_f].iIH]
+
+        for i_i = 1:i_f-1
+            Dimi_IH = IH[Dim[i_i].iIH]
+
+            if Dimf_IH.iCH != Dimi_IH.iCH
+                Vc[i_f, i_i] = conj(Vc[i_i, i_f])
+            else
+                Vc[i_f, i_i] = Vc[i_i, i_f]
+            end
+        end
+    end
+
+    return Vc, Gc, II, IH, Dim
 end
 #*******************************************************************************************
 function preprocessing(Sys, channels, Ff, qn; Np=10, Nx=5, Nphi=5)
@@ -796,14 +809,26 @@ function preprocessing(Sys, channels, Ff, qn; Np=10, Nx=5, Nphi=5)
 
         end
     end
-    kv, wv = gausslaguerre(Np)
-    wv = wv .* exp.(kv)
-    #kv = [2.0496633800321580e-002, 0.10637754206664184, 0.25725070911685544,
-    #    0.47691569315652682, 0.78977094890173449, 1.2661898317497706, 2.0968065118988930,
-    #    3.8872580463677919, 9.4004780129091756, 48.788435306583473]
-    #wv = [5.2385549033825828e-002, 0.11870709308644416, 0.18345726134358431,
-    #    0.25958276865541480, 0.37687641122072230, 0.60422211564747619, 1.1412809934307626,
-    #    2.7721814583372204, 10.490025610274076, 124.69392072758504]
+
+
+    #kgen, wgen = cgqf(Np, 0.0, 0.0, 0.0, pi / 2)
+    # 做变量变换：x = tan(θ), dx = dθ / cos²θ
+    #  arctan 映射是 (0, ∞) 对应到 (0, π/2)
+    #kv = tan.(kgen)
+    #wv = wgen ./ (cos.(kgen) .^ 2)
+
+    # Step 1: 生成 [-1, 1] 上的 Gauss–Legendre 节点和权重
+    nodes, weights = gausslegendre(Np)
+    # Step 2: 映射到 [0, π/2]
+    θ = 0.5 * (nodes .+ 1.0) * (π / 2)
+    wθ = 0.5 * (π / 2) * weights
+    # Step 3: 做变换 x = tan(θ)，dx = dθ / cos²θ
+    kv = tan.(θ)
+    wv = wθ ./ (cos.(θ) .^ 2)
+
+    #kv, wv = gausslaguerre(Np)
+    #wv = wv .* exp.(kv)
+
     xv, wxv = gausslegendre(Nx)
 
     wd = [wignerd(qn.J / qn.Jh, acos(xv[i])) for i in 1:Nx]
@@ -812,11 +837,35 @@ function preprocessing(Sys, channels, Ff, qn; Np=10, Nx=5, Nphi=5)
     pv = pi * (pv .+ 1.0)   # 将节点映射到 [0, 2π]
     wpv = wpv * pi  # 调整权重
 
-    dphi = 2.0 * pi / Nphi
+
     sp = [sin(pv[i]) for i in 1:Nphi]
     cp = [cos(pv[i]) for i in 1:Nphi]
     SYS = structSys(Sys, kv, wv, xv, wxv, wd, pv, wpv, sp, cp)
 
     return SYS, IA, CH, IH
 end
+
+# Gauss-Legendre quadrature rule generator 
+function cgqf(N::Int, a::Float64, b::Float64)
+
+    # 构造 Jacobi 矩阵
+    J = zeros(N, N)
+    for i in 1:N-1
+        v = i / sqrt(4i^2 - 1)
+        J[i, i+1] = v
+        J[i+1, i] = v
+    end
+
+    vals, vecs = eigen(J)
+    x_std = vals
+    w_std = 2 * vecs[1, :] .^ 2
+
+    # 映射到 [a, b]
+    x = 0.5 * ((b - a) * x_std .+ (b + a))
+    w = 0.5 * (b - a) * w_std
+
+    return x, w
+end
+
+
 end
