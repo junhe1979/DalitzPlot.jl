@@ -160,10 +160,10 @@ function simpleXsection(ER, M2, CH, qn; Ep="cm")
     Xsection = Matrix{Float64}[]
     NCH = length(CH)
     N = length(ER)
-    cons = 0.3894 / (256.0 * pi^3)  # 预先计算不变的常数部分
+    cons = 0.3894 / (256.0 * pi^3)
 
     for i in 1:N
-        Xs0 = zeros(size(M2[1]))  # 提前分配 `Xs0`，每次循环覆盖而非重新分配
+        Xs0 = zeros(size(M2[1]))  # Preallocate `Xs0` and overwrite it in each loop iteration instead of reallocating
         W = ER[i]
 
         for iM2 in 1:NCH
@@ -175,7 +175,7 @@ function simpleXsection(ER, M2, CH, qn; Ep="cm")
             fac2mi1 = (pi1.Jh == 1) ? 1 : 2.0 * mi1
             fac2mi2 = (pi2.Jh == 1) ? 1 : 2.0 * mi2
 
-            # 检查 Ep 是否为 "L"，只在需要时重新计算 W
+
             if Ep == "L"
                 W = sqrt((sqrt(W^2 + mi1^2) + mi2)^2 - W^2)
             end
@@ -196,38 +196,36 @@ function simpleXsection(ER, M2, CH, qn; Ep="cm")
             end
         end
 
-        push!(Xsection, Xs0)  # 将计算结果添加到 `Xsection` 中
+        push!(Xsection, Xs0)
     end
 
     return Xsection
 end
-#得到log|1-VG|以寻找极点。
+# Evaluate log-determinant |1 - V G| to locate poles
 function res(Range, iER, qn, SYS, IA, CH, IH, fV)
-    Ect = ComplexF64[] #设置保存复的总能量Ec=ER+EI*im的数组
-    reslogt = Float64[] #设置保存log|1-VG|的数组
+    Ect = ComplexF64[] # Array to store complex total energy Ec=ER+EI*im
+    reslogt = Float64[] # Array to store log|1-VG|
     Dim = nothing
     TG = nothing
     NCH = length(CH)
     resM2 = zeros(Float64, NCH, NCH)
-    ER = Range.ERmax - iER * (Range.ERmax - Range.ERmin) / (Range.NER - 1) #计算ER
-    #if myid() == 1 
-    #@show iER,ER, Range.ERmin, Range.ERmax,nprocs() - 1
-    #end
+    ER = Range.ERmax - iER * (Range.ERmax - Range.ERmin) / (Range.NER - 1) # Calculate ER
+
 
     EI = 0.0
     if Range.Ep == "L" #here, we use the pL, so should be transfered to ER
-        PL = Range.ERmax - iER * (Range.ERmax - Range.ERmin) / Range.NER #计算ER
+        PL = Range.ERmax - iER * (Range.ERmax - Range.ERmin) / Range.NER # Calculate ER
         ER = sqrt((sqrt(PL^2 + qBSE.p[qBSE.pkey["K_m"]].m^2) + qBSE.p[qBSE.pkey["N_p"]].m)^2 - PL^2)
     end
     NEI = Range.NEI
-    for iEI in -NEI:NEI #虚部部分循环
+    for iEI in -NEI:NEI
         if NEI != 0
-            EI = iEI * Range.EIt / NEI #计算虚部
+            EI = iEI * Range.EIt / NEI
         end
         Ec = ER + EI * im
         Vc, Gc, II, IH, Dim = qBSE.VGI(Ec, qn, SYS, IA, CH, IH, fV, lRm=qn.lRm) # Calculate the V, G, and unit matrix II
         VGI = II - Vc * Gc
-        detVGI = det(VGI)   # Compute determinant of (1 - VGc)，调用LinearAlgebra包det函数
+        detVGI = det(VGI)   # Compute determinant of (1 - VGc)
         logdetVGI = log(abs(detVGI)^2)
         push!(Ect, Ec)
         push!(reslogt, logdetVGI)
@@ -245,7 +243,8 @@ function res(Range, iER, qn, SYS, IA, CH, IH, fV)
     return Ect, reslogt, resM2, IH, Dim, TG
 end
 #*******************************************************************************************
-#获取对应该事例的IH和Dim。注意此处未同时做差值，因为会导致内存泄漏，原因未知。
+# Get the corresponding IH and Dim for the given case.
+# Note: Interpolation is not performed here simultaneously, as it may cause memory leaks for unknown reasons.
 function IHDim(E, Et, Range, Tt, IHt, Dimt)
     ii = Range.NER - Xs.Nsij(E, Range.ERmin, Range.ERmax, Range.NER - 1)
     Emin, Emax = Et[ii+1], Et[ii]
@@ -254,7 +253,7 @@ function IHDim(E, Et, Range, Tt, IHt, Dimt)
         return IHt[ii], Dimt[ii]
     else
         mid = 0.5 * (Emin + Emax)
-        idx = (E < mid) + 1  # 避免 if 分支
+        idx = (E < mid) + 1
         return IHt[ii+idx-1], Dimt[ii+idx-1]
     end
 end
@@ -271,7 +270,7 @@ function TGA(cfinal, cinter, Vert, para)
     E, par, IH, Dim, k, P = para.E, para.par, para.IH, para.Dim, para.k, para.P
     Et, TGt, qn, CH, SYS = par.Et, par.TGt, par.qn, par.CH, par.SYS
 
-    #差值,将差值放到这里是为了防止内存泄漏
+    # Interpolation: placing interpolation here helps prevent memory leaks
     ii = par.Range.NER - Xs.Nsij(E, par.Range.ERmin, par.Range.ERmax, par.Range.NER - 1)
     Emin, Emax = Et[ii+1], Et[ii]
     Tmin, Tmax = TGt[ii+1], TGt[ii]
@@ -572,7 +571,7 @@ function propagator(k, kv, w, wv, Ec, Np, CH, IH0, Dimo, lRm)
         # Add imaginary component  and ensure correct sign
         # + for II Riemann sheet, the sign for I sheet is added by Rm. 
         if imag(konc) >= 0
-            propagator += mi2p2 * konc * complex_factor * Rm 
+            propagator += mi2p2 * konc * complex_factor * Rm
         else
             propagator -= mi2p2 * konc * complex_factor * Rm #conjugate 
         end
@@ -615,7 +614,7 @@ function workSpace(Ec, lRm, Np, SYS, CH, IH)
         end
 
         temp = real(Ec) < (mass1 + mass2)
-        Rm = !((lRm0 == 0 || lRm0 == 1) && temp)  
+        Rm = !((lRm0 == 0 || lRm0 == 1) && temp)
 
         if Rm
             kon = sqrt((Ec^2 - (mass1 + mass2)^2) * (Ec^2 - (mass1 - mass2)^2)) / (2.0 * Ec)
@@ -811,18 +810,11 @@ function preprocessing(Sys, channels, Ff, qn; Np=10, Nx=5, Nphi=5)
     end
 
 
-    #kgen, wgen = cgqf(Np, 0.0, 0.0, 0.0, pi / 2)
-    # 做变量变换：x = tan(θ), dx = dθ / cos²θ
-    #  arctan 映射是 (0, ∞) 对应到 (0, π/2)
-    #kv = tan.(kgen)
-    #wv = wgen ./ (cos.(kgen) .^ 2)
-
-    # Step 1: 生成 [-1, 1] 上的 Gauss–Legendre 节点和权重
+    # generate Gauss–Legendre nodes and weights in[-1, 1]  
     nodes, weights = gausslegendre(Np)
-    # Step 2: 映射到 [0, π/2]
+    # to [0, π/2]
     θ = 0.5 * (nodes .+ 1.0) * (π / 2)
     wθ = 0.5 * (π / 2) * weights
-    # Step 3: 做变换 x = tan(θ)，dx = dθ / cos²θ
     kv = tan.(θ)
     wv = wθ ./ (cos.(θ) .^ 2)
 
@@ -834,8 +826,8 @@ function preprocessing(Sys, channels, Ff, qn; Np=10, Nx=5, Nphi=5)
     wd = [wignerd(qn.J / qn.Jh, acos(xv[i])) for i in 1:Nx]
 
     pv, wpv = gausslegendre(Nphi)
-    pv = pi * (pv .+ 1.0)   # 将节点映射到 [0, 2π]
-    wpv = wpv * pi  # 调整权重
+    pv = pi * (pv .+ 1.0)   # to [0, 2π]
+    wpv = wpv * pi
 
 
     sp = [sin(pv[i]) for i in 1:Nphi]
@@ -848,7 +840,6 @@ end
 # Gauss-Legendre quadrature rule generator 
 function cgqf(N::Int, a::Float64, b::Float64)
 
-    # 构造 Jacobi 矩阵
     J = zeros(N, N)
     for i in 1:N-1
         v = i / sqrt(4i^2 - 1)
@@ -860,7 +851,6 @@ function cgqf(N::Int, a::Float64, b::Float64)
     x_std = vals
     w_std = 2 * vecs[1, :] .^ 2
 
-    # 映射到 [a, b]
     x = 0.5 * ((b - a) * x_std .+ (b + a))
     w = 0.5 * (b - a) * w_std
 

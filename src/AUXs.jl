@@ -1,30 +1,31 @@
 module AUXs
-using Statistics,JLD2,Distributed,Distributions
-# 定义一个包装函数，自动根据掩码将固定参数和自由参数合并，
-# 并提取自由参数的下界和上界
+using Statistics, JLD2, Distributed, Distributions
+
+# Define a wrapper function that automatically merges fixed and free parameters
+# based on the mask, and extracts lower and upper bounds for free parameters
 function create_fixed_obj_from_mask(original_obj, lower, upper, full_initial, mask)
-    # 自由参数的索引：mask[i]==1表示该参数自由
+    # Indices of free parameters: mask[i]==1 means the parameter is free
     free_indices = [i for i in 1:length(mask) if mask[i] == 1]
-    # 固定参数的索引：mask[i]==0表示固定参数
+    # Indices of fixed parameters: mask[i]==0 means the parameter is fixed
     fixed_indices = [i for i in 1:length(mask) if mask[i] == 0]
 
-    # 构造包装后的目标函数，只接受自由参数
+    # Construct a wrapped objective function that only takes free parameters
     function fixed_obj(free_params)
         full_params = similar(full_initial)
-        # 将自由参数赋值到对应位置
+        # Assign free parameters to their corresponding positions
         for (j, i) in enumerate(free_indices)
             full_params[i] = free_params[j]
         end
-        # 固定参数则直接使用 full_initial 中的值
+        # Use original values from full_initial for fixed parameters
         for i in fixed_indices
             full_params[i] = full_initial[i]
         end
         return original_obj(full_params)
     end
 
-    # 自由参数的初始猜测
+    # Initial guess for free parameters
     free_initial = [full_initial[i] for i in free_indices]
-    # 自由参数对应的下界和上界
+    # Lower and upper bounds for free parameters
     free_lower = [lower[i] for i in free_indices]
     free_upper = [upper[i] for i in free_indices]
 
@@ -32,10 +33,10 @@ function create_fixed_obj_from_mask(original_obj, lower, upper, full_initial, ma
 end
 
 function get_full_parameters(result, initial, mask)
-    # 获取自由参数的最优值
+    # Extract optimal values of free parameters
     free_params_opt = result.minimizer
 
-    # 将自由参数的最优值合并回完整的参数向量
+    # Merge optimal values back into the full parameter vector
     full_params_opt = copy(initial)
     free_indices = [i for i in 1:length(mask) if mask[i] == 1]
     for (j, i) in enumerate(free_indices)
@@ -43,7 +44,6 @@ function get_full_parameters(result, initial, mask)
     end
 
     return full_params_opt
-
 end
 
 function uncertainty(f, x_opt; Δf=1.0, ε=1e-2, M=5, max_iter=20, tol=0.1)
@@ -57,7 +57,7 @@ function uncertainty(f, x_opt; Δf=1.0, ε=1e-2, M=5, max_iter=20, tol=0.1)
         dir = zeros(n)
         dir[i] = 1.0
 
-        # 左右各进行一次二分搜索
+        # Perform binary search on both sides
         for s in (-1.0, 1.0)
             lo = 0.0
             hi = scale * 1.0
@@ -100,26 +100,20 @@ function broadcast_variable(varname::Symbol, value; filename="temp.jld2", cleanu
     cleanup && rm(filename, force=true)
 end
 
-function significance(chi2_diff,ndf_diff::Int64)
-
-
-    # 使用高精度 BigFloat 类型
+function significance(chi2_diff, ndf_diff::Int64)
+    # Use high-precision BigFloat type
     chi2_diff = BigFloat(chi2_diff)
 
-    # 创建自由度为 1 的卡方分布
+    # Create a chi-squared distribution with given degrees of freedom
     chi2_dist = Chisq(ndf_diff)
 
-    # 计算 p-value (尾概率)
+    # Compute the p-value (tail probability)
     p_value = ccdf(chi2_dist, chi2_diff)
 
-    # 将 p-value 转换为显著性 (sigma) 
+    # Convert p-value to significance (sigma)
     sigma = quantile(Normal(), 1 - p_value)
 
-    #println("高精度 p-value = ", p_value)
-    #println("显著性 (σ) = ", sigma)
-
     return sigma
-
 end
 
 end

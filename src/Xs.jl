@@ -8,14 +8,14 @@ function LorentzBoost(k::SVector{5,Float64}, p::SVector{5,Float64})
     kp = k[1] * p[1] + k[2] * p[2] + k[3] * p[3]  # 点积 k ⋅ p
     p5 = sqrt(p[4]^2 - p[1]^2 - p[2]^2 - p[3]^2)
     beta_factor = kp / (p[4] + p5) + k[4]       # β-related factor
-    inv_p5 = 1.0 / p5  # 预计算倒数，提高计算效率
+    inv_p5 = 1.0 / p5
 
-    # 计算新的动量和能量分量
+
     k1 = k[1] + p[1] * beta_factor * inv_p5
     k2 = k[2] + p[2] * beta_factor * inv_p5
     k3 = k[3] + p[3] * beta_factor * inv_p5
     k4 = (p[4] * k[4] + kp) * inv_p5
-    k5 = k[5]  # 不变的标量
+    k5 = k[5]
 
     return @SVector [k1, k2, k3, k4, k5]
 end
@@ -56,10 +56,10 @@ function binrange(laxes::Vector{Vector{Vector{Int64}}}, tecm, ch, stype; Range=[
     maxn = Vector{Float64}[]
 
     for i in eachindex(laxes)
-        # 计算每个子向量的最小值和最大值
+
         min0, max0 = binrange(laxes[i], tecm, ch, stype)
 
-        # 如果用户传入了min和max参数，覆盖默认计算值
+        # If the user provides min and max parameters, override the default calculated values
         if !isempty(Range)
             if !isempty(Range[i])
                 if !ismissing(Range[i][1])
@@ -71,8 +71,8 @@ function binrange(laxes::Vector{Vector{Vector{Int64}}}, tecm, ch, stype; Range=[
                 end
             end
         end
-        push!(minn, min0)  # 将结果添加到minn
-        push!(maxn, max0)  # 将结果添加到maxn
+        push!(minn, min0)
+        push!(maxn, max0)
     end
 
 
@@ -88,11 +88,11 @@ function Nsum3(laxes::Vector{Vector{Int64}}, i, bin::NamedTuple, kf, stype)
 
     for iaxes in eachindex(laxes)
         axes0 = laxes[iaxes]
-        # 计算 kij 和 kijs
+
         kij = kf[axes0[1]] + kf[axes0[2]]
         kijs = stype == 2 ? kij * kij : sqrt(kij * kij)
         sij = push!(sij, kijs)
-        # 计算 Nsij 并添加到 Ns 数组中
+
         push!(Ns, Nsij(kijs, bin.min[i][iaxes], bin.max[i][iaxes], bin.Nbin))
     end
     return Ns, sij
@@ -113,14 +113,14 @@ function plab2pcm(p::Float64, mi::Vector{Float64})
     return W
 end
 function getkf(p::Float64, kf::Vector{SVector{5,Float64}}, ch::NamedTuple)
-    # 预计算常量
+
     ebm = sqrt(p^2 + ch.mi[1]^2)
     tecm = sqrt((ebm + ch.mi[2])^2 - p^2)
 
     GAM = (ebm + ch.mi[2]) / tecm
     ETA = p / tecm
 
-    # 使用静态数组和广播计算
+
     klab = SVector{5,Float64}[SVector{5,Float64}(
         GAM * k[1] + ETA * k[4],  # k1
         k[2],                    # k2
@@ -179,16 +179,10 @@ function Xsection(tecm, ch, callback; axes=[], Range=[], nevtot=Int64(1e6),
     for ine in 1:nevtot
 
         kf, wt = GENEV(tecm, ch.mf)
-        #@show wt
         if Nf > 2
             Nsij, sij = Nsum3(laxes, bin, kf, stype)
 
-
-
-            #if all(min .<= sij .<= max)
             if all([any(min[i] .<= sij[i] .&& sij[i] .<= max[i]) for i in eachindex(min)])
-
-                #@show Nsij
 
                 amp0 = ch.amps(tecm, kf, ch, para, p0)
                 wt = wt * amp0
@@ -197,9 +191,7 @@ function Xsection(tecm, ch, callback; axes=[], Range=[], nevtot=Int64(1e6),
                         for isij in Nsij[i]
                             if 1 < isij <= Nbin
                                 if i == 2
-                                    #if sij[1][1] > 1.3922 || sij[1][1] < 1.3822
                                     zsumt[i, isij] += wt
-                                    #end
                                 else
                                     zsumt[i, isij] += wt
                                 end
@@ -233,16 +225,16 @@ function Xsection(tecm, ch, callback; axes=[], Range=[], nevtot=Int64(1e6),
 end
 
 function worker_Xsection(tecm, ch, axes, Range, nevt, Nbin, para, p0, stype, progressbar)
-    # 定义进度条更新函数
+    # Define progress bar update function
     function progress_callback(pb)
-        ProgressBars.update(pb)  # 更新进度条
+        ProgressBars.update(pb)
     end
-    # 检查是否是主进程
-    if myid() == 2 && progressbar# 仅第一个进程显示进度条
-        pb = ProgressBar(1:nevt)  # 创建进度条，范围从1到n
-        callback = i -> progress_callback(pb)   # 回调函数更新进度条
+
+    if myid() == 2 && progressbar # Only the first process displays the progress bar
+        pb = ProgressBar(1:nevt)  # Create a progress bar ranging from 1 to n
+        callback = i -> progress_callback(pb)   # Callback function to update the progress bar
     else
-        callback = _ -> nothing  # 其他进程不显示进度条
+        callback = _ -> nothing
     end
     return Xsection(tecm, ch, callback, axes=axes, Range=Range, nevtot=nevt, Nbin=Nbin, para=para, p0=p0, stype=stype)
 end
@@ -252,13 +244,8 @@ function Xsection(tecm, ch; axes=[23, 21], Range=[], nevtot=Int64(1e6), Nbin=100
     nevt_per_worker = div(nevtot, num_workers)
     ranges = [(i * nevt_per_worker + 1, Base.min((i + 1) * nevt_per_worker, nevtot)) for i in 0:(num_workers-1)]
     GC.gc(false)
-    # 使用 pmap 执行任务并获取结果
     results = pmap(r -> worker_Xsection(tecm, ch, axes, Range, r[2] - r[1] + 1, Nbin, para, p0, stype, progressbar), ranges)
-    #results = @distributed (vcat) for r in ranges
-    #    worker_Xsection(tecm, ch, axes, Range, r[2] - r[1] + 1, Nbin, para, p0, stype, progressbar)
-    #end
 
-    # 汇总结果
     zsum = 0.0
     zsumt = nothing
     zsumd = nothing

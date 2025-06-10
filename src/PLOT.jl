@@ -1,29 +1,29 @@
 module PLOT
 using Plots, LaTeXStrings, Colors, Compose, DelimitedFiles
 function readdata(filename)
-    data_groups = []
-    current_group = []  # 临时存储当前数据组
+    data_groups = []              # Stores all data groups
+    current_group = []           # Temporary storage for current data group
 
     open(filename, "r") do file
         for line in eachline(file)
-            # 忽略以 # 开头的行
+            # Skip lines starting with #
             if startswith(strip(line), "#")
                 continue
             end
 
-            if isempty(strip(line))  # 判断是否为空行
-                # 如果当前数据组不为空，说明到达一组结束
+            if isempty(strip(line))  # Check for blank line
+                # If current group is not empty, we've reached the end of a group
                 if !isempty(current_group)
-                    push!(data_groups, hcat(current_group...)')  # 保存当前数据组
-                    empty!(current_group)  # 清空临时数组
+                    push!(data_groups, hcat(current_group...)')  # Save current group as matrix
+                    empty!(current_group)  # Clear temporary array for the next group
                 end
             else
-                # 将每行解析为浮点数，并添加到当前数据组
+                # Parse the line into Float64 numbers and add to current group
                 row = [parse(Float64, x) for x in split(line)]
                 push!(current_group, row)
             end
         end
-        # 最后检查并保存最后一个数据组（如果存在）
+        # At the end, check if there is an unfinished group to be saved
         if !isempty(current_group)
             push!(data_groups, hcat(current_group...)')
         end
@@ -32,7 +32,8 @@ function readdata(filename)
 end
 
 
-function plotD(res; cg=cgrad([:white, :green, :blue, :red], [0, 0.01, 0.1, 0.5, 1.0]), xx=[], xy=[], yx=[], yy=[],filename="DP.pdf")
+
+function plotD(res; cg=cgrad([:white, :green, :blue, :red], [0, 0.01, 0.1, 0.5, 1.0]), xx=[], xy=[], yx=[], yy=[], filename="DP.pdf")
     ENV["GKSwstype"] = "100"
     cs1 = res.cs1
     cs2 = res.cs2
@@ -66,7 +67,7 @@ function plotD(res; cg=cgrad([:white, :green, :blue, :red], [0, 0.01, 0.1, 0.5, 
     ylims = (minimum(y2), maximum(y2))
     dy = (maximum(y2) - minimum(y2)) / Nbin
     xlims = (minimum(x2) / dy, maximum(x2) / dy * 1.1)
-    p0=Plots.plot(x2 / dy, y2, xlims=xlims, ylims=ylims, xlabel=latexstring("d\\sigma/m^2_{" * Laxes[2] * "} (\\textrm{ barn/GeV^2})"), framestyle=:box, ymirror=true, legend=:none, linetype=:steppre)
+    p0 = Plots.plot(x2 / dy, y2, xlims=xlims, ylims=ylims, xlabel=latexstring("d\\sigma/m^2_{" * Laxes[2] * "} (\\textrm{ barn/GeV^2})"), framestyle=:box, ymirror=true, legend=:none, linetype=:steppre)
     if !isempty(yy)
         p2 = Plots.scatter!(yy, yx, markersize=1)
     else

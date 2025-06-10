@@ -4,50 +4,50 @@
 
 - [Outline](#outline)
 - [Quasipotential approximation](#quasipotential-approximation)
-	- [Partial-wave expansion](#partial-wave-expansion)
-	- [Fixed parity](#fixed-parity)
-	- [Transformation to a matrix equation](#transformation-to-a-matrix-equation)
-	- [Code](#code)
-	- [Pole search](#pole-search)
-	- [Physical observable](#physical-observable)
-		- [The cross section for the channel considered](#the-cross-section-for-the-channel-considered)
-		- [Argand plot](#argand-plot)
+  - [Partial-wave expansion](#partial-wave-expansion)
+  - [Fixed parity](#fixed-parity)
+  - [Transformation to a matrix equation](#transformation-to-a-matrix-equation)
+  - [Code](#code)
+  - [Pole search](#pole-search)
+  - [Physical observable](#physical-observable)
+    - [The cross section for the channel considered](#the-cross-section-for-the-channel-considered)
+    - [Argand plot](#argand-plot)
 - [Three body decay](#three-body-decay)
-	- [kinematics](#kinematics)
-		- [Lorentz boost](#lorentz-boost)
-	- [Amplitude](#amplitude)
-	- [Decay width](#decay-width)
-		- [The case with one rescattering](#the-case-with-one-rescattering)
-			- [Phase space](#phase-space)
-			- [Differential decay width](#differential-decay-width)
-		- [The case with more than one rescattering](#the-case-with-more-than-one-rescattering)
+  - [kinematics](#kinematics)
+    - [Lorentz boost](#lorentz-boost)
+  - [Amplitude](#amplitude)
+  - [Decay width](#decay-width)
+    - [The case with one rescattering](#the-case-with-one-rescattering)
+      - [Phase space](#phase-space)
+      - [Differential decay width](#differential-decay-width)
+    - [The case with more than one rescattering](#the-case-with-more-than-one-rescattering)
 - [qBSE package](#qbse-package)
-	- [Data Structures for the Dimensions](#data-structures-for-the-dimensions)
-		- [`structChannel`](#structchannel)
-		- [`structIndependentHelicity`](#structindependenthelicity)
-		- [`structDimension`](#structdimension)
-	- [Data Structures for the Interactions](#data-structures-for-the-interactions)
-		- [`structSys`](#structsys)
-		- [`structInterAction`](#structinteraction)
-	- [Additional Data Structures](#additional-data-structures)
-		- [`structMomentum`](#structmomentum)
-		- [`structHelicity`](#structhelicity)
-		- [`structParticle`](#structparticle)
-	- [Functions for the qBSE](#functions-for-the-qbse)
-		- [`function preprocessing(Sys, channels, Ff, qn; Np=10, Nx=5, Nphi=5)`](#function-preprocessingsys-channels-ff-qn-np10-nx5-nphi5)
-		- [`function res(Range, iER, qn, SYS, IA, CH, IH, fV)`](#function-resrange-ier-qn-sys-ia-ch-ih-fv)
-		- [`function fV(k, l, SYS, IA0, CHf, CHi)`](#function-fvk-l-sys-ia0-chf-chi)
-		- [`function propFF(k, ex, L, LLi, LLf; lregu=1, lFFex=0)`](#function-propffk-ex-l-lli-llf-lregu1-lffex0)
-		- [`function simpleXsection(ER, resM2, CH, qn; Ep="cm")`](#function-simplexsectioner-resm2-ch-qn-epcm)
-		- [`function lambda(m1, m2, m3)`](#function-lambdam1-m2-m3)
-	- [Decay](#decay)
-		- [function setTGA(par, sij, k, tecm, i, j)](#function-settgapar-sij-k-tecm-i-j)
-		- [`TGA(cfinal, cinter, Vert, para)`](#tgacfinal-cinter-vert-para)
-		- [`function Vertex14(p1, p2, l1, l2, Vert, k, P)`](#function-vertex14p1-p2-l1-l2-vert-k-p)
-		- [auxiliary function](#auxiliary-function)
-	- [Additional functions](#additional-functions)
-		- [`function ch(pf, pin, amps)`](#function-chpf-pin-amps)
-		- [`function LorentzBoostRotation(k, tecm, p1, p2)`](#function-lorentzboostrotationk-tecm-p1-p2)
+  - [Data Structures for the Dimensions](#data-structures-for-the-dimensions)
+    - [`structChannel`](#structchannel)
+    - [`structIndependentHelicity`](#structindependenthelicity)
+    - [`structDimension`](#structdimension)
+  - [Data Structures for the Interactions](#data-structures-for-the-interactions)
+    - [`structSys`](#structsys)
+    - [`structInterAction`](#structinteraction)
+  - [Additional Data Structures](#additional-data-structures)
+    - [`structMomentum`](#structmomentum)
+    - [`structHelicity`](#structhelicity)
+    - [`structParticle`](#structparticle)
+  - [Functions for the qBSE](#functions-for-the-qbse)
+    - [`function preprocessing(Sys, channels, Ff, qn; Np=10, Nx=5, Nphi=5)`](#function-preprocessingsys-channels-ff-qn-np10-nx5-nphi5)
+    - [`function res(Range, iER, qn, SYS, IA, CH, IH, fV)`](#function-resrange-ier-qn-sys-ia-ch-ih-fv)
+    - [`function fV(k, l, SYS, IA0, CHf, CHi)`](#function-fvk-l-sys-ia0-chf-chi)
+    - [`function propFF(k, ex, L, LLi, LLf; lregu=1, lFFex=0)`](#function-propffk-ex-l-lli-llf-lregu1-lffex0)
+    - [`function simpleXsection(ER, resM2, CH, qn; Ep="cm")`](#function-simplexsectioner-resm2-ch-qn-epcm)
+    - [`function lambda(m1, m2, m3)`](#function-lambdam1-m2-m3)
+  - [Decay](#decay)
+    - [function setTGA(par, sij, k, tecm, i, j)](#function-settgapar-sij-k-tecm-i-j)
+    - [`TGA(cfinal, cinter, Vert, para)`](#tgacfinal-cinter-vert-para)
+    - [`function Vertex14(p1, p2, l1, l2, Vert, k, P)`](#function-vertex14p1-p2-l1-l2-vert-k-p)
+    - [auxiliary function](#auxiliary-function)
+  - [Additional functions](#additional-functions)
+    - [`function ch(pf, pin, amps)`](#function-chpf-pin-amps)
+    - [`function LorentzBoostRotation(k, tecm, p1, p2)`](#function-lorentzboostrotationk-tecm-p1-p2)
 
 <!-- tocstop -->
 
@@ -69,10 +69,10 @@ $$
 where ${\cal V}$ is the potential kernel and $G$ is the propagator for the two constituent particles. The total momentum of the system is denoted by $P = k_1 + k_2 = k'_1 + k'_2 = k''_1 + k''_2$.
 
 The Bethe-Salpeter equation can be succinctly expressed as
+
 $$
 {\cal M} = {\cal V} + {\cal V} G {\cal M},
 $$
-
 
 The Bethe-Salpeter (BS) equation for the amputated scattering matrix with external legs, denoted as ${\cal M}_{[\mu_f][\mu_i]}$, is given by:
 
@@ -83,6 +83,7 @@ $$
 	M}_{[\mu][\mu_i]},
 \end{align}
 $$
+
 where the propagator for the two constituent particles is given by
 
 $$
@@ -93,7 +94,7 @@ G^{[\mu'][\mu]} = G_1^{[\mu'_1][\mu_1]} \, G_2^{[\mu'_2][\mu_2]}
 \end{align}
 $$
 
-where $P^{[\mu'][\mu]}$ is a general tensor structure. For example, for two vector mesons, $P^{[\mu'][\mu]} = (-g^{\mu'_1\mu_1} + k^{\mu'_1}_1 k^{\mu_1}_1 / m_1^2)(-g^{\mu'_2\mu_2} + k^{\mu'_2}_2 k^{\mu_2}_2 / m_2^2)$; for two spin-$1/2$ baryons, $P^{[\mu'][\mu]} = (\gamma \cdot k_1 + m_1)(\gamma \cdot k_2 + m_2)$. 
+where $P^{[\mu'][\mu]}$ is a general tensor structure. For example, for two vector mesons, $P^{[\mu'][\mu]} = (-g^{\mu'_1\mu_1} + k^{\mu'_1}_1 k^{\mu_1}_1 / m_1^2)(-g^{\mu'_2\mu_2} + k^{\mu'_2}_2 k^{\mu_2}_2 / m_2^2)$; for two spin-$1/2$ baryons, $P^{[\mu'][\mu]} = (\gamma \cdot k_1 + m_1)(\gamma \cdot k_2 + m_2)$.
 In general, such propagators are difficult to handle because the potential ${\cal V}$ and amplitude ${\cal M}$ cannot be factorized. However, since the dominant contribution comes from the region where both constituents are near their mass shells, a form factor or cutoff is usually introduced to restrict the propagator to the near on-shell region. Therefore, it is reasonable to approximate $P^{[\mu'][\mu]}$ by its on-shell value, which can be expressed as a sum over polarization vectors or spinors: $P^{[\mu'][\mu]} \approx \sum_{\lambda_1, \lambda_2} A_{\lambda_1}^{[\mu'_1]} A_{\lambda_1}^{[\mu_1]} A_{\lambda_2}^{[\mu'_2]} A_{\lambda_2}^{[\mu_2]}$, where $A$ denotes the polarization vector or spinor.
 
 The Gross form of proposed quasipotential propagators for particles 1 and 2 with mass $m_1$ and $m_2$ written down in
@@ -316,7 +317,7 @@ fV(k, l, SYS, IA0, CHf, CHi)
 where `k` and `l` are for the momenta and helicities of final and initial particles. `SYS` is
 for the system information. `IA0` is for the interaction information., `CHf` and `CHi` are for the information of final and initial channels.
 
-Transition of ${\cal V}_{\lambda'-\lambda}({\bm k}',{\bm k})$ to ${\cal V}^{J^P}_{ij}({\rm k}',{\rm k}'')$ performed in `qBSE.fKernel` which is an internal function. 
+Transition of ${\cal V}_{\lambda'-\lambda}({\bm k}',{\bm k})$ to ${\cal V}^{J^P}_{ij}({\rm k}',{\rm k}'')$ performed in `qBSE.fKernel` which is an internal function.
 
 ## Transformation to a matrix equation
 
@@ -346,7 +347,6 @@ Im~G=-\rho/2=-\frac{\bar{{\rm k}''}}{32\pi^2 W}.
 $$
 
 It should be noted that in the region $W < m_1 + m_2$, the potential remains real, since no imaginary component emerges in this energy range.
-
 
 It suggests the unitary is satisfied if the potential $i{\cal V}$ is real.
 
@@ -477,21 +477,25 @@ The $|1-V(z)G(z)|$ in complex enery plane is calculated in `qBSE.res` and the po
 
 As shown above, the propagator acquires an imaginary part in the region $W > m_1 + m_2$, specifically $-i\rho/2$. According to the Schwarz reflection principle, if a function $f(z)$ is analytic in a region of the complex plane that includes a portion of the real axis where $f$ is real, then it satisfies $[f(z^*)]^* = f(z)$. Since the propagator $G$ satisfies these conditions, we have, for ${\rm Re}(z) > m_1 + m_2$,
 
-$$G(z - i\epsilon) = G^*(z + i\epsilon) = G(z + i\epsilon) + i\rho.$$
+$$
+G(z - i\epsilon) = G^*(z + i\epsilon) = G(z + i\epsilon) + i\rho.
+$$
 
 The value of the propagator at the lower edge of the branch cut on the first Riemann sheet, $G^I(z - i\epsilon)$, coincides with the upper edge of the second Riemann sheet, $G^{II}(z + i\epsilon)$. Therefore,
 
-$$G^{II}(z + i\epsilon) = G^I(z - i\epsilon) = G^I(z + i\epsilon) + i\rho.$$
+$$
+G^{II}(z + i\epsilon) = G^I(z - i\epsilon) = G^I(z + i\epsilon) + i\rho.
+$$
 
 Before analytically continuing into the complex plane, we adopt the convention that on the first Riemann sheet, the propagator is real for $W < m_1 + m_2$, and has an imaginary part $-i\rho/2$ for $W > m_1 + m_2$. The second Riemann sheet is defined as the region where the propagator has an imaginary part of $i\rho/2$, i.e., shifted by $i\rho$ relative to the first sheet.
 
-In our calculations, we use the first Riemann sheet for $W < m_1 + m_2$, and the second Riemann sheet for $W > m_1 + m_2$.
+When searching for the poles, we use the first Riemann sheet for $W < m_1 + m_2$, and the second Riemann sheet for $W > m_1 + m_2$. In the code, the `lRm` in `qn` is chosen as `0` in this case. If only first or  second Riemann sheet is considered, `lRm` is set to `1` or `2`.
 
-**Attention**: Physical observables are computed on the first Riemann sheet—more precisely, along the real axis. Therefore, for $W < m_1 + m_2$, the treatment is consistent with that used in pole searches. However, for $W > m_1 + m_2$, the pole search is carried out on the second Riemann sheet, where the propagator has an imaginary part of $i\rho/2$, in contrast to $-i\rho/2$ on the first sheet. This leads to a relative phase difference between the two Riemann sheets along the real axis.
+In the code, the `lRm` can be set to a `Int64` number `0`, `1`, or `2` for all channels, or `(n1,n2,n2,...)` for each channel, where `n1`, `n2`, etc. are the Riemann sheet numbers for each channel.
+
+**Attention**: Physical observables are computed on the first Riemann sheet—more precisely, along the real axis (`lRm=1`). Therefore, for $W < m_1 + m_2$, the treatment is consistent with that used in pole searches. However, for $W > m_1 + m_2$, the pole search is carried out on the second Riemann sheet, where the propagator has an imaginary part of $i\rho/2$, in contrast to $-i\rho/2$ on the first sheet. This leads to a relative phase difference between the two Riemann sheets along the real axis.
 
 ## Physical observable
-
-
 
 With the obtained amplitude $M^{J^P}$, we can also calculate the physical observable. Note that all physical observable are at real axis, we choose the onshell momentum as
 
@@ -569,11 +573,7 @@ $$
 \end{align}
 $$
 
-where $a^J=-\frac{|{\bm k}|}{8\pi\sqrt{s}}{\cal M}(|{\bm k}|)$, which can be displayed as a trajectory in an Argand plot.
-
-
-
-
+where $a^J=-\frac{|{\bm k}|}{8\pi\sqrt{s}}{\cal M}^J(|{\bm k}|)$, which can be displayed as a trajectory in an Argand plot.
 
 # Three body decay
 
@@ -801,7 +801,7 @@ $$
 \end{align}
 $$
 
-where $i$ and $j$ denote the independent $\lambda_{2,3}$ and $\lambda$, and the factors $f_{i=0}=1/\sqrt{2}$ and $f_{i\neq0}=1$ are inserted. The above equation can be abbreviated as $M={A}^{d}+{T}G { A}$, where  $T$ is solved by the Bethe-Salpeter equation $T=V+VGT$. NOTE: The $\hat{T}$ should be multiplied by $4\pi$ to be used as ${\cal T}$, and $\hat{G}_0$ should be divided by $4\pi$ to be used as ${G}_0$, which is cancelled by each other.
+where $i$ and $j$ denote the independent $\lambda_{2,3}$ and $\lambda$, and the factors $f_{i=0}=1/\sqrt{2}$ and $f_{i\neq 0}=1$ are inserted. The above equation can be abbreviated as $M={A}^{d}+{T}G { A}$, where  $T$ is solved by the Bethe-Salpeter equation $T=V+VGT$. NOTE: The $\hat{T}$ should be multiplied by $4\pi$ to be used as ${\cal T}$, and $\hat{G}_0$ should be divided by $4\pi$ to be used as ${G}_0$, which is cancelled by each other.
 
 ### The case with more than one rescattering
 
@@ -814,7 +814,7 @@ d\Gamma=\frac{1}{2E}\sum|{\cal M}|^2 d\Phi=\frac{1}{2E}\sum|{\cal M}|^2 (2\pi)^{
 \end{align}
 $$
 
-The distribution can be calculated with `qBSE.Xsection`. 
+The distribution can be calculated with `qBSE.Xsection`.
 
 Here we consider a process with direct, 23 rescattering, 13 rescattering.
 
@@ -873,13 +873,6 @@ $$
 \end{align}
 $$
 
-
-
-- The GEN pacakge can generate the events with $(p^{lab}_1, p^{lab}_2, p^{lab}_3)$ in the frame of $Y$.
-- The $M_{ij}$ can be obtained as $(p^{lab}_i+p^{lab}_j)^2$, and used to solve the ${\cal T}^{J^P}_{\lambda_i,\lambda_j;\lambda'_i,\lambda'_j}({\rm p}'_j,M_{ij})$ with qBSE. Here, the ${\rm p}'_j$ is generated by the Gauss discretization.
-- With Lorentz boost and rotation, the momentum of $p_i$ in the cernter of mass frame of partilces $ij$ can be calculated. However, for the intermediate particles,the $D^{J}_{\lambda_{ji},\lambda'_{ji}}( \Omega'_j) $ is used to calculate ${\cal A}^{J\lambda_{ji}}_{\lambda_k;\lambda'_i,\lambda'_j;\lambda}(\Omega^{lab}_k,{\rm p}'_j,M_{ij})$.
-- Because only $|{\cal M}|^2$ has the same value in different frames, the ${\cal M}$ for rescatterings of particles 23 and 13 can not be summed up directly.
-
 # qBSE package
 
 The qBSE package is used to solve the Bethe-Salpeter equation with some auxiliary functions.
@@ -891,13 +884,13 @@ In the qBSE approach, matrix dimensions for a coupled-channel system are organiz
 ### `structChannel`
 
 The `struct structChannel` structure encapsulates the properties of a physical channel in the qBSE package, often used as `CH` in the code. Its fields include:
-- `p::Vector{Float64}`, `m::Vector{Float64}`, `J::Vector{Int64}`, `Jh::Vector{Int64}`, `P::Vector{Int64}`: Vectors specifying the momentum $p$, mass $m$, total angular momentum $J$=`J/Jh`, and parity (`P`) for each particle in the channel. Here, `Jh = 1` for integer spin and `Jh = 2` for half-integer spin. 
+
+- `p::Vector{Float64}`, `m::Vector{Float64}`, `J::Vector{Int64}`, `Jh::Vector{Int64}`, `P::Vector{Int64}`: Vectors specifying the momentum $p$, mass $m$, total angular momentum $J$=`J/Jh`, and parity (`P`) for each particle in the channel. Here, `Jh = 1` for integer spin and `Jh = 2` for half-integer spin.
 - `cutoff::Float64` specifying the cutoff parameter for the channel.
 - `name::String`, `name0::String`  for the channel name, with and without charge. `name0` is used to define channels with definite isospin.
 - `IHb::Int64`, `IHe::Int64`, `IHn::Int64` indicating the starting and ending indices of independent helicities, and the total number of independent helicity states for the channel.
 
 These definitions ensure that each channel's quantum numbers and relevant parameters are explicitly tracked, supporting efficient matrix construction and manipulation in qBSE calculations.
-
 
 ### `structIndependentHelicity`
 
@@ -980,31 +973,29 @@ The `struct structParticle` structure defines the properties of a single particl
 
 A function is also provided to read particle information from a file and populate the particle list and key dictionary:
 
-`
-function particles!(particles::Vector{structParticle}, pkey::Dict{String,Int64}, filename::String)
-`
+`function particles!(particles::Vector{structParticle}, pkey::Dict{String,Int64}, filename::String)`
 
 - `particles`: A global vector (`const p = structParticle[]`) storing all particle information.
 - `pkey`: A global dictionary (`const pkey = Dict{String,Int64}()`) mapping particle names to their indices.
 
 This setup allows efficient lookup and management of particle properties for use in qBSE calculations.
 
-
 ## Functions for the qBSE
 
 ### `function preprocessing(Sys, channels, Ff, qn; Np=10, Nx=5, Nphi=5)`
 
-This function prepares the system and channel data structures for qBSE calculations by setting up the necessary discretization and quantum number information. 
+This function prepares the system and channel data structures for qBSE calculations by setting up the necessary discretization and quantum number information.
 
 **Arguments:**
 
 - `Sys::String`: Label identifying the system, stored in `SYS.Sys`.
 - `channels`: List of channels to be included in the calculation, stored in `IA[]`.
 - `Ff`: Flavor factors, stored in `IA[]`.
-- `qn`: Quantum numbers for the process.
+- `qn`: Quantum numbers for the process, and labels for Riemann sheets.
 - `Np`, `Nx`, `Nphi`: Number of momentum discretization points (default: 10), $\cos\theta$ discretization points (default: 5), azimuthal angle discretization points (default: 5).
 
 Example for arguments:
+
 ```julia
 Sys == "KNcp"
 qn = (I=1, Ih=1, J=1, Jh=2, P=-1, C=-1, lRm=1)
@@ -1027,7 +1018,6 @@ Ff = Dict(
 	)
 ```
 
-
 **Returns:**
 
 - `SYS::structSys`: The processed system object containing discretization and system information.
@@ -1035,19 +1025,20 @@ Ff = Dict(
 - `CH::Vector{structChannel}`: The processed channel objects, each describing a physical channel.
 - `IH::Vector{structIndependentHelicity}`: The processed independent helicity objects, ready for use in qBSE calculations.
 
-
 ### `function res(Range, iER, qn, SYS, IA, CH, IH, fV)`
 
-This function calculates the rescatering process by qBSE for a given range of energies. 
+This function calculates the rescatering process by qBSE for a given range of energies.
 
 **Arguments:**
+
 - `Range`: The range of energies to be considered. For example `Range = (ERmin=1.2, ERmax=2.0, NER=200, EIt=0.200, NEI=20, Ep="cm")`
 - `iER`: The index of the energy range, energy can be obtained as `ER = Range.ERmax - iER * (Range.ERmax - Range.ERmin) / (Range.NER - 1)`.
 - `qn`: The quantum numbers for the process.
 - `SYS`, `IA`, `CH`, `IH`:  Obtained by `preprocessing`.
-- `fV`: The potential kernel for qBSE. 
+- `fV`: The potential kernel for qBSE.
 
 **Returns:**
+
 - `Ect::Vector{ComplexF64}`: The complex energy values for the system.
 - `reslogt::Vector{Float64}`: The values of $\log|1 - VG|$.
 - `resM2::Matrix{Float64}`: The matrix $|M|^2$ for the channels.
@@ -1055,12 +1046,12 @@ This function calculates the rescatering process by qBSE for a given range of en
 - `Dim::Vector{structDimension}`: The dimension objects, recalculated from the input `Dim`.
 - `TG::Matrix{ComplexF64}`: The $TG$ matrix used for decays.
 
-
 ### `function fV(k, l, SYS, IA0, CHf, CHi)`
 
 This function defines the potential kernel for the qBSE calculation. It is used to compute the interaction potential between particles in a scattering process.
 
 **Arguments:**
+
 - `k::structMomentum`,`l::structHelicity`: The momenta and helicities of initial and final particles.
 - `SYS::structSys`: The same as above.
 - `IA0::structInterAction`: The interaction object containing information about the interactions and their properties, one of element of `IA` above.
@@ -1070,58 +1061,61 @@ This function defines the potential kernel for the qBSE calculation. It is used 
 
 A value representing the potential kernel, suitable for use in the qBSE package's calculations.
 
-**Note:**  
+**Note:**
 This is an internal function intended for use within the qBSE package. Users should not call this function directly.
 
 ### `function propFF(k, ex, L, LLi, LLf; lregu=1, lFFex=0)`
 
-In the `fV` function, form factors can be included via the auxiliary function `propFF`, which is used to regulate the interaction kernel. 
+In the `fV` function, form factors can be included via the auxiliary function `propFF`, which is used to regulate the interaction kernel.
 
 **Arguments:**
+
 - `k::structMomentum`: The kinematic information for the process.
 - `ex::Int64`: Index of the exchanged particle, usually set as `ex = IA0.key_ex[le]`, where `le` runs over the exchanged mesons in `1:IA0.Nex`.
 - `L::Float64`: The cutoff parameter for the exchanged meson, often chosen as the average of the initial and final particle cutoffs: `L = (LLi + LLf) / 2`.
 - `LLi::Float64`, `LLf::Float64`: Cutoff parameters for the initial and final particles, typically set as `LLi = CHi.cutoff`, `LLf = CHf.cutoff`.
 - `lregu::Int64`: Regularization flag for constituent particles (default: `1`).
 - `lFFex::Int64`: Type of form factor for the exchanged meson:
-	- `0`: No form factor.
-	- `1`: $\frac{L^2 - m^2}{L^2 - q^2}$
-	- `2`: $\frac{L^4}{(m^2 - q^2)^2 + L^4}$
-	- `3`: $\exp\left(-\frac{(m^2 - q^2)^2}{L^4}\right)$
-	- `4`: $\frac{L^4 + (q_t - m^2)^2 / 4}{(q^2 - (q_t + m^2) / 2)^2 + L^4}$
+  - `0`: No form factor.
+  - `1`: $\frac{L^2 - m^2}{L^2 - q^2}$
+  - `2`: $\frac{L^4}{(m^2 - q^2)^2 + L^4}$
+  - `3`: $\exp\left(-\frac{(m^2 - q^2)^2}{L^4}\right)$
+  - `4`: $\frac{L^4 + (q_t - m^2)^2 / 4}{(q^2 - (q_t + m^2) / 2)^2 + L^4}$
 
 **Description:**
 
 These options allow flexible control over the inclusion and type of form factors in the potential kernel, supporting different regularization schemes as needed for the physical system under study.
-
 
 ### `function simpleXsection(ER, resM2, CH, qn; Ep="cm")`
 
 This function computes the total cross section for a $2 \to 2$ scattering process using the squared amplitude matrix and channel information.
 
 **Arguments:**
+
 - `ER::Vector{Float64}`: Array of energy values (typically from `Ect`).
 - `resM2::Matrix{Float64}`: Matrix of squared amplitudes $|M|^2$ for the process, as obtained from the qBSE calculation.
 - `CH`: Vector of channel structures, as described above.
 - `qn`: Quantum numbers for the process.
 - `Ep`: Energy frame to use (`"cm"` for center-of-mass, `"L"` for laboratory; default: `"cm"`).
 
-**Returns:**  
+**Returns:**
 A `Vector{Matrix{Float64}}` value representing the total cross section at each energy point.
 
 **Description:**
 The function calculates the cross section by summing or integrating over the relevant momentum discretization points and applying the appropriate kinematic and symmetry factors, including spin averaging and flux normalization. It uses the channel and quantum number information to determine the initial and final state properties.
 
-###  `function lambda(m1, m2, m3)`
-This function calculates the Kallen function $\lambda(m_1, m_2, m_3)$, which is used in the phase space integration. 
+### `function lambda(m1, m2, m3)`
+
+This function calculates the Kallen function $\lambda(m_1, m_2, m_3)$, which is used in the phase space integration.
 
 ## Decay
 
-### function setTGA(par, sij, k, tecm, i, j)
+### `function setTGA(par, sij, k, tecm, i, j)`
 
 set the frame and other things for calculating TGA, which should be usde before `TGA` function.
 
 **Arguments:**
+
 - `par`: The parameters for the TGA calculation.
 - `sij`: The invariant mass squared of the two particles $i$ and $j$.
 - `k`: The momentum of the particle in the center-of-mass (CM) frame.
@@ -1133,24 +1127,23 @@ set the frame and other things for calculating TGA, which should be usde before 
 
 `para=(E=sqrt(sij), par=par, IH=IH, Dim=Dim, k=kn, P=Pn)`
 
-
-
 ### `TGA(cfinal, cinter, Vert, para)`
 
 This function calculates the transition amplitude for a given final state `cfinal` and interaction `cinter`.
 
 **Arguments:**
+
 - `cfinal`: The index of final state configuration (e.g., channel and particle information for the outgoing particles).
 - `cinter`: The index of intermediate interaction.
 - `Vert`: The vertex function and associated data, including the vertex structure, precomputed spinors or polarization vectors, and helicity assignments (e.g., `Vert=Vertex14, ULc=GA1 * FR.U(para14.P, lLc), l2=l2, l3=l3`).
 - `para`: The calculation parameters, as returned by `setTGA`.
-
 
 ### `function Vertex14(p1, p2, l1, l2, Vert, k, P)`
 
 This function computes the initial decay vertex for a process involving two rescattering particles.
 
 **Arguments:**
+
 - `p1`, `p2`: Four-momenta of the two rescattering particles.
 - `l1`, `l2`: Helicity indices of the two rescattering particles.
 - `Vert`: Vertex structure or function, as defined in the context of the calculation.
@@ -1161,9 +1154,8 @@ This function computes the initial decay vertex for a process involving two resc
 
 A value representing the decay vertex amplitude, suitable for use in the qBSE package's transition amplitude calculations.
 
-**Note:**  
+**Note:**
 This is an internal function intended for use within the qBSE package. Users should not call this function directly.
-
 
 ### auxiliary function
 
@@ -1182,6 +1174,7 @@ This function is used to display the pole information, including the energy, wid
 This function constructs a channel tuple for use in decay width or cross section calculations, such as with `Xs.Xsection`.
 
 **Arguments:**
+
 - `pf`: List of final state particle names (e.g., `["pi_m", "pi_p", "pi_p", "Lambda"]`).
 - `pin`: List of initial state particle names (can be empty if not needed).
 - `amps`: Amplitude information or function.
@@ -1189,6 +1182,7 @@ This function constructs a channel tuple for use in decay width or cross section
 **Returns:**
 
 A tuple of the form `(pf=pf, namef=namef, mf=mf, pin=pin, namei=namei, mi=mi, amps=amps)`, where:
+
 - `pf`, `pin`: Final and initial state particle names.
 - `namef`, `namei`: Channel names for final and initial states.
 - `mf`, `mi`: Masses of final and initial state particles.
@@ -1197,17 +1191,19 @@ A tuple of the form `(pf=pf, namef=namef, mf=mf, pin=pin, namei=namei, mi=mi, am
 **Example:**
 
 To compute the decay width for $\Lambda_c \to \pi^- \pi^- \pi^+ \Lambda$:
+
 ```julia
 ch = qBSE.ch(["pi_m", "pi_p", "pi_p", "Lambda"], [], amps)
 ```
-The resulting `ch` can be passed directly to `Xs.Xsection`. See the `Xs.Xsection` documentation for further usage details.
 
+The resulting `ch` can be passed directly to `Xs.Xsection`. See the `Xs.Xsection` documentation for further usage details.
 
 ### `function LorentzBoostRotation(k, tecm, p1, p2)`
 
 This function performs a Lorentz boost and rotation to transform a particle's momentum from the lab (static) frame of the total system to the center-of-mass system (CMS) of two particles.
 
 **Arguments:**
+
 - `k`: The momentum of the particle in the CMS frame (after transformation).
 - `tecm`: The total energy in the CMS frame.
 - `p1`: The momentum of the first particle in the lab frame.
@@ -1219,6 +1215,3 @@ This function performs a Lorentz boost and rotation to transform a particle's mo
 - `Pnew`: Total four-momentum vector after the same transformations.
 
 This function is useful for kinematic calculations where momenta need to be expressed in different reference frames, ensuring proper treatment of boosts and rotations.
-
-
-
