@@ -41,7 +41,7 @@
     - [`function simpleXsection(ER, resM2, CH, qn; Ep="cm")`](#function-simplexsectioner-resm2-ch-qn-epcm)
     - [`function lambda(m1, m2, m3)`](#function-lambdam1-m2-m3)
   - [Decay](#decay)
-    - [function setTGA(par, sij, k, tecm, i, j)](#function-settgapar-sij-k-tecm-i-j)
+    - [`function setTGA(par, sij, k, tecm, i, j)`](#function-settgapar-sij-k-tecm-i-j)
     - [`TGA(cfinal, cinter, Vert, para)`](#tgacfinal-cinter-vert-para)
     - [`function Vertex14(p1, p2, l1, l2, Vert, k, P)`](#function-vertex14p1-p2-l1-l2-vert-k-p)
     - [auxiliary function](#auxiliary-function)
