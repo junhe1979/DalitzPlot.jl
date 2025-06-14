@@ -21,4 +21,6 @@ using .FR
 using .qBSE
 using .PLOT
 using .AUXs
+# 顶层导出
+export GEN, Xs, FR, qBSE, PLOT, AUXs
 end
