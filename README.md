@@ -350,19 +350,14 @@ For example, $g^{00}$ is accessed as `FR.g[4,4]`.
 
 We adopt the Dirac representation for the gamma matrices:
 
-$$
-\gamma_1=\left(\begin{array}{cccc}0&0& 0&1\\0&0&1&0\\0&-1&0&0\\-1&0&0&0\end{array}\right),
-\gamma_2=\left(\begin{array}{cccc}0&0& 0&-i\\0&0&i&0\\0&i&0&0\\-i&0&0&0\end{array}\right),
-\gamma_3=\left(\begin{array}{cccc}0&0& 1&0\\0&0&0&-1\\-1&0&0&0\\0&1&0&0\end{array}\right),
-$$
+**Gamma matrices (Dirac representation):**
 
-$$
-\gamma_0=\left(\begin{array}{cccc}1&0& 0&0\\0&1&0&0\\0&0&-1&0\\0&0&0&-1\end{array}\right),
-\gamma_5=\left(\begin{array}{cccc}0&0& 1&0\\0&0&0&1\\1&0&0&0\\0&1&0&0\end{array}\right),
-I=\left(\begin{array}{cccc}1&0& 0&0\\0&1&0&0\\0&0&1&0\\0&0&0&1\end{array}\right),
-$$
+ $\gamma_0 = \left( \begin{array}{cccc} 1 & 0 & 0 & 0 \\ 0 & 1 & 0 & 0 \\ 0 & 0 & -1 & 0 \\ 0 & 0 & 0 & -1 \end{array} \right)$, $\gamma_1 = \left( \begin{array}{cccc} 0 & 0 & 0 & 1 \\ 0 & 0 & 1 & 0 \\ 0 & -1 & 0 & 0 \\ -1 & 0 & 0 & 0 \end{array} \right)$ , $\gamma_2 = \left( \begin{array}{cccc} 0 & 0 & 0 & -i \\ 0 & 0 & i & 0 \\ 0 & i & 0 & 0 \\ -i & 0 & 0 & 0 \end{array} \right)$
 
-The Dirac gamma matrices are represented by the array GA=$[\gamma_1,\gamma_2,\gamma_3,\gamma_0,\gamma_5]$, with each gamma matrix defined as `SMatrix{4,4,ComplexF64}`.
+ $\gamma_3 = \left( \begin{array}{cccc} 0 & 0 & 1 & 0 \\ 0 & 0 & 0 & -1 \\ -1 & 0 & 0 & 0 \\ 0 & 1 & 0 & 0 \end{array} \right)$, $\gamma_5 = \left( \begin{array}{cccc} 0 & 0 & 1 & 0 \\ 0 & 0 & 0 & 1 \\ 1 & 0 & 0 & 0 \\ 0 & 1 & 0 & 0 \end{array} \right)$, $I = \left( \begin{array}{cccc} 1 & 0 & 0 & 0 \\ 0 & 1 & 0 & 0 \\ 0 & 0 & 1 & 0 \\ 0 & 0 & 0 & 1 \end{array} \right)$  
+
+
+The Dirac gamma matrices are represented by the array GA=$\left[{\gamma}_1, {\gamma}_2, {\gamma}_3, {\gamma}_0, {\gamma}_5\right]$, with each gamma matrix defined as `SMatrix{4,4,ComplexF64}`.
 
 For example, $\gamma_2$ can be accessed as `FR.GA[2]` and has the type `SMatrix{4,4,ComplexF64}`. The unit matrix is accessed as   `FR.I`
 
