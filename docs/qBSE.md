@@ -98,7 +98,7 @@ where $P^{[\mu'][\mu]}$ is a general tensor structure. For example, for two vect
 In general, such propagators are difficult to handle because the potential ${\cal V}$ and amplitude ${\cal M}$ cannot be factorized. However, since the dominant contribution comes from the region where both constituents are near their mass shells, a form factor or cutoff is usually introduced to restrict the propagator to the near on-shell region. Therefore, it is reasonable to approximate $P^{[\mu'][\mu]}$ by its on-shell value, which can be expressed as a sum over polarization vectors or spinors: $P^{[\mu'][\mu]} \approx \sum_{\lambda_1, \lambda_2} A_{\lambda_1}^{[\mu'_1]} A_{\lambda_1}^{[\mu_1]} A_{\lambda_2}^{[\mu'_2]} A_{\lambda_2}^{[\mu_2]}$, where $A$ denotes the polarization vector or spinor.
 
 The Gross form of proposed quasipotential propagators for particles 1 and 2 with mass $m_1$ and $m_2$ written down in
-the center of mass frame where $P=(W,{\bm 0})$ with particle 2 being on shell are
+the center of mass frame where $P=(W,{\boldsymbol 0})$ with particle 2 being on shell are
 
 $$
 \begin{align}
@@ -107,22 +107,22 @@ i\frac{\delta(k^0_2-E_2)}{2E_2[(W-E_2)^2-E_1^2]},
 \end{align}
 $$
 
-where $k_1=(k_1^0,\bm k)=(E_1,\bm k)$, $k_2=(k_2^0,-\bm k)=(W-E_1,-\bm k)$ with $E_1=\sqrt{m_1^2+|\bm k|^2}$.
+where $k_1=(k_1^0,\boldsymbol k)=(E_1,\boldsymbol k)$, $k_2=(k_2^0,-\boldsymbol k)=(W-E_1,-\boldsymbol k)$ with $E_1=\sqrt{m_1^2+|\boldsymbol k|^2}$.
 
 With the define of $G_0=g/(2\pi i)$, the four-dimensional BSE can be reduced to a three-dimensional equation in center of mass frame
 
 $$
 \begin{align}
-i{\cal M}({\bm k}',{\bm k})&=i{\cal
-V}({\bm k}',{\bm k})+\int\frac{d
-{\bm k}''}{(2\pi)^3}
+i{\cal M}({\boldsymbol k}',{\boldsymbol k})&=i{\cal
+V}({\boldsymbol k}',{\boldsymbol k})+\int\frac{d
+{\boldsymbol k}''}{(2\pi)^3}
 i{\cal
-V}({\bm k}',{\bm k}'')G_0({\bm k}'')i{\cal
-M}({\bm k}'',{\bm k}),\quad
+V}({\boldsymbol k}',{\boldsymbol k}'')G_0({\boldsymbol k}'')i{\cal
+M}({\boldsymbol k}'',{\boldsymbol k}),\quad
 \end{align}
 $$
 
-Note: the $i{\cal M}$ and $i{\cal V}$ are usually real. In the center of mass frame. We choose ${\bm k}_2={\bm k}$ and ${\bm k}_1=-{\bm k}$.
+Note: the $i{\cal M}$ and $i{\cal V}$ are usually real. In the center of mass frame. We choose ${\boldsymbol k}_2={\boldsymbol k}$ and ${\boldsymbol k}_1=-{\boldsymbol k}$.
 
 ## Partial-wave expansion
 
@@ -130,7 +130,7 @@ To reduce the equation to one-dimensional equation, we apply the partial wave ex
 
 $$
 \begin{align}
-{\cal V}_{\lambda'\lambda}({\bm k}',{\bm k})&\equiv\langle\theta'\phi',\lambda'|{\cal V}|\theta\phi,\lambda\rangle
+{\cal V}_{\lambda'\lambda}({\boldsymbol k}',{\boldsymbol k})&\equiv\langle\theta'\phi',\lambda'|{\cal V}|\theta\phi,\lambda\rangle
 =\sum_{J'M'JM}\langle\theta'\phi'|J'M',\lambda'\rangle\langle J'M'|{\cal V}|JM,\lambda\rangle\langle JM,\lambda|\theta\phi,\lambda\rangle
 \nonumber\\
 &=\sum_{JM }N_J^2D^{J*}_{M\lambda'}(\phi',\theta',0){\cal
@@ -141,17 +141,17 @@ $$
 \nonumber\\
 {\cal V}_{\lambda'\lambda}^{JM}({\rm k}',{\rm k})&=
 N^2_J\int d\Omega' d\Omega
-D^{J}_{M,\lambda'}(\phi',\theta',0){\cal V}_{\lambda'\lambda}({\bm k}',{\bm k})D^{J*}_{M,\lambda}(\phi,\theta,0).
+D^{J}_{M,\lambda'}(\phi',\theta',0){\cal V}_{\lambda'\lambda}({\boldsymbol k}',{\boldsymbol k})D^{J*}_{M,\lambda}(\phi,\theta,0).
 \end{align}
 $$
 
 where $N_J=\sqrt{\frac{2J+1}{4\pi}}$, $\int d\Omega D^{J*}_{\lambda_1,\lambda_2}(\phi,\theta,0)D^{J'*}_{\lambda'_1,\lambda'_2}(\phi,\theta,0)=N_J^{-2}$.
 
-To calculate ${\cal V}_{\lambda'\lambda}^{JM}({\rm k}',{\rm k})$, we adopt a special CMS frame. The momenta are chosen as $k_2=(E_2,0,0,{\rm k})$, $k_1=(W-E_2,0,0,-{\rm k})$  and $k'_2=(E'_2,{\rm k}'\sin\theta_{k,k'},0,{\rm k}'\cos\theta_{k,k'})$, $k=(W-E_2, -{\rm k}'\sin\theta_{k,k'},0,-{\rm k}'\cos\theta_{k,k'})$ with ${\rm k}=|{\bm k}|$ and ${\rm k}'=|{\bm k}'|$.
+To calculate ${\cal V}_{\lambda'\lambda}^{JM}({\rm k}',{\rm k})$, we adopt a special CMS frame. The momenta are chosen as $k_2=(E_2,0,0,{\rm k})$, $k_1=(W-E_2,0,0,-{\rm k})$  and $k'_2=(E'_2,{\rm k}'\sin\theta_{k,k'},0,{\rm k}'\cos\theta_{k,k'})$, $k=(W-E_2, -{\rm k}'\sin\theta_{k,k'},0,-{\rm k}'\cos\theta_{k,k'})$ with ${\rm k}=|{\boldsymbol k}|$ and ${\rm k}'=|{\boldsymbol k}'|$.
 
 $$
 \begin{align}
-\to{\cal V}_{\lambda'\lambda}({\bm k}',{\bm k})&=
+\to{\cal V}_{\lambda'\lambda}({\boldsymbol k}',{\boldsymbol k})&=
 	\sum_{JM}N^2_JD^{J*}_{M\lambda'}(0,\theta_{k',k},0){\cal
 	V}^{JM}_{\lambda'\lambda}({\rm k}',{\rm k})D^{J}_{M\lambda}(0,0,0).
 \nonumber\\
@@ -161,13 +161,13 @@ $$
 	V}^J_{\lambda'\lambda}({\rm k}',{\rm k})
 \nonumber\\
 {\cal V}_{\lambda'\lambda}^J({\rm k}',{\rm k})&=2\pi\int d\cos\theta_{k,k'} d^{J}_{\lambda,\lambda'}(\theta_{k',k})
-{\cal V}_{\lambda'\lambda}({\bm k}',{\bm k}).
+{\cal V}_{\lambda'\lambda}({\boldsymbol k}',{\boldsymbol k}).
 \end{align}
 $$
 
 where $\int^1_{-1}d\cos\theta' d^{J'}_{\lambda,\lambda'}(\theta')d^{J}_{\lambda,\lambda'}(\theta')=N_J^{-2}/2\pi\delta_{JJ'}$ are used.
 
-NOTE: Which particle is chosen to parallel to $z$ axis is related to the order of $\lambda$ and $\lambda'$ in $d^{J}_{\lambda'\lambda}(\theta_{k,k'})$, so it can not be chosen arbitrarily. And the definition of helicity is also dependent of the definition of ${\bm k}_{1,2}$. Here, $\lambda=\lambda_2-\lambda_1$  and $\lambda_1=-s_1$, $\lambda_2=s_2$. The scattering amplitudes ${\cal M}$ has analogous relations.
+NOTE: Which particle is chosen to parallel to $z$ axis is related to the order of $\lambda$ and $\lambda'$ in $d^{J}_{\lambda'\lambda}(\theta_{k,k'})$, so it can not be chosen arbitrarily. And the definition of helicity is also dependent of the definition of ${\boldsymbol k}_{1,2}$. Here, $\lambda=\lambda_2-\lambda_1$  and $\lambda_1=-s_1$, $\lambda_2=s_2$. The scattering amplitudes ${\cal M}$ has analogous relations.
 
 Now we have the partial wave BS equation,
 
@@ -175,11 +175,11 @@ $$
 \begin{align}
 i{\cal M}^J_{\lambda',\lambda}({\rm k}',{\rm k})&=
 N^2_J\int d\Omega' d\Omega D^{J*}_{\lambda_R,\lambda'}(\phi',\theta',0)D^{J}_{\lambda_R,\lambda}(\phi,\theta,0)\nonumber\\
-&\cdot\left[i{\cal V}_{\lambda'\lambda}({\bm k}',{\bm
-k})+\int\frac{d{\bm k}''}{(2\pi)^3}i{\cal V}_{\lambda'\lambda''}({\bm
-k}',{\bm k}'') G_0({\bm k}'')i{\cal M}_{\lambda''\lambda}({\bm k}'',{\bm k})\right]\nonumber\\
+&\cdot\left[i{\cal V}_{\lambda'\lambda}({\boldsymbol k}',{\boldsymbol
+k})+\int\frac{d{\boldsymbol k}''}{(2\pi)^3}i{\cal V}_{\lambda'\lambda''}({\boldsymbol
+k}',{\boldsymbol k}'') G_0({\boldsymbol k}'')i{\cal M}_{\lambda''\lambda}({\boldsymbol k}'',{\boldsymbol k})\right]\nonumber\\
 &=i{\cal V}^J_{\lambda'\lambda}({\rm k}',{\rm k})+\int\frac{{\rm k}''^2d{\rm k}''}{(2\pi)^3}i{\cal V}^J_{\lambda'\lambda''}({\rm k}',{\rm k}'')
-G_0({\bm k}'')i{\cal M}^J_{\lambda''\lambda}({\rm k}'',{\rm k})
+G_0({\boldsymbol k}'')i{\cal M}^J_{\lambda''\lambda}({\rm k}'',{\rm k})
 \end{align}
 $$
 
@@ -275,9 +275,9 @@ $$
 i{\cal V}_{\lambda'\lambda}^{J^P}({\rm k}',{\rm k})
 &=2\pi\int d\cos\theta
 ~[d^{J}_{\lambda\lambda'}(\theta)
-i{\cal V}_{\lambda'\lambda}({\bm k}',{\bm k})
+i{\cal V}_{\lambda'\lambda}({\boldsymbol k}',{\boldsymbol k})
 +\eta d^{J}_{-\lambda\lambda'}(\theta)
-i{\cal V}_{\lambda'-\lambda}({\bm k}',{\bm k})],
+i{\cal V}_{\lambda'-\lambda}({\boldsymbol k}',{\boldsymbol k})],
 \end{align}
 $$
 
@@ -300,15 +300,15 @@ $$
 i{\cal V}^{J^P}_{ij}({\rm k}',{\rm k}'')
 &=f_if_j2\pi\int d\cos\theta
 ~[d^{J}_{\lambda\lambda'}(\theta)
-i{\cal V}_{\lambda'\lambda}({\bm k}',{\bm k})
+i{\cal V}_{\lambda'\lambda}({\boldsymbol k}',{\boldsymbol k})
 +\eta d^{J}_{-\lambda\lambda'}(\theta)
-i{\cal V}_{\lambda'-\lambda}({\bm k}',{\bm k})].
+i{\cal V}_{\lambda'-\lambda}({\boldsymbol k}',{\boldsymbol k})].
 \end{align}
 $$
 
 Note here the $f_if_j$ is also incorporated. Additionally, the form factors for the interacting particles are also included in the potential, modifying it as ${\cal V}\to f(k'){\cal V}f(k)$. Consequently, the resulting amplitude ${\cal M}$ also includes these form factors.
 
-The potential ${\cal V}_{\lambda'-\lambda}({\bm k}',{\bm k})$ is introduced by `fV` function in main file as
+The potential ${\cal V}_{\lambda'-\lambda}({\boldsymbol k}',{\boldsymbol k})$ is introduced by `fV` function in main file as
 
 ```julia
 fV(k, l, SYS, IA0, CHf, CHi) 
@@ -317,7 +317,7 @@ fV(k, l, SYS, IA0, CHf, CHi)
 where `k` and `l` are for the momenta and helicities of final and initial particles. `SYS` is
 for the system information. `IA0` is for the interaction information., `CHf` and `CHi` are for the information of final and initial channels.
 
-Transition of ${\cal V}_{\lambda'-\lambda}({\bm k}',{\bm k})$ to ${\cal V}^{J^P}_{ij}({\rm k}',{\rm k}'')$ performed in `qBSE.fKernel` which is an internal function.
+Transition of ${\cal V}_{\lambda'-\lambda}({\boldsymbol k}',{\boldsymbol k})$ to ${\cal V}^{J^P}_{ij}({\rm k}',{\rm k}'')$ performed in `qBSE.fKernel` which is an internal function.
 
 ## Transformation to a matrix equation
 
@@ -444,9 +444,9 @@ $$
 \hat{V}^{J^P}&={V}^{J^P}/4\pi=i{\cal V}^{J^P}_{\lambda'\lambda''}({\rm p}',{\rm p}'')/4\pi=f_if_j i{\cal V}_{\lambda'\lambda}^{J^P}({\rm p}',{\rm p})/4\pi \nonumber\\
 &=\frac{1}{2}f_if_j \int d\cos\theta
 ~[d^{J}_{\lambda\lambda'}(\theta)
-i{\cal V}_{\lambda'\lambda}({\bm p}',{\bm p})
+i{\cal V}_{\lambda'\lambda}({\boldsymbol p}',{\boldsymbol p})
 +\eta d^{J}_{-\lambda\lambda'}(\theta)
-i{\cal V}_{\lambda'-\lambda}({\bm p}',{\bm p})],
+i{\cal V}_{\lambda'-\lambda}({\boldsymbol p}',{\boldsymbol p})],
 \end{align}
 $$
 
@@ -516,7 +516,7 @@ For the open channel, the cross section can be obtained as
 $$
 \begin{align}
 	\frac{d\sigma}{d\Omega}=\frac{1}{\tilde{j}_1\tilde{j}_2}\frac{1}{64\pi^2
-	s}\frac{{\rm k}'}{{\rm k}}\sum_{\lambda\lambda'}|i{\cal M}_{\lambda\lambda'}({\bm k}',{\bm k})|^2.
+	s}\frac{{\rm k}'}{{\rm k}}\sum_{\lambda\lambda'}|i{\cal M}_{\lambda\lambda'}({\boldsymbol k}',{\boldsymbol k})|^2.
 \end{align}
 $$
 
@@ -566,14 +566,14 @@ The amplitudes can be written as
 
 $$
 \begin{align}
-	i{\cal M}({\bm k}', {\bm k})=-8\pi\sqrt{s}f({\bm k}',{\bm
-	k})=-\frac{8\pi\sqrt{s}}{|{\bm k}|}\sum
+	i{\cal M}({\boldsymbol k}', {\boldsymbol k})=-8\pi\sqrt{s}f({\boldsymbol k}',{\boldsymbol
+	k})=-\frac{8\pi\sqrt{s}}{|{\boldsymbol k}|}\sum
 	 _{JM}N^2_J D^{J*}_{\lambda_R,\lambda}(\phi',\theta',0)
-	a^J_{\lambda\lambda'}(|{\bm	k}'|,|{\bm k}|)D^{J}_{M,\lambda'}(\phi,\theta,0).
+	a^J_{\lambda\lambda'}(|{\boldsymbol	k}'|,|{\boldsymbol k}|)D^{J}_{M,\lambda'}(\phi,\theta,0).
 \end{align}
 $$
 
-where $a^J=-\frac{|{\bm k}|}{8\pi\sqrt{s}}{\cal M}^J(|{\bm k}|)$, which can be displayed as a trajectory in an Argand plot.
+where $a^J=-\frac{|{\boldsymbol k}|}{8\pi\sqrt{s}}{\cal M}^J(|{\boldsymbol k}|)$, which can be displayed as a trajectory in an Argand plot.
 
 # Three body decay
 
@@ -586,16 +586,16 @@ To study a $1\to3$ decay with the qBSE, we need consider the center of mass fram
 
 $$
 \begin{align}
-P^{lab}=(W,0,0,0);\  \ p^{lab}_1=(E^{lab}_1,{\bm p}^{lab}_1);\ \ p^{lab}_2=(E^{lab}_2,{\bm p}^{lab}_2);\ \ p^{lab}_3=(E^{lab}_3,{\bm p}^{lab}_3)
+P^{lab}=(W,0,0,0);\  \ p^{lab}_1=(E^{lab}_1,{\boldsymbol p}^{lab}_1);\ \ p^{lab}_2=(E^{lab}_2,{\boldsymbol p}^{lab}_2);\ \ p^{lab}_3=(E^{lab}_3,{\boldsymbol p}^{lab}_3)
 \end{align}
 $$
 
-The  Lorentz boost from $(m,{\bm 0})$ to $(E,{\bm k})$,
+The  Lorentz boost from $(m,{\boldsymbol 0})$ to $(E,{\boldsymbol k})$,
 
 $$
 \begin{align}
 \Lambda^{\mu}_\nu=\frac{1}{m}\left(\begin{array}{cccc}
-E({\bm k})&k_x&k_y&k_z\nonumber\\
+E({\boldsymbol k})&k_x&k_y&k_z\nonumber\\
 k_x&m+\frac{k_x k_x}{E+m}&\frac{k_x k_y}{E+m}&\frac{k_x k_z}{E+m}\nonumber\\
 k_y&\frac{k_y k_x}{E+m}&m+\frac{k_y k_y}{E+m}&\frac{k_y k_z}{E+m}\nonumber\\
 k_z&\frac{k_z k_x}{E+m}&\frac{k_z k_y}{E+m}&m+\frac{k_z k_z}{E+m}\nonumber\\
@@ -603,27 +603,27 @@ k_z&\frac{k_z k_x}{E+m}&\frac{k_z k_y}{E+m}&m+\frac{k_z k_z}{E+m}\nonumber\\
 \end{align}
 $$
 
-With  the Lorentz boost  the momenta for particle 23 in the laboratory frame $(E^{lab}_{23},-{\bm p}^{lab}_1)$ can be written with the momenta in the CMS of particles 23 $(M_{23},{\bm 0})$ as $p^{lab}=\Lambda(E^{lab}_{23},-{\bm p}^{lab}_1) p^{cm}$,
+With  the Lorentz boost  the momenta for particle 23 in the laboratory frame $(E^{lab}_{23},-{\boldsymbol p}^{lab}_1)$ can be written with the momenta in the CMS of particles 23 $(M_{23},{\boldsymbol 0})$ as $p^{lab}=\Lambda(E^{lab}_{23},-{\boldsymbol p}^{lab}_1) p^{cm}$,
 
 $$
 \begin{align}
-{\bm p}^{lab}&={\bm p}^{cm}-\frac{{\bm p}^{lab}_1}{M_{23}}\left[\frac{-{\bm p}^{lab}_1\cdot {\bm p}^{cm}}{W-E^{lab}_1({\rm p}^{lab}_1)+M_{23}}+p^{0cm}\right],\nonumber\\
-p^{0lab}&=\frac{1}{M_{23}}\left[(W-E^{lab}_1({\rm p}^{lab}_1))p^{0cm}-{\bm p}^{lab}_1\cdot{\bm p}^{cm}\right],
+{\boldsymbol p}^{lab}&={\boldsymbol p}^{cm}-\frac{{\boldsymbol p}^{lab}_1}{M_{23}}\left[\frac{-{\boldsymbol p}^{lab}_1\cdot {\boldsymbol p}^{cm}}{W-E^{lab}_1({\rm p}^{lab}_1)+M_{23}}+p^{0cm}\right],\nonumber\\
+p^{0lab}&=\frac{1}{M_{23}}\left[(W-E^{lab}_1({\rm p}^{lab}_1))p^{0cm}-{\boldsymbol p}^{lab}_1\cdot{\boldsymbol p}^{cm}\right],
 \end{align}
 $$
 
 where the $p_{23}+p_1=P$ is applied, and $M_{23}=\sqrt{(p^{lab}_2+p^{lab}_3)^2}=\sqrt{(p^{cm}_2+p^{cm}_3)^2}=\sqrt{(P-p_1)^2}$.
 
-The momenta in CMS of $23$ can also be written with the momentum in laboratory frame as $p=\Lambda(E^{lab}_{23},{\bm p}^{lab}_1) p^{lab}$
+The momenta in CMS of $23$ can also be written with the momentum in laboratory frame as $p=\Lambda(E^{lab}_{23},{\boldsymbol p}^{lab}_1) p^{lab}$
 
 $$
 \begin{align}
-{\bm p}^{cm}&={\bm p}^{lab}+\frac{{\bm p}^{lab}_1}{M_{23}}\left[\frac{{\bm p}^{lab}_1\cdot {\bm p}^{lab}}{M-E^{lab}_1({\rm p}^{lab}_1)+M_{23}}+p^{0lab}\right], \nonumber\\
-p^{0cm}&=\frac{1}{M_{23}}\left[(M-E^{lab}_1({\rm p}^{lab}_1))p^{0lab}+{\bm p}^{lab}_1\cdot{\bm p}^{lab}\right].
+{\boldsymbol p}^{cm}&={\boldsymbol p}^{lab}+\frac{{\boldsymbol p}^{lab}_1}{M_{23}}\left[\frac{{\boldsymbol p}^{lab}_1\cdot {\boldsymbol p}^{lab}}{M-E^{lab}_1({\rm p}^{lab}_1)+M_{23}}+p^{0lab}\right], \nonumber\\
+p^{0cm}&=\frac{1}{M_{23}}\left[(M-E^{lab}_1({\rm p}^{lab}_1))p^{0lab}+{\boldsymbol p}^{lab}_1\cdot{\boldsymbol p}^{lab}\right].
 \end{align}
 $$
 
-For the outgoing particles 2 and 3, the ${\bm p}^{cm}$ should be set along the $z$ axis, hence, an additional rotation is adopted as $p=R(-\theta^{cm},-\phi^{cm})p^{cm}$
+For the outgoing particles 2 and 3, the ${\boldsymbol p}^{cm}$ should be set along the $z$ axis, hence, an additional rotation is adopted as $p=R(-\theta^{cm},-\phi^{cm})p^{cm}$
 
 $$
 \begin{align}
@@ -694,12 +694,12 @@ d\Phi=(2\pi)^4\delta^4(P-p_1-p_2-p_3) \frac{d^3p_1}{2E_1(2\pi)^3}\frac{d^3p_2}{2
 \end{align}
 $$
 
-To study the invariant mass spectrum of the particles 2 and 3, it is convenient to rewrite the Lorentz-invariant phase space $d\Phi$ by taking as integration variables the direction of the momentum of particle 2 ${\bm p}_2^{cm}$ in the center-of-mass (cm) frame of particles 2 and 3. Thus, we first rewrite the phase factor as
+To study the invariant mass spectrum of the particles 2 and 3, it is convenient to rewrite the Lorentz-invariant phase space $d\Phi$ by taking as integration variables the direction of the momentum of particle 2 ${\boldsymbol p}_2^{cm}$ in the center-of-mass (cm) frame of particles 2 and 3. Thus, we first rewrite the phase factor as
 
 $$
 \begin{align}
 d\Phi
-&=(2\pi)^4\delta(E^{cm}_2+E^{cm}_3-W_{23})\delta^3({\bm p}^{cm}_2+{\bm p}^{cm}_3) \frac{d^3p^{lab}_1}{2E^{lab}_1(2\pi)^3}\frac{d^3p^{cm}_2}{2E_2^{cm}(2\pi)^3}\frac{d^3p^{cm}_3}{2E_3^{cm}(2\pi)^3}
+&=(2\pi)^4\delta(E^{cm}_2+E^{cm}_3-W_{23})\delta^3({\boldsymbol p}^{cm}_2+{\boldsymbol p}^{cm}_3) \frac{d^3p^{lab}_1}{2E^{lab}_1(2\pi)^3}\frac{d^3p^{cm}_2}{2E_2^{cm}(2\pi)^3}\frac{d^3p^{cm}_3}{2E_3^{cm}(2\pi)^3}
 \end{align}
 $$
 
@@ -708,7 +708,7 @@ where $W_{23}^2=(M-E^{lab}_1)^2-|{\rm p}^{lab}_1|^2$. Here the Lorentz invarianc
 Here, we use the momentum of the particle 3 in the center of mass system of two rescattering particles.
 The momentum of the particle 3 has a relation ${\rm p}^{cm}_3=\frac{1}{2M_{23}}\sqrt{\lambda(M_{23}^2,m_3^2,m_2^2)}$.
 
-Owing to the three-momentum $\delta$ function, the integral over ${\bm p}^{cm}_2$ can be eliminated. Next, the quantity $d^3p^{cm}_3$ is converted to $dM_{23}$ by the relation,
+Owing to the three-momentum $\delta$ function, the integral over ${\boldsymbol p}^{cm}_2$ can be eliminated. Next, the quantity $d^3p^{cm}_3$ is converted to $dM_{23}$ by the relation,
 
 $$
 \begin{align}
