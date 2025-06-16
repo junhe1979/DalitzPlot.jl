@@ -1074,13 +1074,14 @@ In the `fV` function, form factors can be included via the auxiliary function `p
 - `ex::Int64`: Index of the exchanged particle, usually set as `ex = IA0.key_ex[le]`, where `le` runs over the exchanged mesons in `1:IA0.Nex`.
 - `L::Float64`: The cutoff parameter for the exchanged meson, often chosen as the average of the initial and final particle cutoffs: `L = (LLi + LLf) / 2`.
 - `LLi::Float64`, `LLf::Float64`: Cutoff parameters for the initial and final particles, typically set as `LLi = CHi.cutoff`, `LLf = CHf.cutoff`.
-- `lregu::Int64`: Regularization flag for constituent particles (default: `1`).
+- `lregu::Int64`: Regularization flag for constituent particles (Only `1`).
 - `lFFex::Int64`: Type of form factor for the exchanged meson:
   - `0`: No form factor.
   - `1`: $\frac{L^2 - m^2}{L^2 - q^2}$
   - `2`: $\frac{L^4}{(m^2 - q^2)^2 + L^4}$
   - `3`: $\exp\left(-\frac{(m^2 - q^2)^2}{L^4}\right)$
   - `4`: $\frac{L^4 + (q_t - m^2)^2 / 4}{(q^2 - (q_t + m^2) / 2)^2 + L^4}$
+  - `5`: $\frac{L^2}{L^2 - q^2}$
 
 **Description:**
 

@@ -480,6 +480,7 @@ The data should be in the following format:
 0.150 25  4
 ```
 
+
 # AUXs Package: for Auxiliary functions
 
 ## Fitting 

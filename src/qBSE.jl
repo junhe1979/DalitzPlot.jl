@@ -415,7 +415,7 @@ function showPoleInfo(qn, Ec, reslog, filename)
 end
 #*******************************************************************************************
 #form factors
-function propFF(k, ex, L, LLi, LLf; lregu=1, lFFex=0)
+function propFF(k, ex, L, LLi, LLf; lFFex=0)
     m = p[ex].m
     if lFFex >= 10
         L = m + 0.22 * L
@@ -437,27 +437,30 @@ function propFF(k, ex, L, LLi, LLf; lregu=1, lFFex=0)
             FFex *= exp(-2.0 * (m^2 - k.q2)^2 / L^4)
         elseif lFFex == 4
             FFex *= ((L^4 + (k.qt - m^2)^2 / 4) / ((k.q2 - (qt + m^2) / 2)^2 + L^4))^2
+        elseif lFFex == 5
+            FFex *= (L^2 / (L^2 - k.q2))^2  #type 1
         end
     end
 
-    if lregu == 1
-        mi1 = real(k.i1[5])
-        mf1 = real(k.f1[5])
-        mi2 = real(k.i2[5])
-        mf2 = real(k.f2[5])
-        if mi1 <= mi2
-            FFre += -(mi1^2 - k.i1 * k.i1)^2 / LLi^4
-        end
-        if mi1 > mi2
-            FFre += -(mi2^2 - k.i2 * k.i2)^2 / LLi^4
-        end
-        if mf1 <= mf2
-            FFre += -(mf1^2 - k.f1 * k.f1)^2 / LLf^4
-        end
-        if mf1 > mf2
-            FFre += -(mf2^2 - k.f2 * k.f2)^2 / LLf^4
-        end
+
+    mi1 = real(k.i1[5])
+    mf1 = real(k.f1[5])
+    mi2 = real(k.i2[5])
+    mf2 = real(k.f2[5])
+    if mi1 <= mi2
+        FFre += -(mi1^2 - k.i1 * k.i1)^2 / LLi^4
+
     end
+    if mi1 > mi2
+        FFre += -(mi2^2 - k.i2 * k.i2)^2 / LLi^4
+    end
+    if mf1 <= mf2
+        FFre += -(mf1^2 - k.f1 * k.f1)^2 / LLf^4
+    end
+    if mf1 > mf2
+        FFre += -(mf2^2 - k.f2 * k.f2)^2 / LLf^4
+    end
+
     return prop * FFex * exp(FFre)
 
 end
@@ -468,7 +471,6 @@ function kernel(kf, ki, Ec, qn, SYS, IA, CH, IHf, IHi, fV)::ComplexF64 # Calcula
     IA0 = IA[ichf, ichi]
     CHi = CH[ichi]
     CHf = CH[ichf]
-
     if IA[ichi, ichf].Nex == 0 # no exchange, returen 0
         return 0 + 0im
     end
@@ -511,6 +513,7 @@ function kernel(kf, ki, Ec, qn, SYS, IA, CH, IHf, IHi, fV)::ComplexF64 # Calcula
         q2 = q * q
         k = structMomentum(ki1, kf1, ki2, kf2, q, q2, qt)
 
+
         l.f1, l.i2 = -l.f1, -l.i2  #helicity to spin and the minus for fixed parity
         Kerm1 = fV(k, l, SYS, IA0, CHf, CHi) * SYS.d[i][Int64(lJJ + l21i)+1, lf] * eta
         l.f1, l.i2 = -l.f1, -l.i2
@@ -518,6 +521,7 @@ function kernel(kf, ki, Ec, qn, SYS, IA, CH, IHf, IHi, fV)::ComplexF64 # Calcula
         Kerp1 = fV(k, l, SYS, IA0, CHf, CHi) * SYS.d[i][Int64(lJJ - l21i)+1, lf]
         l.i1, l.f1 = -l.i1, -l.f1
         Ker0 += (Kerp1 + Kerm1) * SYS.wxv[i]
+        #@show i,Ker0
     end
 
     kernel = Ker0 * 2pi
@@ -527,8 +531,7 @@ function kernel(kf, ki, Ec, qn, SYS, IA, CH, IHf, IHi, fV)::ComplexF64 # Calcula
     if l.i1 == 0 && l.i2 == 0
         kernel /= sqrt(2.0)
     end
-    #@show kernel
-    #exit()
+
     return kernel
 end
 #*******************************************************************************************
@@ -588,6 +591,61 @@ function propagator(k, kv, w, wv, Ec, Np, CH, IH0, Dimo, lRm)
 end
 
 #*******************************************************************************************
+
+
+# calculate V G I
+function VGI(Ec, qn, SYS, IA, CH, IH, fV; lRm=0)
+    # Determine the dimension of the work matrix. 
+    Np = length(SYS.kv)
+    SYS, IH, Dim, = workSpace(Ec, lRm, Np, SYS, CH, IH)
+    Nt = length(Dim)
+
+    # Initialize matrices
+    Vc = zeros(Complex{Float64}, Nt, Nt)
+    Gc = zeros(Complex{Float64}, Nt, Nt)
+    II = zeros(Float64, Nt, Nt)
+
+    # Populate Vc, Gc, and II
+    for i_f = 1:Nt
+        Dimf = Dim[i_f]
+        kf = Dimf.k
+
+        for i_i = i_f:Nt
+            Dimi = Dim[i_i]
+            ki = Dimi.k
+
+            # Compute Vc for upper triangular part
+            Vc[i_f, i_i] = kernel(kf, ki, Ec, qn, SYS, IA, CH, IH[Dimf.iIH], IH[Dimi.iIH], fV)::ComplexF64
+            #@show Vc[i_f, i_i] 
+            #exit()
+            
+            # Compute Gc and II only on the diagonal
+            if i_i == i_f
+                Gc[i_f, i_i] = propagator(kf, SYS.kv, Dimf.w, SYS.wv, Ec, Np, CH, IH[Dimf.iIH], Dimf.Dimo, lRm)
+                II[i_f, i_i] = 1.0
+            end
+        end
+    end
+
+    # Populate lower triangular part of Vc based on conjugate symmetry
+    for i_f = 2:Nt
+        Dimf_IH = IH[Dim[i_f].iIH]
+
+        for i_i = 1:i_f-1
+            Dimi_IH = IH[Dim[i_i].iIH]
+
+            if Dimf_IH.iCH != Dimi_IH.iCH
+                Vc[i_f, i_i] = conj(Vc[i_i, i_f])
+            else
+                Vc[i_f, i_i] = Vc[i_i, i_f]
+            end
+        end
+    end
+    #@show Vc[:,1]
+    #exit()
+    return Vc, Gc, II, IH, Dim
+end
+
 function workSpace(Ec, lRm, Np, SYS, CH, IH)
     #produce the dimensions in a independent helicity amplitudes, especially for the onshell dimension.
     Ec += Complex{Float64}(0.0, 1e-15)
@@ -623,10 +681,10 @@ function workSpace(Ec, lRm, Np, SYS, CH, IH)
             IH[i1].Dime = Nt
             IH[i1].Dimn = Np + IH[i1].Dimo
             for idim in 1:Np
-                Dim0 = structDimension(IH[i1].iCH, SYS.kv[idim], SYS.wv[idim], 0)
+                Dim0 = structDimension(i1, SYS.kv[idim], SYS.wv[idim], 0)
                 push!(Dim, Dim0)
             end
-            Dim0 = structDimension(IH[i1].iCH, kon, 0.0, 1)
+            Dim0 = structDimension(i1, kon, 0.0, 1)
             push!(Dim, Dim0)
         else
             Nt += Np
@@ -634,7 +692,7 @@ function workSpace(Ec, lRm, Np, SYS, CH, IH)
             IH[i1].Dimn = Np
 
             for idim in 1:Np
-                Dim0 = structDimension(IH[i1].iCH, SYS.kv[idim], SYS.wv[idim], 0)
+                Dim0 = structDimension(i1, SYS.kv[idim], SYS.wv[idim], 0)
                 push!(Dim, Dim0)
 
             end
@@ -646,55 +704,6 @@ function workSpace(Ec, lRm, Np, SYS, CH, IH)
     return SYS, IH, Dim
 end
 
-# calculate V G I
-function VGI(Ec, qn, SYS, IA, CH, IH, fV; lRm=0)
-    # Determine the dimension of the work matrix. 
-    Np = length(SYS.kv)
-    SYS, IH, Dim, = workSpace(Ec, lRm, Np, SYS, CH, IH)
-    Nt = length(Dim)
-
-    # Initialize matrices
-    Vc = zeros(Complex{Float64}, Nt, Nt)
-    Gc = zeros(Complex{Float64}, Nt, Nt)
-    II = zeros(Float64, Nt, Nt)
-
-    # Populate Vc, Gc, and II
-    for i_f = 1:Nt
-        Dimf = Dim[i_f]
-        kf = Dimf.k
-
-        for i_i = i_f:Nt
-            Dimi = Dim[i_i]
-            ki = Dimi.k
-
-            # Compute Vc for upper triangular part
-            Vc[i_f, i_i] = kernel(kf, ki, Ec, qn, SYS, IA, CH, IH[Dimf.iIH], IH[Dimi.iIH], fV)::ComplexF64
-
-            # Compute Gc and II only on the diagonal
-            if i_i == i_f
-                Gc[i_f, i_i] = propagator(kf, SYS.kv, Dimf.w, SYS.wv, Ec, Np, CH, IH[Dimf.iIH], Dimf.Dimo, lRm)
-                II[i_f, i_i] = 1.0
-            end
-        end
-    end
-
-    # Populate lower triangular part of Vc based on conjugate symmetry
-    for i_f = 2:Nt
-        Dimf_IH = IH[Dim[i_f].iIH]
-
-        for i_i = 1:i_f-1
-            Dimi_IH = IH[Dim[i_i].iIH]
-
-            if Dimf_IH.iCH != Dimi_IH.iCH
-                Vc[i_f, i_i] = conj(Vc[i_i, i_f])
-            else
-                Vc[i_f, i_i] = Vc[i_i, i_f]
-            end
-        end
-    end
-
-    return Vc, Gc, II, IH, Dim
-end
 #*******************************************************************************************
 function preprocessing(Sys, channels, Ff, qn; Np=10, Nx=5, Nphi=5)
     #store the channel information, interaction information in CH,IH,IA
@@ -813,15 +822,19 @@ function preprocessing(Sys, channels, Ff, qn; Np=10, Nx=5, Nphi=5)
     # generate Gauss–Legendre nodes and weights in[-1, 1]  
     nodes, weights = gausslegendre(Np)
     # to [0, π/2]
-    θ = 0.5 * (nodes .+ 1.0) * (π / 2)
-    wθ = 0.5 * (π / 2) * weights
-    kv = tan.(θ)
-    wv = wθ ./ (cos.(θ) .^ 2)
+    k0 = 0.5 * (nodes .+ 1.0) * (π / 2)
+    w0 = 0.5 * (π / 2) * weights
+    kv = tan.(k0)
+    wv = w0 ./ (cos.(k0) .^ 2)
 
     #kv, wv = gausslaguerre(Np)
     #wv = wv .* exp.(kv)
 
     xv, wxv = gausslegendre(Nx)
+
+    #xv = -1 .+ 2 / Nx .* ((1:Nx) .- 0.5)
+    #wxv = fill(2 / Nx, Nx)
+
 
     wd = [wignerd(qn.J / qn.Jh, acos(xv[i])) for i in 1:Nx]
 
