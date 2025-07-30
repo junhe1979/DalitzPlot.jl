@@ -463,6 +463,15 @@ $$
 
 ## Pole search
 
+To find a bound state or resonance, the singularities should be searched at the pole of the $M(z)=0$ in the complex plane after analytic continuation total energy $W$ into the complex plane as $z$. 
+
+Since $E=\sqrt{m_1^2+p^2}+\sqrt{m_2^2+p^2}$, the $p$-plane correspond to two Reimann sheets for $E$. The bound state is located in the first Reimann sheet while the resonances located in the second Reimann sheet.
+
+![Description](fig/Riemansheet.png)
+
+From the above figure, the resonances should be found with $Im(q)<0$. The potential $V$ is dependent on the $E$.
+
+
 After extend the energy in the center of mass frame $W$ into complex energy plane as $z$, the pole can be found by variation of $z$ to satisfy
 
 $$
