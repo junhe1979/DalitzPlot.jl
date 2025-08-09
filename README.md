@@ -399,7 +399,7 @@ A function `FR.GS` is provided for calculate $\gamma \cdot k$ as `function GS(k:
 
 `function LC(a::SVector, b::SVector, c::SVector, d::SVector)`: $\epsilon^{\mu\nu\rho\lambda}a_\mu b_\nu c_\rho d_\lambda$.
 
-***Note* Here, the Levi-Civita tensor is defined with upper indices $\epsilon^{\mu\nu\rho\lambda}$, and all resultant quantities will likewise carry upper indices. The input vectors a, b, c, and d are also specified in their contravariant form (${\rm a}^{\mu}$,${\rm b}^{\mu}$,${\rm c}^{\mu}$,${\rm d}^{\mu}$).
+***Note*** Here, the Levi-Civita tensor is defined with upper indices $\epsilon^{\mu\nu\rho\lambda}$, and all resultant quantities will likewise carry upper indices. The input vectors a, b, c, and d are also specified in their contravariant form (${\rm a}^{\mu}$,${\rm b}^{\mu}$,${\rm c}^{\mu}$,${\rm d}^{\mu}$).
 
 ## Additional defintions to operations
 
