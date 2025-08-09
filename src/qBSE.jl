@@ -15,6 +15,10 @@ struct structSys #SYS
     wpv::Vector{Float64} #weights of discreting
     sp::Vector{Float64} #sin phi
     cp::Vector{Float64} #cos phi
+    cutoff_re_type::Symbol
+    cutoff_ex::Float64
+    cutoff_ex_type::Symbol
+    FF_ex_type::Int64
 end
 # store the information of a interaction
 struct structInterAction #IA[]
@@ -214,7 +218,7 @@ function res(Range, iER, qn, SYS, IA, CH, IH, fV)
 
     EI = 0.0
     if Range.Ep == "L" #here, we use the pL, so should be transfered to ER
-        PL = Range.ERmax - iER * (Range.ERmax - Range.ERmin) / Range.NER # Calculate ER
+        PL = Range.ERmax - iER * (Range.ERmax - Range.ERmin) / (Range.NER - 1)# Calculate ER
         ER = sqrt((sqrt(PL^2 + qBSE.p[qBSE.pkey["K_m"]].m^2) + qBSE.p[qBSE.pkey["N_p"]].m)^2 - PL^2)
     end
     NEI = Range.NEI
@@ -415,55 +419,70 @@ function showPoleInfo(qn, Ec, reslog, filename)
 end
 #*******************************************************************************************
 #form factors
-function propFF(k, ex, L, LLi, LLf; lFFex=0)
-    m = p[ex].m
-    if lFFex >= 10
-        L = m + 0.22 * L
-        LLi = m + 0.22 * LLi
-        LLf = m + 0.22 * LLf
-        lFFex -= 10
+function FFre(k, cutoffi, cutofff; cutoff_re_type=:Lambda, CHi=nothing, CHf=nothing, key_ex=0)
+
+    if cutoff_re_type == :alpha_light
+        cutoffi = CHi.m[1] + 0.22 * cutoffi
+        cutofff = CHf.m[1] + 0.22 * cutofff
+    elseif cutoff_re_type == :alpha
+        cutoffi = p[key_ex].m + 0.22 * cutoffi
+        cutofff = p[key_ex].m + 0.22 * cutofff
     end
 
-    prop = 1.0 + 0im #propagator
-    FFex = 1.0 + 0im #form factor for exchanged particles
     FFre = 0.0 + 0im #form factor for constituent particles
-    if p[ex].name != "V" #not contact interaction
-        prop *= (1.0 + 0im) / (k.q2 - ComplexF64(m^2))
-        if lFFex == 1
-            FFex *= ((L^2 - m^2) / (L^2 - k.q2))^2  #type 1
-        elseif lFFex == 2
-            FFex *= (L^4 / ((m^2 - k.q2)^2 + L^4))^2 #type 2
-        elseif lFFex == 3
-            FFex *= exp(-2.0 * (m^2 - k.q2)^2 / L^4)
-        elseif lFFex == 4
-            FFex *= ((L^4 + (k.qt - m^2)^2 / 4) / ((k.q2 - (qt + m^2) / 2)^2 + L^4))^2
-        elseif lFFex == 5
-            FFex *= (L^2 / (L^2 - k.q2))^2  #type 1
-        end
-    end
-
 
     mi1 = real(k.i1[5])
     mf1 = real(k.f1[5])
     mi2 = real(k.i2[5])
     mf2 = real(k.f2[5])
     if mi1 <= mi2
-        FFre += -(mi1^2 - k.i1 * k.i1)^2 / LLi^4
+        FFre += -(mi1^2 - k.i1 * k.i1)^2 / cutoffi^4
 
     end
     if mi1 > mi2
-        FFre += -(mi2^2 - k.i2 * k.i2)^2 / LLi^4
+        FFre += -(mi2^2 - k.i2 * k.i2)^2 / cutoffi^4
     end
     if mf1 <= mf2
-        FFre += -(mf1^2 - k.f1 * k.f1)^2 / LLf^4
+        FFre += -(mf1^2 - k.f1 * k.f1)^2 / cutofff^4
     end
     if mf1 > mf2
-        FFre += -(mf2^2 - k.f2 * k.f2)^2 / LLf^4
+        FFre += -(mf2^2 - k.f2 * k.f2)^2 / cutofff^4
     end
 
-    return prop * FFex * exp(FFre)
+    return exp(FFre)
 
 end
+function propFFex(k, key_ex, cutoff; cutoff_ex_type=:Lambda, FF_ex_type=3)
+
+    m = p[key_ex].m
+
+    if cutoff_ex_type == :alpha
+        cutoff = m + 0.22 * cutoff
+    end
+
+    prop = 1.0 + 0im #propagator
+    FFex = 1.0 + 0im #form factor for exchanged particles
+    if p[key_ex].name != "V" #not contact interaction
+        prop *= (1.0 + 0im) / (k.q2 - ComplexF64(m^2))
+        if FF_ex_type == 1
+            FFex *= ((cutoff^2 - m^2) / (cutoff^2 - k.q2))^2  #type 1
+        elseif FF_ex_type == 2
+            FFex *= (cutoff^4 / ((m^2 - k.q2)^2 + cutoff^4))^2 #type 2
+        elseif FF_ex_type == 3
+            FFex *= exp(-2.0 * (m^2 - k.q2)^2 / cutoff^4)
+        elseif FF_ex_type == 4
+            FFex *= ((cutoff^4 + (k.qt - m^2)^2 / 4) / ((k.q2 - (qt + m^2) / 2)^2 + cutoff^4))^2
+        elseif FF_ex_type == 5
+            FFex *= (cutoff^2 / (cutoff^2 - k.q2))^2  #type 1
+        elseif FF_ex_type == 6
+            FFex *= exp(-(m^2 - k.q2)^2 / cutoff^4)
+        end
+    end
+
+    return prop * FFex
+
+end
+
 #potential kernel
 function kernel(kf, ki, Ec, qn, SYS, IA, CH, IHf, IHi, fV)::ComplexF64 # Calculating kernel
     ichi = IHi.iCH # channel
@@ -483,9 +502,9 @@ function kernel(kf, ki, Ec, qn, SYS, IA, CH, IHf, IHi, fV)::ComplexF64 # Calcula
 
     ki10, ki20, qti = (mi1 + 1e-7 <= mi2) ? (Ec - Ei2, Ei2, mi2) : (Ei1, Ec - Ei1, Ec - mi1)
     kf10, kf20, qtf = (mf1 + 1e-7 <= mf2) ? (Ec - Ef2, Ef2, mf2) : (Ef1, Ec - Ef1, Ec - mf1)
-    # @show ki10, ki20, qti 
-    qt = (qti - qtf)^2 + 0im
 
+    qt = (qti - qtf)^2 + 0im
+    
     l = structHelicity(  #helicities
         IHi.hel[1], IHi.helh[1],
         IHf.hel[1], IHf.helh[1],
@@ -505,10 +524,12 @@ function kernel(kf, ki, Ec, qn, SYS, IA, CH, IHf, IHi, fV)::ComplexF64 # Calcula
     for i in 1:ndx
         x = SYS.xv[i]
         sqrt1_x2 = sqrt(1 - x^2)
+
         ki1 = @SVector [0.0 + 0im, 0.0 + 0im, -ki + 0im, ki10 + 0im, mi1 + 0im]
         kf1 = @SVector [-kf * sqrt1_x2 + 0im, 0.0 + 0im, -kf * x + 0im, kf10 + 0im, mf1 + 0im]
         ki2 = @SVector [0.0 + 0im, 0.0 + 0im, ki + 0im, ki20 + 0im, mi2 + 0im]
         kf2 = @SVector [kf * sqrt1_x2 + 0im, 0.0 + 0im, kf * x + 0im, kf20 + 0im, mf2 + 0im]
+
         q = kf2 - ki2
         q2 = q * q
         k = structMomentum(ki1, kf1, ki2, kf2, q, q2, qt)
@@ -618,7 +639,7 @@ function VGI(Ec, qn, SYS, IA, CH, IH, fV; lRm=0)
             Vc[i_f, i_i] = kernel(kf, ki, Ec, qn, SYS, IA, CH, IH[Dimf.iIH], IH[Dimi.iIH], fV)::ComplexF64
             #@show Vc[i_f, i_i] 
             #exit()
-            
+
             # Compute Gc and II only on the diagonal
             if i_i == i_f
                 Gc[i_f, i_i] = propagator(kf, SYS.kv, Dimf.w, SYS.wv, Ec, Np, CH, IH[Dimf.iIH], Dimf.Dimo, lRm)
@@ -705,7 +726,7 @@ function workSpace(Ec, lRm, Np, SYS, CH, IH)
 end
 
 #*******************************************************************************************
-function preprocessing(Sys, channels, Ff, qn; Np=10, Nx=5, Nphi=5)
+function preprocessing(Sys, channels, Ff, qn, cutoff; Np=10, Nx=5, Nphi=5)
     #store the channel information, interaction information in CH,IH,IA
     CH = structChannel[]
     IH = structIndependentHelicity[]
@@ -845,7 +866,12 @@ function preprocessing(Sys, channels, Ff, qn; Np=10, Nx=5, Nphi=5)
 
     sp = [sin(pv[i]) for i in 1:Nphi]
     cp = [cos(pv[i]) for i in 1:Nphi]
-    SYS = structSys(Sys, kv, wv, xv, wxv, wd, pv, wpv, sp, cp)
+
+    SYS = structSys(Sys, kv, wv, xv, wxv, wd, pv, wpv, sp, cp,
+        get(cutoff, :cutoff_re_type, :Lambda),
+        get(cutoff, :cutoff_ex, 0.0),
+        get(cutoff, :cutoff_ex_type, :Lambda),
+        get(cutoff, :FF_ex_type, 3))
 
     return SYS, IA, CH, IH
 end

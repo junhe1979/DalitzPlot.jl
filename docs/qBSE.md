@@ -936,6 +936,9 @@ The `struct structSys` (often referenced as `SYS` in the code) stores informatio
 - `d::Vector{Matrix{Float64}}`: Precomputed Wigner $d$-matrices of $\theta$.
 - `pv::Vector{Float64}`, `wpv::Vector{Float64}`: Discretized azimuthal angles and weight of $\phi$ discretization.
 - `sp::Vector{Float64}`, `cp::Vector{Float64}`: Sine values and Cosine values of the discretized $\phi$ angles.
+- `cutoff_re_type::Symbol`: The type of cutoff used for the exponential regularization of the constituent particles. Use `:Lambda` for a fixed $\Lambda$, `:alpha` for $\Lambda = m + 0.22 \alpha$, where $m$ is the mass of the exchanged meson, and `:alpha_light` for using the mass of the light meson.
+- `cutoff_ex::Float64`, `cutoff_ex_type::Symbol`, `FF_ex_type::Int64`: The value and type of cutoff for the exchanged meson, and the type of the form factor applied to the exchanged meson.
+
 
 These fields provide all necessary information for numerical integration over momentum and angular variables in the qBSE framework.
 
@@ -991,7 +994,7 @@ This setup allows efficient lookup and management of particle properties for use
 
 ## Functions for the qBSE
 
-### `function preprocessing(Sys, channels, Ff, qn; Np=10, Nx=5, Nphi=5)`
+### `function preprocessing(Sys, channels, Ff, qn, cutoff; Np=10, Nx=5, Nphi=5)`
 
 This function prepares the system and channel data structures for qBSE calculations by setting up the necessary discretization and quantum number information.
 
@@ -1001,6 +1004,7 @@ This function prepares the system and channel data structures for qBSE calculati
 - `channels`: List of channels to be included in the calculation, stored in `IA[]`.
 - `Ff`: Flavor factors, stored in `IA[]`.
 - `qn`: Quantum numbers for the process, and labels for Riemann sheets.
+- `cutoff`: A `NamedTuple` for the last four keys of `structSys`. The user may provide only the required fields; the omitted ones will be set to default as `cutoff = (cutoff_re_type = :Lambda, cutoff_ex = 0.0, cutoff_ex_type = :Lambda, FF_ex_type = 3)`.
 - `Np`, `Nx`, `Nphi`: Number of momentum discretization points (default: 10), $\cos\theta$ discretization points (default: 5), azimuthal angle discretization points (default: 5).
 
 Example for arguments:
@@ -1008,7 +1012,7 @@ Example for arguments:
 ```julia
 Sys == "KNcp"
 qn = (I=1, Ih=1, J=1, Jh=2, P=-1, C=-1, lRm=1)
-
+cutoff = (cutoff_re_type = :alpha_light,)
 channels = (
     ("K_b0", "N_p", qBSE.p[qBSE.pkey["K"]].m + 0.22 * 1.63),
     ("pi_0", "Sigma_p", qBSE.p[qBSE.pkey["pi"]].m + 0.22 * 1.63),
@@ -1073,18 +1077,33 @@ A value representing the potential kernel, suitable for use in the qBSE package'
 **Note:**
 This is an internal function intended for use within the qBSE package. Users should not call this function directly.
 
-### `function propFF(k, ex, L, LLi, LLf; lregu=1, lFFex=0)`
+### `FFre(k, cutoffi, cutofff; cutoff_re_type=:Lambda, CHi=nothing, CHf=nothing, key_ex=0)`
 
-In the `fV` function, form factors can be included via the auxiliary function `propFF`, which is used to regulate the interaction kernel.
+In the `fV` function, form factors for constituent partilces can be included via the auxiliary function `FFre` for the regulization, which is used to regulate the interaction kernel.
+
+**Arguments:**
+
+- `k::structMomentum`: The kinematic information for the process.
+- `cutoffi::Float64`, `cutofff::Float64`: Cutoff parameters for the initial and final particles, typically set as `cutoffi = CHi.cutoff`, `cutofff = CHf.cutoff`.
+- `cutoff_re_type`: The type of cutoff used for the exponential regularization of the constituent particles. Use `:Lambda` for a fixed $\Lambda$, `:alpha` for $\Lambda = m + 0.22 \alpha$, where $m$ is the mass of the exchanged meson, and `:alpha_light` for using the mass of the light meson.
+- `CHi,CHf`,`ex::Int64`: Used for the type `alpha_light` and `alpha`, respectively.
+- `key_ex::Int64`: Index of the exchanged particle, usually set as `key_ex = IA0.key_ex[le]`, where `le` runs over the exchanged mesons in `1:IA0.Nex`.
+
+**Description:**
+
+These options allow flexible control over the inclusion and type of form factors in the potential kernel, supporting different regularization schemes as needed for the physical system under study.
+
+### `function propFFex(k, key_ex, cutoff; cutoff_ex_type=:Lambda, FF_ex_type=3)`
+
+In the `fV` function, form factors for the exchanged mesons can be included via the auxiliary function `propFFex`.
 
 **Arguments:**
 
 - `k::structMomentum`: The kinematic information for the process.
 - `ex::Int64`: Index of the exchanged particle, usually set as `ex = IA0.key_ex[le]`, where `le` runs over the exchanged mesons in `1:IA0.Nex`.
-- `L::Float64`: The cutoff parameter for the exchanged meson, often chosen as the average of the initial and final particle cutoffs: `L = (LLi + LLf) / 2`.
-- `LLi::Float64`, `LLf::Float64`: Cutoff parameters for the initial and final particles, typically set as `LLi = CHi.cutoff`, `LLf = CHf.cutoff`.
-- `lregu::Int64`: Regularization flag for constituent particles (Only `1`).
-- `lFFex::Int64`: Type of form factor for the exchanged meson:
+- `cutoff::Float64`: The cutoff parameter for the exchanged meson, often chosen as the same as the regulations.
+- `cutoff_ex_type`: The type of cutoff used for the exchanged mesons. Use `:Lambda` for a fixed $\Lambda$, `:alpha` for $\Lambda = m + 0.22 \alpha$, where $m$ is the mass of the exchanged meson.
+- `FF_ex_type::Int64`: Type of form factor for the exchanged meson:
   - `0`: No form factor.
   - `1`: $\frac{L^2 - m^2}{L^2 - q^2}$
   - `2`: $\frac{L^4}{(m^2 - q^2)^2 + L^4}$

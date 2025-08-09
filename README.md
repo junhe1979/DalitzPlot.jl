@@ -336,6 +336,8 @@ PCM, WT=GEN.GENEV(tecm,EM)
 
 Since arrays in Julia are 1-indexed, a covariant 4-vector is represented as an `SVector{5, Type}(v1, v2, v3, v0, v5)`. The first three elements correspond to a 3-vector, the fourth element represents the time component (or the 0th component), and the fifth element represents mass in the case of momentum, but it is typically meaningless in most other contexts. The addition of the fifth element serves to distinguish it from the four-dimensional Dirac gamma matrices.
 
+
+
 For example, a momentum is `SVector{5, Type}(kx,ky,kz,k0,m)`.
 
 Note that the fifth element represents the mass of the particle. After performing a `+/-` operation on two momentum vectors, the fifth element of the resulting vector no longer has physical meaning. If the summed momentum `p` is intended to represent a physical particle, its mass should be explicitly set using `setindex(p, m, 5)`, where `m` is the correct mass value.
@@ -346,25 +348,27 @@ Minkowski metric is chosen as $g^{\mu\nu}=diag(1,-1,-1,-1)$. In the code, we sti
 
 For example, $g^{00}$ is accessed as `FR.g[4,4]`.
 
+***Note*** To avoid confusion, all covariant 4-vectors are written with upper indices. Therefore, if multiplying 4-vectors directly in component form, one must include the metric tensor `FR.g` (or a similar operation) to ensure proper contraction.
+
 ## Dirac Gamma matrices.
 
 We adopt the Dirac representation for the gamma matrices:
 
 $$
-\gamma_1=\left(\begin{array}{cccc}0&0& 0&1\\0&0&1&0\\0&-1&0&0\\-1&0&0&0\end{array}\right),
-\gamma_2=\left(\begin{array}{cccc}0&0& 0&-i\\0&0&i&0\\0&i&0&0\\-i&0&0&0\end{array}\right),
-\gamma_3=\left(\begin{array}{cccc}0&0& 1&0\\0&0&0&-1\\-1&0&0&0\\0&1&0&0\end{array}\right),
+\gamma^1=\left(\begin{array}{cccc}0&0& 0&1\\0&0&1&0\\0&-1&0&0\\-1&0&0&0\end{array}\right),
+\gamma^2=\left(\begin{array}{cccc}0&0& 0&-i\\0&0&i&0\\0&i&0&0\\-i&0&0&0\end{array}\right),
+\gamma^3=\left(\begin{array}{cccc}0&0& 1&0\\0&0&0&-1\\-1&0&0&0\\0&1&0&0\end{array}\right),
 $$
 
 $$
-\gamma_0=\left(\begin{array}{cccc}1&0& 0&0\\0&1&0&0\\0&0&-1&0\\0&0&0&-1\end{array}\right),
-\gamma_5=\left(\begin{array}{cccc}0&0& 1&0\\0&0&0&1\\1&0&0&0\\0&1&0&0\end{array}\right),
+\gamma^0=\left(\begin{array}{cccc}1&0& 0&0\\0&1&0&0\\0&0&-1&0\\0&0&0&-1\end{array}\right),
+\gamma^5=\left(\begin{array}{cccc}0&0& 1&0\\0&0&0&1\\1&0&0&0\\0&1&0&0\end{array}\right),
 I=\left(\begin{array}{cccc}1&0& 0&0\\0&1&0&0\\0&0&1&0\\0&0&0&1\end{array}\right),
 $$
 
-The Dirac gamma matrices are represented by the array GA=$[\gamma_1,\gamma_2,\gamma_3,\gamma_0,\gamma_5]$, with each gamma matrix defined as `SMatrix{4,4,ComplexF64}`.
+The Dirac gamma matrices are represented by the array GA=$[\gamma^1,\gamma^2,\gamma^3,\gamma^0,\gamma^5]$, with each gamma matrix defined as `SMatrix{4,4,ComplexF64}`.
 
-For example, $\gamma_2$ can be accessed as `FR.GA[2]` and has the type `SMatrix{4,4,ComplexF64}`. The unit matrix is accessed as   `FR.I`
+For example, $\gamma^2$ can be accessed as `FR.GA[2]` and has the type `SMatrix{4,4,ComplexF64}`. The unit matrix is accessed as   `FR.I`
 
 A function `FR.GS` is provided for calculate $\gamma \cdot k$ as `function GS(k::SVector{5, Type})::SMatrix{4,4,ComplexF64}`
 
@@ -389,11 +393,13 @@ A function `FR.GS` is provided for calculate $\gamma \cdot k$ as `function GS(k:
 
 ### Levi-Civita tensor
 
-`function LC(a::SVector, b::SVector, c::SVector)`: $\epsilon_{\mu\nu\rho\lambda}a^\mu b^\nu c^\rho$.
+`function LC(a::SVector, b::SVector, c::SVector)`: $\epsilon^{\mu\nu\rho\lambda}a_\mu b_\nu c_\rho$.
 
-`function LC(i0::Int64, i1::Int64, i2::Int64, i3::Int64)`: $\epsilon_{\mu\nu\rho\lambda}$
+`function LC(i0::Int64, i1::Int64, i2::Int64, i3::Int64)`: $\epsilon^{\mu\nu\rho\lambda}$
 
-`function LC(a::SVector, b::SVector, c::SVector, d::SVector)`: $\epsilon_{\mu\nu\rho\lambda}a^\mu b^\nu c^\rho d^\lambda$.
+`function LC(a::SVector, b::SVector, c::SVector, d::SVector)`: $\epsilon^{\mu\nu\rho\lambda}a_\mu b_\nu c_\rho d_\lambda$.
+
+***Note* Here, the Levi-Civita tensor is defined with upper indices $\epsilon^{\mu\nu\rho\lambda}$, and all resultant quantities will likewise carry upper indices. The input vectors a, b, c, and d are also specified in their contravariant form (${\rm a}^{\mu}$,${\rm b}^{\mu}$,${\rm c}^{\mu}$,${\rm d}^{\mu}$).
 
 ## Additional defintions to operations
 
