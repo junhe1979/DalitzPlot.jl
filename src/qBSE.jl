@@ -396,6 +396,9 @@ function showSYSInfo(Range, qn, IA, CH, IH)
     println(dashline)
 end
 function showPoleInfo(qn, Ec, reslog, filename)
+    open(filename, "w") do f
+        # 打开文件写入模式会自动清空内容
+    end
     Ampmin, Ampminx, Ampminy = 0.0, 0.0, 0.0
     for i in eachindex(Ec)
         Eci = Ec[i]
@@ -504,7 +507,7 @@ function kernel(kf, ki, Ec, qn, SYS, IA, CH, IHf, IHi, fV)::ComplexF64 # Calcula
     kf10, kf20, qtf = (mf1 + 1e-7 <= mf2) ? (Ec - Ef2, Ef2, mf2) : (Ef1, Ec - Ef1, Ec - mf1)
 
     qt = (qti - qtf)^2 + 0im
-    
+
     l = structHelicity(  #helicities
         IHi.hel[1], IHi.helh[1],
         IHf.hel[1], IHf.helh[1],
