@@ -198,34 +198,29 @@ function Xsection(tecm, ch, callback; axes=[], Range=[], nevtot=Int64(1e6),
 
                 amp0 = ch.amps(tecm, kf, ch, para, p0)
                 wtamp = wt .* amp0
-                if Nf > 2
-                    for i in 1:Naxes
-                        for isij in Nsij[i]
-                            if 1 < isij <= Nbin
-                                if i == 2
-                                    zsumt[i, isij] .+= wtamp
-                                else
-                                    zsumt[i, isij] .+= wtamp
-                                end
-
-                            end
+                zsum .+= wtamp
+                for i in 1:Naxes
+                    for isij in Nsij[i]
+                        if 1 < isij <= Nbin
+                            zsumt[i, isij] .+= wtamp
                         end
                     end
-                    if Naxes >= 2
-                        for isij in Nsij[1], jsij in Nsij[2]
-                            if 1 < isij <= Nbin && 1 < jsij <= Nbin
-                                zsumd[isij, jsij] .+= wtamp
-                            end
+                end
+                if Naxes >= 2
+                    for isij in Nsij[1], jsij in Nsij[2]
+                        if 1 < isij <= Nbin && 1 < jsij <= Nbin
+                            zsumd[isij, jsij] .+= wtamp
                         end
                     end
                 end
             end
         elseif Nf == 2
             amp0 = ch.amps(tecm, kf, ch, para, p0)
-            wtamp = wt * amp0[1]
+            wtamp = wt * amp0
+            zsum .+= wtamp
         end
 
-        zsum .+= wtamp
+
         callback(ine)
     end
 
