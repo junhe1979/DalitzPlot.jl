@@ -43,17 +43,26 @@ function plotD(res; cg=cgrad([:white, :green, :blue, :red], [0, 0.01, 0.1, 0.5, 
 
     laxes1 = [laxes0[1] for laxes0 in laxes]
     Laxes = [ch.namef[laxes1[1][1]] * ch.namef[laxes1[1][2]], ch.namef[laxes1[2][1]] * ch.namef[laxes1[2][2]]]
-
-
+    
+  
     Nbin = length(axesV[1])
     x1 = axesV[1]
-    y1 = cs1[1, :]
     xlims = (minimum(x1), maximum(x1))
-    ylims = (minimum(y1), maximum(y1))
     dx = (maximum(x1) - minimum(x1)) / Nbin
-    ylims = (minimum(y1) / dx, maximum(y1) / dx * 1.1)
 
-    p0 = Plots.plot(x1, y1 / dx, xlims=xlims, ylims=ylims, xticks=:auto, ylabel=latexstring("d\\sigma/m^2_{" * Laxes[1] * "} (\\textrm{ barn/GeV^2})"), framestyle=:box, xmirror=true, legend=:none, linetype=:steppre)
+    p0 = Plots.plot(xticks=:auto, ylabel=latexstring("d\\sigma/m^2_{" * Laxes[1] * "} (\\textrm{ barn/GeV^2})"), framestyle=:box, xmirror=true, legend=:none, linetype=:steppre)
+    y1min, y1max = 1e20, 0.
+    for i in eachindex(cs1)
+        y1 = cs1[i][1, :]
+        if minimum(y1) / dx < y1min
+            y1min = minimum(y1) / dx
+        end
+        if maximum(y1) / dx > y1max
+            y1max = maximum(y1) / dx
+        end
+        Plots.plot!(p0, x1, y1 / dx, xlims=xlims, ylims=(y1min, y1max * 1.005))
+    end
+
     if !isempty(xx)
         p1 = Plots.scatter!(xx, xy, markersize=1)
     else
@@ -61,13 +70,22 @@ function plotD(res; cg=cgrad([:white, :green, :blue, :red], [0, 0.01, 0.1, 0.5, 
     end
 
     y2 = axesV[2]
-    x2 = cs1[2, :]
-
-    xlims = (minimum(x2), maximum(x2))
     ylims = (minimum(y2), maximum(y2))
     dy = (maximum(y2) - minimum(y2)) / Nbin
-    xlims = (minimum(x2) / dy, maximum(x2) / dy * 1.1)
-    p0 = Plots.plot(x2 / dy, y2, xlims=xlims, ylims=ylims, xlabel=latexstring("d\\sigma/m^2_{" * Laxes[2] * "} (\\textrm{ barn/GeV^2})"), framestyle=:box, ymirror=true, legend=:none, linetype=:steppre)
+    p0 = Plots.plot(xlabel=latexstring("d\\sigma/m^2_{" * Laxes[2] * "} (\\textrm{ barn/GeV^2})"), framestyle=:box, ymirror=true, legend=:none, linetype=:steppre)
+    x2min, x2max = 1e20, 0.
+    for i in eachindex(cs1)
+        x2 = cs1[i][2, :]
+
+        if minimum(x2) / dx < x2min
+            x2min = minimum(x2) / dy
+        end
+        if maximum(x2) / dx > x2max
+            x2max = maximum(x2) / dy
+        end
+        p0 = Plots.plot!(x2 / dy, y2, xlims=(x2min, x2max * 1.005), ylims=ylims)
+    end
+
     if !isempty(yy)
         p2 = Plots.scatter!(yy, yx, markersize=1)
     else
@@ -80,7 +98,7 @@ function plotD(res; cg=cgrad([:white, :green, :blue, :red], [0, 0.01, 0.1, 0.5, 
     ylims = (minimum(y), maximum(y))
     dx = (maximum(x) - minimum(x)) / Nbin
     dy = (maximum(y) - minimum(y)) / Nbin
-    z = [cs2[ix, iy] / (dx * dy) for iy in 1:Nbin, ix in 1:Nbin]
+    z = [cs2[1][ix, iy] / (dx * dy) for iy in 1:Nbin, ix in 1:Nbin]
     p3 = Plots.heatmap(x, y, z, xlims=xlims, ylims=ylims, c=cg, xlabel=latexstring(Laxes[1]), ylabel=latexstring(Laxes[2]), framestyle=:box, cb=:none)
 
 

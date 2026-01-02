@@ -35,6 +35,7 @@ end
 # store the information of a channel.
 struct structChannel #CH[] 
     p::Vector{Int64} #particles of channel
+    anti::Vector{Int} #label for antiparticle 
     m::Vector{Float64} #particle masses of channel
     J::Vector{Int64} #particle spins of channel
     Jh::Vector{Int64} #particle  spins of channel
@@ -91,6 +92,7 @@ struct structParticle
     name::String #
     name0::String #without charge, used for the cases with symmetry.
     nameL::String #Latex.
+    anti::Int #antiparticle
     m::Float64 #mass
     J::Int64 #spin
     Jh::Int64  #for fermion, the helicity is obtianed by J/Jh
@@ -103,22 +105,24 @@ function particles!(particles::Vector{structParticle}, pkey::Dict{String,Int64},
         i = 1
         for line in eachline(file)
             parts = split(line)
-            particle = structParticle(parts[1], parts[2], parts[3], parse(Float64, parts[4]),
-                parse(Int64, parts[5]), parse(Int64, parts[6]), parse(Int64, parts[7]))
+            particle = structParticle(parts[1], parts[2], parts[3], parse(Int, parts[4]),
+                parse(Float64, parts[5]), parse(Int64, parts[6]), parse(Int64, parts[7]),
+                parse(Int64, parts[8]))
             push!(particles, particle)
             pkey[parts[1]] = i
             i += 1
         end
     end
+
 end
 const p = structParticle[] #store of information of particles in this global vector
 const pkey = Dict{String,Int64}() #store the dictionary for key and the number of particles
 #*******************************************************************************************
 function ch(pf, pin, amps)
     mf = [qBSE.p[qBSE.pkey[p]].m for p in pf]
-    namef = ["\\" * qBSE.p[qBSE.pkey[p]].nameL for p in pf]
+    namef = [qBSE.p[qBSE.pkey[p]].nameL for p in pf]
     mi = [qBSE.p[qBSE.pkey[p]].m for p in pin]
-    namei = ["\\" * qBSE.p[qBSE.pkey[p]].nameL for p in pin]
+    namei = [qBSE.p[qBSE.pkey[p]].nameL for p in pin]
     ch = (pf=pf, namef=namef, mf=mf, pin=pin, namei=namei, mi=mi, amps=amps)
 end
 #*******************************************************************************************
@@ -206,7 +210,7 @@ function simpleXsection(ER, M2, CH, qn; Ep="cm")
     return Xsection
 end
 # Evaluate log-determinant |1 - V G| to locate poles
-function res(Range, iER, qn, SYS, IA, CH, IH, fV)
+function res(Range, iER, qn, SYS, IA, CH, IH, fV; eps=+1e-4im)
     Ect = ComplexF64[] # Array to store complex total energy Ec=ER+EI*im
     reslogt = Float64[] # Array to store log|1-VG|
     Dim = nothing
@@ -227,7 +231,7 @@ function res(Range, iER, qn, SYS, IA, CH, IH, fV)
             EI = iEI * Range.EIt / NEI
         end
         Ec = ER + EI * im
-        Vc, Gc, II, IH, Dim = qBSE.VGI(Ec, qn, SYS, IA, CH, IH, fV, lRm=qn.lRm) # Calculate the V, G, and unit matrix II
+        Vc, Gc, II, IH, Dim = qBSE.VGI(Ec, qn, SYS, IA, CH, IH, fV, qn.lRm, eps) # Calculate the V, G, and unit matrix II
         VGI = II - Vc * Gc
         detVGI = det(VGI)   # Compute determinant of (1 - VGc)
         logdetVGI = log(abs(detVGI)^2)
@@ -236,7 +240,6 @@ function res(Range, iER, qn, SYS, IA, CH, IH, fV)
         if iEI == 0
             T = inv(VGI) * Vc
             TG = T * Gc
-
             resM2 = qBSE.M2_channel(T, CH, IH)
         end
     end
@@ -289,78 +292,78 @@ function TGA(cfinal, cinter, Vert, para)
         TG = TGt[ii+idx-1]
     end
 
-
     # Independent helicities for final states
-    IHb = CH[cfinal].IHb
-    IHe = CH[cfinal].IHe
+    CHf = CH[cfinal]
+    IHfb, IHfe = CHf.IHb, CHf.IHe
     # Rank of dimensions for intermediate state
-    Dimb = IH[CH[cinter].IHb].Dimb
-    Dime = IH[CH[cinter].IHe].Dime
+
     lJJ = qn.J / qn.Jh
-    NJ2d2 = (2.0 * lJJ + 1.0) / (8.0 * pi)
     TGAdic = Dict()
     ndx = length(SYS.xv)
     ndphi = length(SYS.pv)
-    dx = 2.0 / ndx
-    dphi = 2.0 * pi / ndphi
     #loop for all Independent helicities of final state
-    @inbounds for il in IHb:IHe
-        m1, m2 = CH[il].m[1], CH[il].m[2]
-        IHl = IH[il]
-        l21 = IHl.hel[2] / IHl.helh[2] - IHl.hel[1] / IHl.helh[1]
+    @inbounds for iIHf in IHfb:IHfe
+        IHf = IH[iIHf]
+        l21 = IHf.hel[2] / IHf.helh[2] - IHf.hel[1] / IHf.helh[1]
         dl21 = Int64(lJJ + l21) + 1
         #loop for dimensions for intermediate state
         TGA = 0.0
         eta = 0.0
-        @inbounds for iDim in Dimb:Dime
-            p20 = real(Dim[iDim].k)
-            p20m1sq = sqrt(p20^2 + m1^2)
-            p20m2sq = sqrt(p20^2 + m2^2)
-            IHp = IH[Dim[iDim].iIH]
-            l21p = IHp.hel[2] / IHp.helh[2] - IHp.hel[1] / IHp.helh[1]
-            CH0 = CH[IHp.iCH]
-            etap = CH0.P[1] * CH0.P[2] * qn.P * (-1)^(qn.J / qn.Jh - CH0.J[1] / CH0.Jh[1] - CH0.J[2] / CH0.Jh[2])
-            dl21pp = Int64(lJJ + l21p) + 1
-            dl21pm = Int64(lJJ - l21p) + 1
-            # loop for integration of angles
-            A = 0.0
-            la, lb = IHp.hel[1], IHp.hel[2]
-            for j in 1:ndphi
-                #phi
-                phi = SYS.pv[j]
-                cosphi, sinphi = SYS.cp[j], SYS.sp[j]
-                exppl = exp(-im * phi * l21)
-                for i in 1:ndx
-                    #theta
-                    ct = SYS.xv[i]
-                    st = sqrt(1.0 - ct^2)
-                    #momentum for intermediate state. 
-                    px, py, pz = p20 * st * cosphi, p20 * st * sinphi, p20 * ct
-                    p1 = SVector{5,Float64}(-px, -py, -pz, p20m1sq, m1)
-                    p2 = SVector{5,Float64}(px, py, pz, p20m2sq, m2)
-                    Ap = Vert.Vert(p1, p2, la, lb, Vert, k, P)
-                    Am = Vert.Vert(p1, p2, -la, -lb, Vert, k, P)
-                    Dp = SYS.d[i][dl21, dl21pp]
-                    Dm = SYS.d[i][dl21, dl21pm] * etap
-                    A -= exppl * (Dp * Ap + Dm * Am) * SYS.wxv[i] * SYS.wpv[i]
+        for cinter0 in cinter
+            CHc = CH[cinter0[1]]
+            Dimb = IH[CHc.IHb].Dimb
+            Dime = IH[CHc.IHe].Dime
+            m1, m2 = CHc.m[1], CHc.m[2]
+            @inbounds for iDim in Dimb:Dime
+                kc = real(Dim[iDim].k)
+                Eon = sqrt(kc^2 + (m1 > m2 ? m1^2 : m2^2))  # 较重粒子能量
+                E1 = m1 > m2 ? Eon : E - Eon                # 粒子1能量
+                E2 = m1 > m2 ? E - Eon : Eon                # 粒子2能量
+                IHc = IH[Dim[iDim].iIH]
+                l21c = IHc.hel[2] / IHc.helh[2] - IHc.hel[1] / IHc.helh[1]
+                etap = CHc.P[1] * CHc.P[2] * qn.P * (-1)^(qn.J / qn.Jh - CHc.J[1] / CHc.Jh[1] - CHc.J[2] / CHc.Jh[2])
+                dl21pp = Int64(lJJ + l21c) + 1
+                dl21pm = Int64(lJJ - l21c) + 1
+                # loop for integration of angles
+                A = 0.0
+                la, lb = IHc.hel[1], IHc.hel[2]
+                for j in 1:ndphi
+                    #phi
+                    phi = SYS.pv[j]
+                    cosphi, sinphi = SYS.cp[j], SYS.sp[j]
+                    exppl = exp(-im * phi * l21)
+                    for i in 1:ndx
+                        #theta
+                        ct = SYS.xv[i]
+                        st = sqrt(1.0 - ct^2)
+                        #momentum for intermediate state. 
+                        px, py, pz = kc * st * cosphi, kc * st * sinphi, kc * ct
+                        p1 = SVector{5,Float64}(-px, -py, -pz, E1, m1)
+                        p2 = SVector{5,Float64}(px, py, pz, E2, m2)
+                        Ap = Vert.Vert(p1, p2, la, lb, Vert, k, P)
+                        Am = Vert.Vert(p1, p2, -la, -lb, Vert, k, P)
+                        Dp = SYS.d[i][dl21, dl21pp]
+                        Dm = SYS.d[i][dl21, dl21pm] * etap
+                        A -= (Dp * Ap + Dm * Am) * exppl * SYS.wxv[i] * SYS.wpv[i]
+                    end
 
                 end
+
+                if TeT
+                    TG0 = Tmin[IHf.Dime, iDim] * (1.0 - ww) + Tmax[IHf.Dime, iDim] * ww #插值
+                else
+                    TG0 = TG[IHf.Dime, iDim]
+                end
+
+                TGA += (A * TG0) * cinter0[2]  #note that the weights and p20^2/(2pi)^3 is in G0
             end
 
-            if TeT
-                TG0 = Tmin[IH[il].Dime, iDim] * (1.0 - ww) + Tmax[IH[il].Dime, iDim] * ww #插值
-            else
-                TG0 = TG[IH[il].Dime, iDim]
-            end
-
-            TGA += A * TG0
         end
 
-        h1, h2 = IHl.hel[1], IHl.hel[2]
-        TGA *= NJ2d2
+        h1, h2 = IHf.hel[1], IHf.hel[2]
+        TGA *= (2.0 * lJJ + 1.0) / (8.0 * pi)
         TGAdic[(h1, h2)] = TGA
-        # extend from independent helicities to all helicities
-        CHf = CH[il]
+        # extend from independent helicities to all helicities        
         eta = CHf.P[1] * CHf.P[2] * qn.P * (-1)^(qn.J / qn.Jh - CHf.J[1] / CHf.Jh[1] - CHf.J[2] / CHf.Jh[2])
         TGAdic[(-h1, -h2)] = TGA * eta
         if h1 == 0 && h2 == 0
@@ -370,6 +373,7 @@ function TGA(cfinal, cinter, Vert, para)
     end
     return TGAdic
 end
+
 #*******************************************************************************************
 #显示
 function showSYSInfo(Range, qn, IA, CH, IH)
@@ -560,7 +564,7 @@ function kernel(kf, ki, Ec, qn, SYS, IA, CH, IHf, IHi, fV)::ComplexF64 # Calcula
 end
 #*******************************************************************************************
 #propagator
-function propagator(k, kv, w, wv, Ec, Np, CH, IH0, Dimo, lRm)
+function propagator(k, kv, w, wv, Ec, Np, CH, IH0, Dimo, lRm, eps)
     propagator = Complex{Float64}(0, 0)
     ich = IH0.iCH
     mi1, mi2 = CH[ich].m[1], CH[ich].m[2]
@@ -573,6 +577,8 @@ function propagator(k, kv, w, wv, Ec, Np, CH, IH0, Dimo, lRm)
     mi2p2 = 1.0
     mi2p2 *= (IH0.helh[1] == 2) ? 2.0 * mi1 : 1.0
     mi2p2 *= (IH0.helh[2] == 2) ? 2.0 * mi2 : 1.0
+    
+    Ec+=eps
 
     # Precompute constants
     pi_factor = (2 * pi)^3
@@ -581,13 +587,12 @@ function propagator(k, kv, w, wv, Ec, Np, CH, IH0, Dimo, lRm)
     # For off-momenta
     if Dimo == 0
         cE1, cE2 = sqrt(k^2 + mi1^2), sqrt(k^2 + mi2^2)
-        denominator = (mi1 <= mi2) ? 2 * cE2 * ((Ec - cE2)^2 - cE1^2) : 2 * cE1 * ((Ec - cE1)^2 - cE2^2)
+        denominator = (mi1 <= mi2) ? 2 * cE2 * ((Ec - cE2)^2 - cE1^2 ) : 2 * cE1 * ((Ec - cE1)^2 - cE2^2)
 
         if denominator != 0  # To avoid division by zero
             propagator = mi2p2 * k^2 * w / pi_factor / denominator
         end
     end
-
     # For on-shell
     if Dimo == 1
         delta1 = Ec^2 - (mi1 + mi2)^2
@@ -618,7 +623,7 @@ end
 
 
 # calculate V G I
-function VGI(Ec, qn, SYS, IA, CH, IH, fV; lRm=0)
+function VGI(Ec, qn, SYS, IA, CH, IH, fV, lRm, eps)
     # Determine the dimension of the work matrix. 
     Np = length(SYS.kv)
     SYS, IH, Dim, = workSpace(Ec, lRm, Np, SYS, CH, IH)
@@ -645,7 +650,7 @@ function VGI(Ec, qn, SYS, IA, CH, IH, fV; lRm=0)
 
             # Compute Gc and II only on the diagonal
             if i_i == i_f
-                Gc[i_f, i_i] = propagator(kf, SYS.kv, Dimf.w, SYS.wv, Ec, Np, CH, IH[Dimf.iIH], Dimf.Dimo, lRm)
+                Gc[i_f, i_i] = propagator(kf, SYS.kv, Dimf.w, SYS.wv, Ec, Np, CH, IH[Dimf.iIH], Dimf.Dimo, lRm, eps)
                 II[i_f, i_i] = 1.0
             end
         end
@@ -729,7 +734,7 @@ function workSpace(Ec, lRm, Np, SYS, CH, IH)
 end
 
 #*******************************************************************************************
-function preprocessing(Sys, channels, Ff, qn, cutoff; Np=10, Nx=5, Nphi=5)
+function preprocessing(Sys, channels, Ff, qn, cutoff; Np=10, Nx=10, Nphi=5)
     #store the channel information, interaction information in CH,IH,IA
     CH = structChannel[]
     IH = structIndependentHelicity[]
@@ -737,6 +742,7 @@ function preprocessing(Sys, channels, Ff, qn, cutoff; Np=10, Nx=5, Nphi=5)
 
     for channel in channels
         p1, p2 = pkey[channel[1]], pkey[channel[2]]
+        anti1, anti2 = p[p1].anti, p[p2].anti
         m1, m2 = p[p1].m, p[p2].m
         J1, J2 = p[p1].J, p[p2].J
         Jh1, Jh2 = p[p1].Jh, p[p2].Jh
@@ -779,6 +785,7 @@ function preprocessing(Sys, channels, Ff, qn, cutoff; Np=10, Nx=5, Nphi=5)
         #channel information
         CH0 = structChannel(
             [p1, p2],
+            [anti1, anti2],
             [m1, m2],
             [J1, J2],
             [Jh1, Jh2],

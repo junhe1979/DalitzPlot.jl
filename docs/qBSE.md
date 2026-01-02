@@ -894,7 +894,7 @@ In the qBSE approach, matrix dimensions for a coupled-channel system are organiz
 
 The `struct structChannel` structure encapsulates the properties of a physical channel in the qBSE package, often used as `CH` in the code. Its fields include:
 
-- `p::Vector{Float64}`, `m::Vector{Float64}`, `J::Vector{Int64}`, `Jh::Vector{Int64}`, `P::Vector{Int64}`: Vectors specifying the momentum $p$, mass $m$, total angular momentum $J$=`J/Jh`, and parity (`P`) for each particle in the channel. Here, `Jh = 1` for integer spin and `Jh = 2` for half-integer spin.
+- `p::Vector{Float64}`, `anti::Vector{Int}`, `m::Vector{Float64}`, `J::Vector{Int64}`, `Jh::Vector{Int64}`, `P::Vector{Int64}`: Vectors specifying the index of partilce $p$,  label for antiparticle, mass $m$, spin $J$=`J/Jh`, and parity (`P`) for each particle in the channel. Here, `Jh = 1` for integer spin and `Jh = 2` for half-integer spin.
 - `cutoff::Float64` specifying the cutoff parameter for the channel.
 - `name::String`, `name0::String`  for the channel name, with and without charge. `name0` is used to define channels with definite isospin.
 - `IHb::Int64`, `IHe::Int64`, `IHn::Int64` indicating the starting and ending indices of independent helicities, and the total number of independent helicity states for the channel.
@@ -980,6 +980,7 @@ The `mutable struct structHelicity` structure stores the helicity information fo
 The `struct structParticle` structure defines the properties of a single particle. Its fields are:
 
 - `name::String`, `name0::String`, `nameL::String`: Particle name (with charge and without charge), LaTeX representation of the particle name.
+- `anti::Int`: Flags whether the particle is an antiparticle. **Note:** The labeling convention distinguishes between particles and antiparticles, with specific assignments depending on the particle type (e.g., all three  pions $\pi^\pm$ and $\pi^0$ are typically treated as particles `0`, while certain kaon states $\bar{K}^0$ and $K^-$ are treated as antiparticles `1`).
 - `m::Float64`: Mass of the particle.
 - `J::Int64`, `Jh::Int64`, `P::Int64`: Spin and Parity.
 
@@ -1038,7 +1039,7 @@ Ff = Dict(
 - `CH::Vector{structChannel}`: The processed channel objects, each describing a physical channel.
 - `IH::Vector{structIndependentHelicity}`: The processed independent helicity objects, ready for use in qBSE calculations.
 
-### `function res(Range, iER, qn, SYS, IA, CH, IH, fV)`
+### `function res(Range, iER, qn, SYS, IA, CH, IH, fV; eps=1e-4im)`
 
 This function calculates the rescatering process by qBSE for a given range of energies.
 
@@ -1049,6 +1050,7 @@ This function calculates the rescatering process by qBSE for a given range of en
 - `qn`: The quantum numbers for the process.
 - `SYS`, `IA`, `CH`, `IH`:  Obtained by `preprocessing`.
 - `fV`: The potential kernel for qBSE.
+- `eps`: Optional regularization parameter (default: 1e-4im) to add a small imaginary part to propagator denominators to avoid singularities.
 
 **Returns:**
 
@@ -1110,6 +1112,7 @@ In the `fV` function, form factors for the exchanged mesons can be included via 
   - `3`: $\exp\left(-\frac{(m^2 - q^2)^2}{L^4}\right)$
   - `4`: $\frac{L^4 + (q_t - m^2)^2 / 4}{(q^2 - (q_t + m^2) / 2)^2 + L^4}$
   - `5`: $\frac{L^2}{L^2 - q^2}$
+  - `6`: $\exp\left(-\frac{(m^2 - q^2)^2}{2L^4}\right)$
 
 **Description:**
 
@@ -1162,9 +1165,9 @@ This function calculates the transition amplitude for a given final state `cfina
 
 **Arguments:**
 
-- `cfinal`: The index of final state configuration (e.g., channel and particle information for the outgoing particles).
-- `cinter`: The index of intermediate interaction.
-- `Vert`: The vertex function and associated data, including the vertex structure, precomputed spinors or polarization vectors, and helicity assignments (e.g., `Vert=Vertex14, ULc=GA1 * FR.U(para14.P, lLc), l2=l2, l3=l3`).
+- `cfinal::Int64`: The index of final state configuration (e.g., channel and particle information for the outgoing particles).
+- `cinter::Tuple{Tuple{Int64, Float64}}`: The indices of intermediate channels (`Int64`) with weights (`Float64`).
+- `Vert`: The vertex function and associated data, including the vertex structure, precomputed spinors or polarization vectors, and helicity assignments (e.g., `Vert=Vertex14, ULc=GA1 * FR.U(para14.P, lLc), l2=l2, l3=l3`). It will be used in `function Vertex14`.
 - `para`: The calculation parameters, as returned by `setTGA`.
 
 ### `function Vertex14(p1, p2, l1, l2, Vert, k, P)`
@@ -1175,7 +1178,7 @@ This function computes the initial decay vertex for a process involving two resc
 
 - `p1`, `p2`: Four-momenta of the two rescattering particles.
 - `l1`, `l2`: Helicity indices of the two rescattering particles.
-- `Vert`: Vertex structure or function, as defined in the context of the calculation.
+- `Vert`: Vertex structure or function, defined in  `function TGA`
 - `k`: Momenta of all final state particles.
 - `P`: Four-momentum of the parent (initial) particle.
 

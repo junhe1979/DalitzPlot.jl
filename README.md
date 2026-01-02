@@ -207,9 +207,9 @@ res = Xs.Xsection(tecm, ch, callback,axes=[["p2","p3"], ["p1","p2"]], nevtot=Int
 
 The calculation results are stored in the variable `res` as a `NamedTuple` with the following fields:
 
-- `res.cs0`: The total cross section or decay width, calculated as $\int \text{amp}dR$. The result is given in units of $\text{GeV}^{-2}$. To convert to barns, use the relation $1~\text{GeV}^{-2} = 0.3894~\text{mb}$.
-- `res.cs1`: The invariant mass spectrum, given by $d\int \text{amp}  dR/dx$, where $x$ is the invariant mass $m_{ij}$ of the first two particles (`stype=1`) or the squared invariant mass $s_{ij} = m_{ij}^2$ (`stype=2`). The spectrum is binned according to the specified range and number of bins (`Nbin`).
-- `res.cs2`: The Dalitz plot as $d\int \text{amp} dR/dxdy$.
+- `res.cs0::Vector{Float64}`: Length matches the output of function `amps`. The total cross section or decay width, calculated as $\int \text{amp}dR$. The result is given in units of $\text{GeV}^{-2}$. To convert to barns, use the relation $1~\text{GeV}^{-2} = 0.3894~\text{mb}$.
+- `res.cs1::Vector{Matrix{Float64}}`: Vector length equals the output of function `amps`. The two-dimensional `Matrix` uses its first index for axes and second index for bins. The invariant mass spectrum, given by $d\int \text{amp}  dR/dx$, where $x$ is the invariant mass $m_{ij}$ of the first two particles (`stype=1`) or the squared invariant mass $s_{ij} = m_{ij}^2$ (`stype=2`). The spectrum is binned according to the specified range and number of bins (`Nbin`).
+- `res.cs2::Vector{Matrix{Float64}}`: Vector length equals the output of function `amps`. Both indices of the two-dimensional `Matrix` correspond to bins. The two indices of two dimensional `Matrix` are both for  bins.  The Dalitz plot as $d\int \text{amp} dR/dxdy$.
 
 These results allow you to analyze the total cross section, invariant mass distributions, and Dalitz plot for your process.
 

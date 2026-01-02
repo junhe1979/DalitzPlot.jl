@@ -39,7 +39,15 @@ end
 function binx(i::Int64, bin, iaxis::Int64)::Float64
     return bin.min[iaxis][1] + (i - 0.5) / bin.Nbin * (bin.max[iaxis][1] - bin.min[iaxis][1])
 end
+
 function binrange(laxes::Vector{Int64}, tecm, ch, stype)
+    min = (ch.mf[laxes[1]] + ch.mf[laxes[2]])^stype
+    max = (tecm - sum(ch.mf) + ch.mf[laxes[1]] + ch.mf[laxes[2]])^stype
+    return min, max
+end
+
+function binrange(axis::Vector{String}, tecm, ch, stype)
+    laxes = [findfirst(==(element), ch.pf) for element in axis]
     min = (ch.mf[laxes[1]] + ch.mf[laxes[2]])^stype
     max = (tecm - sum(ch.mf) + ch.mf[laxes[1]] + ch.mf[laxes[2]])^stype
     return min, max
@@ -172,9 +180,13 @@ function Xsection(tecm, ch, callback; axes=[], Range=[], nevtot=Int64(1e6),
 
         axesV = [[binx(ix, bin, iaxes) for ix in 1:Nbin] for iaxes in eachindex(laxes)]
     end
-    zsum = 0e0
-    zsumt = zeros(Float64, Naxes, Nbin)
-    zsumd = zeros(Float64, Nbin, Nbin)
+    kf, wt = GENEV(tecm, ch.mf)
+    leng = length(ch.amps(tecm, kf, ch, para, p0))
+
+
+    zsum = zeros(Float64, leng)
+    zsumt = [zeros(Float64, leng) for _ in 1:Naxes, _ in 1:Nbin]
+    zsumd = [zeros(Float64, leng) for _ in 1:Nbin, _ in 1:Nbin]
 
     for ine in 1:nevtot
 
@@ -185,15 +197,15 @@ function Xsection(tecm, ch, callback; axes=[], Range=[], nevtot=Int64(1e6),
             if all([any(min[i] .<= sij[i] .&& sij[i] .<= max[i]) for i in eachindex(min)])
 
                 amp0 = ch.amps(tecm, kf, ch, para, p0)
-                wt = wt * amp0
+                wtamp = wt .* amp0
                 if Nf > 2
                     for i in 1:Naxes
                         for isij in Nsij[i]
                             if 1 < isij <= Nbin
                                 if i == 2
-                                    zsumt[i, isij] += wt
+                                    zsumt[i, isij] .+= wtamp
                                 else
-                                    zsumt[i, isij] += wt
+                                    zsumt[i, isij] .+= wtamp
                                 end
 
                             end
@@ -202,7 +214,7 @@ function Xsection(tecm, ch, callback; axes=[], Range=[], nevtot=Int64(1e6),
                     if Naxes >= 2
                         for isij in Nsij[1], jsij in Nsij[2]
                             if 1 < isij <= Nbin && 1 < jsij <= Nbin
-                                zsumd[isij, jsij] += wt
+                                zsumd[isij, jsij] .+= wtamp
                             end
                         end
                     end
@@ -210,16 +222,16 @@ function Xsection(tecm, ch, callback; axes=[], Range=[], nevtot=Int64(1e6),
             end
         elseif Nf == 2
             amp0 = ch.amps(tecm, kf, ch, para, p0)
-            wt = wt * amp0
+            wtamp = wt * amp0[1]
         end
 
-        zsum += wt
+        zsum .+= wtamp
         callback(ine)
     end
 
     cs0 = zsum / nevtot
-    cs1 = zsumt / nevtot
-    cs2 = zsumd / nevtot
+    cs1 = [[zsumt[i, j][k] for i in 1:Naxes, j in 1:Nbin] for k in 1:leng] / nevtot
+    cs2 = [[zsumd[i, j][k] for i in 1:Nbin, j in 1:Nbin] for k in 1:leng] / nevtot
     res = (cs0=cs0, cs1=cs1, cs2=cs2, axesV=axesV, laxes=laxes, ch=ch)
     return res
 end
@@ -246,12 +258,16 @@ function Xsection(tecm, ch; axes=[23, 21], Range=[], nevtot=Int64(1e6), Nbin=100
     GC.gc(false)
     results = pmap(r -> worker_Xsection(tecm, ch, axes, Range, r[2] - r[1] + 1, Nbin, para, p0, stype, progressbar), ranges)
 
-    zsum = 0.0
+    zsum = nothing
     zsumt = nothing
     zsumd = nothing
 
     for res in results
-        zsum += res.cs0
+        if isnothing(zsum)
+            zsum = res.cs0
+        else
+            zsum = zsum .+ res.cs0
+        end
         if isnothing(zsumt)
             zsumt = res.cs1
         else

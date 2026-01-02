@@ -414,15 +414,24 @@ end
 #############################################################################
 import Base: *
 function *(Q::SVector{5,T1}, W::SVector{5,T2}) where {T1<:Number, T2<:Number}
-    R = promote_type(T1, T2)  # 确保结果类型正确
-    return R(Q[4] * W[4] - Q[1] * W[1] - Q[2] * W[2] - Q[3] * W[3])
+    return Q[4] * W[4] - Q[1] * W[1] - Q[2] * W[2] - Q[3] * W[3]
 end
+
+function *(Q::SVector{5,T1}, W::SVector{5,T2}) where {T1<:SVector{4,ComplexF64}, T2<:Number}
+    return Q[4] * W[4] - Q[1] * W[1] - Q[2] * W[2] - Q[3] * W[3]
+end
+
+function *(Q::SVector{5,T1}, W::SVector{5,T2}) where {T2<:SVector{4,ComplexF64}, T1<:Number}
+    return Q[4] * W[4] - Q[1] * W[1] - Q[2] * W[2] - Q[3] * W[3]
+end
+
 function *(A::SVector{4,ComplexF64}, M::SMatrix{4,4,ComplexF64,16})
     return SVector{4,ComplexF64}(transpose(A) * M)
 end
 function *(A::SVector{4,ComplexF64}, B::SVector{4,ComplexF64})
     return transpose(A) * B
 end
+
 import Base: -
 function -(A::T, B::SMatrix{4,4,ComplexF64,16}) where {T <: Number}
     return A*I-B
