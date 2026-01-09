@@ -35,8 +35,8 @@
     - [`structParticle`](#structparticle)
   - [Functions for the qBSE](#functions-for-the-qbse)
     - [`function preprocessing(Sys, channels, Ff, qn; Np=10, Nx=5, Nphi=5)`](#function-preprocessingsys-channels-ff-qn-np10-nx5-nphi5)
-    - [`function res(Range, iER, qn, SYS, IA, CH, IH, fV)`](#function-resrange-ier-qn-sys-ia-ch-ih-fv)
-    - [`function fV(k, l, SYS, IA0, CHf, CHi)`](#function-fvk-l-sys-ia0-chf-chi)
+    - [`function res(Range, iER, qn, SYS, IA, CH, IH, VVertex)`](#function-resrange-ier-qn-sys-ia-ch-ih-fv)
+    - [`function fV(k, l, SYS, IA0, CHf, CHi, VVertex)`](#function-fvk-l-sys-ia0-chf-chi)
     - [`function propFF(k, ex, L, LLi, LLf; lregu=1, lFFex=0)`](#function-propffk-ex-l-lli-llf-lregu1-lffex0)
     - [`function simpleXsection(ER, resM2, CH, qn; Ep="cm")`](#function-simplexsectioner-resm2-ch-qn-epcm)
     - [`function lambda(m1, m2, m3)`](#function-lambdam1-m2-m3)
@@ -46,7 +46,7 @@
     - [`function Vertex14(p1, p2, l1, l2, Vert, k, P)`](#function-vertex14p1-p2-l1-l2-vert-k-p)
     - [auxiliary function](#auxiliary-function)
   - [Additional functions](#additional-functions)
-    - [`function ch(pf, pin, amps)`](#function-chpf-pin-amps)
+    - [`function proc(pf, pin, amps)`](#function-chpf-pin-amps)
     - [`function LorentzBoostRotation(k, tecm, p1, p2)`](#function-lorentzboostrotationk-tecm-p1-p2)
 
 <!-- tocstop -->
@@ -886,6 +886,39 @@ $$
 
 The qBSE package is used to solve the Bethe-Salpeter equation with some auxiliary functions.
 
+## Data Structures for the Interactions
+
+In the qBSE package, interaction and system information are encapsulated in dedicated data structures to facilitate efficient computation and clear organization.
+
+### `structSys`
+
+The `struct structSys` (often referenced as `SYS` in the code) stores information about the system and the generally used discretization and angular integration data. Its fields include:
+
+- `Sys::String`: A label identifying the system.
+- `kv::Vector{Float64}`,`wv::Vector{Float64}`: Discretized momentum points and weights  for the momentum discretization (used in numerical integration).
+- `xv::Vector{Float64}`, `wxv::Vector{Float64}`: Discretized values and weight of $\cos\theta$.
+- `d::Vector{Matrix{Float64}}`: Precomputed Wigner $d$-matrices of $\theta$.
+- `pv::Vector{Float64}`, `wpv::Vector{Float64}`: Discretized azimuthal angles and weight of $\phi$ discretization.
+- `sp::Vector{Float64}`, `cp::Vector{Float64}`: Sine values and Cosine values of the discretized $\phi$ angles.
+- `cutoff_re_type::Symbol`: The type of cutoff used for the exponential regularization of the constituent particles. Use `:Lambda` for a fixed $\Lambda$, `:alpha` for $\Lambda = m + 0.22 \alpha$, where $m$ is the mass of the exchanged meson, and `:alpha_light` for using the mass of the light meson.
+- `cutoff_ex::Float64`, `cutoff_ex_type::Symbol`, `FF_ex_type::Int64`: The value and type of cutoff for the exchanged meson, and the type of the form factor applied to the exchanged meson.
+
+
+These fields provide all necessary information for numerical integration over momentum and angular variables in the qBSE framework.
+
+### `structInterAction`
+
+The `struct structInterAction` structure (typically used as `IA` in the code) stores the properties of each interaction or exchange process. Its fields are:
+
+- `Nex::Int64`: Total number of exchange particles or processes.
+- `name_ex::Vector{String}`,`key_ex::Vector{Int64}`: Names and integer labels of the exchanged particles or interactions.
+- `J_ex::Vector{Int64}`, `Jh_ex::Vector{Int64}`, `P_ex::Vector{Int64}`, `m_ex::Vector{Float64}`: Spin, parity, and mass of  exchanged particles.
+- `dc::Vector{Int64}`: Indicates whether the exchange is direct or crossed.
+- `Ff::Vector{Float64}`: Flavor factors associated with each exchange.
+
+These definitions ensure that all relevant quantum numbers and parameters for each interaction are explicitly tracked, supporting flexible and accurate construction of the interaction kernel in qBSE calculations.
+
+
 ## Data Structures for the Dimensions
 
 In the qBSE approach, matrix dimensions for a coupled-channel system are organized hierarchically: the outermost level corresponds to different channels, the next to independent helicities, and the innermost to discretized momentum points. The data structures are designed to clearly separate and manage these levels.
@@ -922,37 +955,6 @@ The `mutable struct structDimension` structure stores information about each dim
 
 This structure is auxiliary one to above structures and ensures that each discretized momentum point is properly associated with its helicity and integration weight, supporting accurate matrix construction and numerical calculations in the qBSE framework.
 
-## Data Structures for the Interactions
-
-In the qBSE package, interaction and system information are encapsulated in dedicated data structures to facilitate efficient computation and clear organization.
-
-### `structSys`
-
-The `struct structSys` (often referenced as `SYS` in the code) stores information about the system and the generally used discretization and angular integration data. Its fields include:
-
-- `Sys::String`: A label identifying the system.
-- `kv::Vector{Float64}`,`wv::Vector{Float64}`: Discretized momentum points and weights  for the momentum discretization (used in numerical integration).
-- `xv::Vector{Float64}`, `wxv::Vector{Float64}`: Discretized values and weight of $\cos\theta$.
-- `d::Vector{Matrix{Float64}}`: Precomputed Wigner $d$-matrices of $\theta$.
-- `pv::Vector{Float64}`, `wpv::Vector{Float64}`: Discretized azimuthal angles and weight of $\phi$ discretization.
-- `sp::Vector{Float64}`, `cp::Vector{Float64}`: Sine values and Cosine values of the discretized $\phi$ angles.
-- `cutoff_re_type::Symbol`: The type of cutoff used for the exponential regularization of the constituent particles. Use `:Lambda` for a fixed $\Lambda$, `:alpha` for $\Lambda = m + 0.22 \alpha$, where $m$ is the mass of the exchanged meson, and `:alpha_light` for using the mass of the light meson.
-- `cutoff_ex::Float64`, `cutoff_ex_type::Symbol`, `FF_ex_type::Int64`: The value and type of cutoff for the exchanged meson, and the type of the form factor applied to the exchanged meson.
-
-
-These fields provide all necessary information for numerical integration over momentum and angular variables in the qBSE framework.
-
-### `structInterAction`
-
-The `struct structInterAction` structure (typically used as `IA` in the code) stores the properties of each interaction or exchange process. Its fields are:
-
-- `Nex::Int64`: Total number of exchange particles or processes.
-- `name_ex::Vector{String}`,`key_ex::Vector{Int64}`: Names and integer labels of the exchanged particles or interactions.
-- `J_ex::Vector{Int64}`, `Jh_ex::Vector{Int64}`, `P_ex::Vector{Int64}`, `m_ex::Vector{Float64}`: Spin, parity, and mass of  exchanged particles.
-- `dc::Vector{Int64}`: Indicates whether the exchange is direct or crossed.
-- `Ff::Vector{Float64}`: Flavor factors associated with each exchange.
-
-These definitions ensure that all relevant quantum numbers and parameters for each interaction are explicitly tracked, supporting flexible and accurate construction of the interaction kernel in qBSE calculations.
 
 ## Additional Data Structures
 
@@ -995,18 +997,18 @@ This setup allows efficient lookup and management of particle properties for use
 
 ## Functions for the qBSE
 
-### `function preprocessing(Sys, channels, Ff, qn, cutoff; Np=10, Nx=5, Nphi=5)`
+### `function preprocessing(Sys, qn, channels, Ff, cutoff, Np, Nx, Nphi)`
 
-This function prepares the system and channel data structures for qBSE calculations by setting up the necessary discretization and quantum number information.
+This function is designed to be called within `res` to prepare the system and channel data structures for qBSE calculations, including the necessary discretization and quantum number information.
 
 **Arguments:**
 
 - `Sys::String`: Label identifying the system, stored in `SYS.Sys`.
+- `qn`: Quantum numbers for the process, and labels for Riemann sheets.
 - `channels`: List of channels to be included in the calculation, stored in `IA[]`.
 - `Ff`: Flavor factors, stored in `IA[]`.
-- `qn`: Quantum numbers for the process, and labels for Riemann sheets.
 - `cutoff`: A `NamedTuple` for the last four keys of `structSys`. The user may provide only the required fields; the omitted ones will be set to default as `cutoff = (cutoff_re_type = :Lambda, cutoff_ex = 0.0, cutoff_ex_type = :Lambda, FF_ex_type = 3)`.
-- `Np`, `Nx`, `Nphi`: Number of momentum discretization points (default: 10), $\cos\theta$ discretization points (default: 5), azimuthal angle discretization points (default: 5).
+- `Np`, `Nx`, `Nphi`: Number of momentum discretization points, $\cos\theta$ discretization points , azimuthal angle discretization points.
 
 Example for arguments:
 
@@ -1039,47 +1041,7 @@ Ff = Dict(
 - `CH::Vector{structChannel}`: The processed channel objects, each describing a physical channel.
 - `IH::Vector{structIndependentHelicity}`: The processed independent helicity objects, ready for use in qBSE calculations.
 
-### `function res(Range, iER, qn, SYS, IA, CH, IH, fV; eps=1e-4im)`
-
-This function calculates the rescatering process by qBSE for a given range of energies.
-
-**Arguments:**
-
-- `Range`: The range of energies to be considered. For example `Range = (ERmin=1.2, ERmax=2.0, NER=200, EIt=0.200, NEI=20, Ep="cm")`
-- `iER`: The index of the energy range, energy can be obtained as `ER = Range.ERmax - iER * (Range.ERmax - Range.ERmin) / (Range.NER - 1)`.
-- `qn`: The quantum numbers for the process.
-- `SYS`, `IA`, `CH`, `IH`:  Obtained by `preprocessing`.
-- `fV`: The potential kernel for qBSE.
-- `eps`: Optional regularization parameter (default: 1e-4im) to add a small imaginary part to propagator denominators to avoid singularities.
-
-**Returns:**
-
-- `Ect::Vector{ComplexF64}`: The complex energy values for the system.
-- `reslogt::Vector{Float64}`: The values of $\log|1 - VG|$.
-- `resM2::Matrix{Float64}`: The matrix $|M|^2$ for the channels.
-- `IH::Vector{structIndependentHelicity}`: The independent helicity objects, recalculated from the input `IH`.
-- `Dim::Vector{structDimension}`: The dimension objects, recalculated from the input `Dim`.
-- `TG::Matrix{ComplexF64}`: The $TG$ matrix used for decays.
-
-### `function fV(k, l, SYS, IA0, CHf, CHi)`
-
-This function defines the potential kernel for the qBSE calculation. It is used to compute the interaction potential between particles in a scattering process.
-
-**Arguments:**
-
-- `k::structMomentum`,`l::structHelicity`: The momenta and helicities of initial and final particles.
-- `SYS::structSys`: The same as above.
-- `IA0::structInterAction`: The interaction object containing information about the interactions and their properties, one of element of `IA` above.
-- `CHf::structChannel`,`CHi::structChannel`: The final and initial channel object containing information about the final state particles, one of element of `CH` above.
-
-**Returns:**
-
-A value representing the potential kernel, suitable for use in the qBSE package's calculations.
-
-**Note:**
-This is an internal function intended for use within the qBSE package. Users should not call this function directly.
-
-### `FFre(k, cutoffi, cutofff; cutoff_re_type=:Lambda, CHi=nothing, CHf=nothing, key_ex=0)`
+### `function FFre(k, cutoffi, cutofff; cutoff_re_type=:Lambda, CHi=nothing, CHf=nothing, key_ex=0)`
 
 In the `fV` function, form factors for constituent partilces can be included via the auxiliary function `FFre` for the regulization, which is used to regulate the interaction kernel.
 
@@ -1118,6 +1080,85 @@ In the `fV` function, form factors for the exchanged mesons can be included via 
 
 These options allow flexible control over the inclusion and type of form factors in the potential kernel, supporting different regularization schemes as needed for the physical system under study.
 
+
+### `function fV(k, l, SYS, IA0, CHf, CHi, VVertex)`
+
+This function defines the potential kernel for qBSE calculations by extracting vertices or the direct potential from VVertex, which is then passed to the kernel function. It is responsible for computing the interaction potential between particles in a scattering process.
+
+**Arguments:**
+
+- `k::structMomentum`,`l::structHelicity`: The momenta and helicities of initial and final particles.
+- `SYS::structSys`: The same as above.
+- `IA0::structInterAction`: The interaction object containing information about the interactions and their properties, one of element of `IA` above.
+- `CHf::structChannel`,`CHi::structChannel`: The final and initial channel object containing information about the final state particles, one of element of `CH` above.
+- `VVertex`: The vertices of the interactions or direct potential for qBSE, which should defiend in main file. 
+
+**Returns:**
+
+A value representing the potential kernel, suitable for use in the qBSE package's calculations.
+
+**Note:**
+This is an internal function intended for use within the qBSE package. Users should not call this function directly.
+
+## Functions for rescattering amplitudes and poles
+
+### auxiliary function
+
+`qBSE.showSYSInfo(Range, qn, IA, CH, IH)`
+
+This function is used to display the system information, including the range of energies, quantum numbers, interaction information, and channel information.
+
+`qBSE.showPoleInfo(qn, Ec, reslog, "data/output.txt")`
+
+This function is used to display the pole information, including the energy, width, and other relevant parameters. The results are saved in a file named "output.txt" in the "data" directory.
+
+### `function resc0(Range, iER, qn, SYS, IA, CH, IH, VVertex; eps)`
+
+This function is designed to be called within `res` to  calculates the rescatering process by qBSE for a given range of energies.
+
+**Arguments:**
+
+- `Range`: The range of energies to be considered. For example `Range = (ERmin=1.2, ERmax=2.0, NER=200, EIt=0.200, NEI=20, Ep="cm")`
+- `iER`: The index of the energy range, energy can be obtained as `ER = Range.ERmax - iER * (Range.ERmax - Range.ERmin) / (Range.NER - 1)`.
+- `qn`: The quantum numbers for the process.
+- `SYS`, `IA`, `CH`, `IH`:  Obtained by `preprocessing`.
+- `VVertex`: Interaction vertices or direct potentials for qBSE framework. 
+  Flow: `VVertex` → `res` → `VGI()` → `kernel()` → `fV()` in computation pipeline.
+- `eps`: Optional regularization parameter (default: 1e-4im) to add a small imaginary part to propagator denominators to avoid singularities.
+
+**Returns:**
+
+- `Ect::Vector{ComplexF64}`: The complex energy values for the system.
+- `reslogt::Vector{Float64}`: The values of $\log|1 - VG|$.
+- `resM2::Matrix{Float64}`: The matrix $|M|^2$ for the channels.
+- `IH::Vector{structIndependentHelicity}`: The independent helicity objects, recalculated from the input `IH`.
+- `Dim::Vector{structDimension}`: The dimension objects, recalculated from the input `Dim`.
+- `TG::Matrix{ComplexF64}`: The $TG$ matrix used for decays.
+
+### `function resc(Sys, qn, Range, channels, Ff, cutoff, VVertex; Np=10, Nx=10, Nphi=5,eps=+1e-4im)`
+
+This function, which employs parallel computation to model the rescattering process via the qBSE (quantum Bethe-Salpeter equation), is designed to be called from the main program. The core calculation is implemented in the function `res0`.
+
+**Arguments:**
+
+- `Sys::String`: Label identifying the system, stored in `SYS.Sys`.
+- `qn`: Quantum numbers for the process, and labels for Riemann sheets.
+- `Range`: The range of energies to be considered. For example `Range = (ERmin=1.2, ERmax=2.0, NER=200, EIt=0.200, NEI=20, Ep="cm")`
+- `channels`: List of channels to be included in the calculation, stored in `IA[]`.
+- `Ff`: Flavor factors, stored in `IA[]`.
+- `cutoff`: A `NamedTuple` for the last four keys of `structSys`. The user may provide only the required fields; the omitted ones will be set to default as `cutoff = (cutoff_re_type = :Lambda, cutoff_ex = 0.0, cutoff_ex_type = :Lambda, FF_ex_type = 3)`.
+- `Np`, `Nx`, `Nphi`: Number of momentum discretization points, $\cos\theta$ discretization points , azimuthal angle discretization points.
+
+**Returns:**
+
+- `Ect::Vector{ComplexF64}`: The complex energy values for the system.
+- `reslogt::Vector{Float64}`: The values of $\log|1 - VG|$.
+- `resM2::Matrix{Float64}`: The matrix $|M|^2$ for the channels.
+- `IH::Vector{structIndependentHelicity}`: The independent helicity objects, recalculated from the input `IH`.
+- `Dim::Vector{structDimension}`: The dimension objects, recalculated from the input `Dim`.
+- `TG::Matrix{ComplexF64}`: The $TG$ matrix used for decays.
+
+
 ### `function simpleXsection(ER, resM2, CH, qn; Ep="cm")`
 
 This function computes the total cross section for a $2 \to 2$ scattering process using the squared amplitude matrix and channel information.
@@ -1142,66 +1183,7 @@ This function calculates the Kallen function $\lambda(m_1, m_2, m_3)$, which is 
 
 ## Decay
 
-### `function setTGA(par, sij, k, tecm, i, j)`
-
-set the frame and other things for calculating TGA, which should be usde before `TGA` function.
-
-**Arguments:**
-
-- `par`: The parameters for the TGA calculation.
-- `sij`: The invariant mass squared of the two particles $i$ and $j$.
-- `k`: The momentum of the particle in the center-of-mass (CM) frame.
-- `tecm`: The total energy in the center-of-mass frame.
-- `i`: The index of the first particle.
-- `j`: The index of the second particle.
-
-**Returns:**
-
-`para=(E=sqrt(sij), par=par, IH=IH, Dim=Dim, k=kn, P=Pn)`
-
-### `TGA(cfinal, cinter, Vert, para)`
-
-This function calculates the transition amplitude for a given final state `cfinal` and interaction `cinter`.
-
-**Arguments:**
-
-- `cfinal::Int64`: The index of final state configuration (e.g., channel and particle information for the outgoing particles).
-- `cinter::Tuple{Tuple{Int64, Float64}}`: The indices of intermediate channels (`Int64`) with weights (`Float64`).
-- `Vert`: The vertex function and associated data, including the vertex structure, precomputed spinors or polarization vectors, and helicity assignments (e.g., `Vert=Vertex14, ULc=GA1 * FR.U(para14.P, lLc), l2=l2, l3=l3`). It will be used in `function Vertex14`.
-- `para`: The calculation parameters, as returned by `setTGA`.
-
-### `function Vertex14(p1, p2, l1, l2, Vert, k, P)`
-
-This function computes the initial decay vertex for a process involving two rescattering particles.
-
-**Arguments:**
-
-- `p1`, `p2`: Four-momenta of the two rescattering particles.
-- `l1`, `l2`: Helicity indices of the two rescattering particles.
-- `Vert`: Vertex structure or function, defined in  `function TGA`
-- `k`: Momenta of all final state particles.
-- `P`: Four-momentum of the parent (initial) particle.
-
-**Returns:**
-
-A value representing the decay vertex amplitude, suitable for use in the qBSE package's transition amplitude calculations.
-
-**Note:**
-This is an internal function intended for use within the qBSE package. Users should not call this function directly.
-
-### auxiliary function
-
-`qBSE.showSYSInfo(Range, qn, IA, CH, IH)`
-
-This function is used to display the system information, including the range of energies, quantum numbers, interaction information, and channel information.
-
-`qBSE.showPoleInfo(qn, Ec, reslog, "data/output.txt")`
-
-This function is used to display the pole information, including the energy, width, and other relevant parameters. The results are saved in a file named "output.txt" in the "data" directory.
-
-## Additional functions
-
-### `function ch(pf, pin, amps)`
+### `function proc(pf, pin, amps)`
 
 This function constructs a channel tuple for use in decay width or cross section calculations, such as with `Xs.Xsection`.
 
@@ -1213,12 +1195,13 @@ This function constructs a channel tuple for use in decay width or cross section
 
 **Returns:**
 
-A tuple of the form `(pf=pf, namef=namef, mf=mf, pin=pin, namei=namei, mi=mi, amps=amps)`, where:
+A tuple of the form `(pf=pf, namef=namef, mf=mf, pin=pin, namei=namei, mi=mi, amps=amps, ranges=ranges)`, where:
 
 - `pf`, `pin`: Final and initial state particle names.
 - `namef`, `namei`: Channel names for final and initial states.
 - `mf`, `mi`: Masses of final and initial state particles.
 - `amps`: Amplitude information.
+- `ranges`: Specifies spin value ranges for final state particles. Example: `(0:0, -1:1, -1:2:1)` represents spins for $\pi$, $\rho$, and $N$ in a $\pi\rho N$ system.
 
 **Example:**
 
@@ -1247,3 +1230,51 @@ This function performs a Lorentz boost and rotation to transform a particle's mo
 - `Pnew`: Total four-momentum vector after the same transformations.
 
 This function is useful for kinematic calculations where momenta need to be expressed in different reference frames, ensuring proper treatment of boosts and rotations.
+
+### `function setTGA(par, sij, k, tecm, i, j)`
+
+set the frame and other things for calculating TGA, which should be usde before `TGA` function.
+
+**Arguments:**
+
+- `par`: The parameters for the TGA calculation.
+- `k`: The momentum of the particle in the center-of-mass (CM) frame.
+- `tecm`: The total energy in the center-of-mass frame.
+- `i`: The index of the first particle.
+- `j`: The index of the second particle.
+
+**Returns:**
+
+`para=(E=sqrt(sij), par=par, IH=IH, Dim=Dim, k=kn, P=Pn,resc=(i,j))`
+
+### `TGA(para, cfinal, cinter, ranges)`
+
+This function calculates the transition amplitude for a given final state `cfinal` and interaction `cinter`.
+
+**Arguments:**
+
+- `para`: The calculation parameters, as returned by `setTGA`.
+- `cfinal::Int64`: The index of final state configuration (e.g., channel and particle information for the outgoing particles).
+- `cinter::Tuple{NamedTuple{Int64, Float64, Function, NamedTuple}}`: The indices of intermediate channels (`ch::Int64`) with weights (`weight=Float64`), the corresponding vertex functions (`Vertex::Function`),  and associated data, including the vertex structure, precomputed spinors or polarization vectors ( `cached::NamedTuple` e.g., `cached=(ULc=GA1 * FR.U(para14.P, lLc),)`). The content in `cached` will be used in functions `Vertex`, such as `Vertex14(k, P, l, cached) = FR.U(k[4], l[4], bar=true) * cached.ULc`, defined in `function amps` in main file.
+
+
+#### `function Vertex14(k, P, l, Vert)`
+
+This function computes the initial decay vertex for a process involving two rescattering particles.
+
+**Arguments:**
+
+
+- `k`: Momenta of the two rescattering particles and all other final-state particles. 
+- `P`: Four-momentum of the parent (initial) particle.
+- `l`: Helicity indices of the two rescattering particles and all other final-state particles.  
+- `Vert`: Vertex structure or function, defined in  `function TGA`
+
+**Returns:**
+
+A value representing the decay vertex amplitude, suitable for use in the qBSE package's transition amplitude calculations.
+
+
+
+
+

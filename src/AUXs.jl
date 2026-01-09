@@ -1,6 +1,6 @@
 module AUXs
 using Statistics, JLD2, Distributed, Distributions
-
+#############################################################################
 # Define a wrapper function that automatically merges fixed and free parameters
 # based on the mask, and extracts lower and upper bounds for free parameters
 function create_fixed_obj_from_mask(original_obj, lower, upper, full_initial, mask)
@@ -31,7 +31,6 @@ function create_fixed_obj_from_mask(original_obj, lower, upper, full_initial, ma
 
     return fixed_obj, free_lower, free_upper, free_initial
 end
-
 function get_full_parameters(result, initial, mask)
     # Extract optimal values of free parameters
     free_params_opt = result.minimizer
@@ -45,7 +44,7 @@ function get_full_parameters(result, initial, mask)
 
     return full_params_opt
 end
-
+#############################################################################
 function uncertainty(f, x_opt; Δf=1.0, ε=1e-2, M=5, max_iter=20, tol=0.1)
     n = length(x_opt)
     fmin = mean([f(x_opt) for _ in 1:M])
@@ -80,26 +79,6 @@ function uncertainty(f, x_opt; Δf=1.0, ε=1e-2, M=5, max_iter=20, tol=0.1)
 
     return unc
 end
-
-function broadcast_variable(varname::Symbol, value; filename="temp.jld2", cleanup=true)
-    @time begin
-        JLD2.jldopen(filename, "w") do f
-            f[string(varname)] = value
-        end
-    end
-    @time begin
-        @sync for pid in workers()
-            @async remotecall_wait(pid) do
-                data = JLD2.load(filename, string(varname))
-                if !isdefined(Main, varname)
-                    Core.eval(Main, :(const $(varname) = $data))
-                end
-            end
-        end
-    end
-    cleanup && rm(filename, force=true)
-end
-
 function significance(chi2_diff, ndf_diff::Int64)
     # Use high-precision BigFloat type
     chi2_diff = BigFloat(chi2_diff)
@@ -115,5 +94,37 @@ function significance(chi2_diff, ndf_diff::Int64)
 
     return sigma
 end
-
+#############################################################################
+function broadcast_variable(varname::Symbol, value; filename="temp.jld2", cleanup=true, threshold=10*1024*1024)  # 默认阈值10MB
+    # 估算变量大小（近似）
+    approx_size = Base.summarysize(value)
+    
+    if approx_size < threshold
+        # 小变量：直接使用 @everywhere
+        println("Variable size: $(approx_size) bytes < $(threshold) bytes, using @everywhere")
+        timer = time()
+        @eval @everywhere const $varname = $value
+        elapsed = time() - timer
+        println("Broadcast time: $(elapsed)s")
+    else
+        # 大变量：使用文件分发
+        println("Variable size: $(approx_size) bytes >= $(threshold) bytes, using file distribution")
+        timer = time()
+        JLD2.jldopen(filename, "w") do f
+            f[string(varname)] = value
+        end
+        @sync for pid in workers()
+            @async remotecall_wait(pid) do
+                data = JLD2.load(filename, string(varname))
+                if !isdefined(Main, varname)
+                    Core.eval(Main, :(const $(varname) = $data))
+                end
+            end
+        end
+        load_time = time() - timer
+        println("Broadcast time: $(load_time)s")
+        
+        cleanup && rm(filename, force=true)
+    end
+end
 end

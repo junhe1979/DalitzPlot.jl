@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.8] - 2026-01-04
+
+### Added
+- Added an auxiliary function `build_full_idx` in the `qBSE` module. This is an internal function used in function `TGA`.
+- Added function `resc` to enable parallel computation using `res0` (formerly `res`) as input.
+
+### Changed
+- Refactored `setTGA` to return `resc=(i,j)` as output, removing the redundant `sij` input parameter.
+- Enhanced the `TGA` function interface with improved parameter handling and output structure.
+- Renamed physics process identifier from `ch` to `proc` to avoid confusion with channels.
+- Relocated `fV` function implementation to `qBSE.jl` for better module organization.
+
 ## [0.3.7] - 2026-01-01
 
 ### Added

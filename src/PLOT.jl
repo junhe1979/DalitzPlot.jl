@@ -30,19 +30,16 @@ function readdata(filename)
     end
     return data_groups
 end
-
-
-
 function plotD(res; cg=cgrad([:white, :green, :blue, :red], [0, 0.01, 0.1, 0.5, 1.0]), xx=[], xy=[], yx=[], yy=[], filename="DP.pdf")
     ENV["GKSwstype"] = "100"
     cs1 = res.cs1
     cs2 = res.cs2
     axesV = res.axesV
     laxes = res.laxes
-    ch = res.ch
+    proc = res.proc
 
     laxes1 = [laxes0[1] for laxes0 in laxes]
-    Laxes = [ch.namef[laxes1[1][1]] * ch.namef[laxes1[1][2]], ch.namef[laxes1[2][1]] * ch.namef[laxes1[2][2]]]
+    Laxes = [proc.namef[laxes1[1][1]] * proc.namef[laxes1[1][2]], proc.namef[laxes1[2][1]] * proc.namef[laxes1[2][2]]]
     
   
     Nbin = length(axesV[1])

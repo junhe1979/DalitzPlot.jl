@@ -115,7 +115,7 @@ Users should provide the amplitude function, named `amp`, which returns the full
 The simplest case is to assume it equals 1.
 
 ```julia
-amp(tecm, kf, ch, para, p0)=1.
+amp(tecm, kf, proc, para, p0)=1.
 ```
 
 Define more intricate amplitudes for a 2->3 process.
@@ -124,7 +124,7 @@ This function, named `amp`, calculates amplitudes with factors for a 2->3 proces
 
 - `tecm`: Total energy in the center-of-mass frame.
 - `kf`: Final momenta generated internally by `GEN`.
-- `ch`: Information about the process (to be defined below).
+- `proc`: Information about the process (to be defined below).
 - `para`: Additional parameters.
 - `p0`: Additional parameters for possible fitting.
 
@@ -132,22 +132,22 @@ Users are expected to customize the amplitudes within this function according to
 
 ```julia
 
-function amps(tecm, kf, ch, para, p0)
+function amps(tecm, kf, proc, para, p0)
 
     # get kf as momenta in the center-of-mass ,
     #k1,k2,k3=kf   
     #get kf as momenta in laboratory frame
-    k1, k2, k3 = Xs.getkf(para.p, kf, ch)
+    k1, k2, k3 = Xs.getkf(para.p, kf, proc)
 
     # Incoming particle momentum
     # Center-of-mass frame: p1 = [p 0.0 0.0 E1]
-    #p1, p2 = pcm(tecm, ch.mi)
+    #p1, p2 = pcm(tecm, proc.mi)
     # Laboratory frame
-    p1, p2 = Xs.plab(para.p, ch.mi)
+    p1, p2 = Xs.plab(para.p, proc.mi)
 
     #flux
     #flux factor for cross section
-    fac = 1e9 / (4 * para.p * ch.mi[2] * (2 * pi)^5)
+    fac = 1e9 / (4 * para.p * proc.mi[2] * (2 * pi)^5)
 
     k12 = k1 + k2
     s12 = k12 * k12
@@ -162,7 +162,7 @@ end
 
 ## Define the masses of initial and final particles
 
-The masses of initial and final particles are specified in a NamedTuple (named `ch` here) with fields `mi` and `mf`.
+The masses of initial and final particles of a physcial process are specified in a NamedTuple (named `proc` here) with fields `mi` and `mf`.
 Particle names can also be provided for PlotD as `namei` and `namef`.
 
 The function for amplitudes with factors is saved as `amp`.
@@ -170,7 +170,7 @@ The function for amplitudes with factors is saved as `amp`.
 Example usage:
 
 ```julia
-ch = (pf=["p1","p2","p3"],mi=[mass_i_1, mass_i_2], mf=[mass_f_1, mass_f_2, mass_f_3], namei=["p^i_{1}", "p^i_{2}"], namef=["p^f_{1}", "p^f_{2}", "p^f_{3}"], amp=amp)
+proc = (pf=["p1","p2","p3"],mi=[mass_i_1, mass_i_2], mf=[mass_f_1, mass_f_2, mass_f_3], namei=["p^i_{1}", "p^i_{2}"], namef=["p^f_{1}", "p^f_{2}", "p^f_{3}"], amp=amp)
 ```
 
 Make sure to replace `mass_i_1`, `mass_i_2`, `mass_f_1`, `mass_f_2`, and `mass_f_3` with the actual masses of the particles (such as `1.0, 1.0, 1.0, 2.0, 3.0`).
@@ -183,14 +183,14 @@ Example usage:
 
 ```julia
 p_lab = 20.0
-tecm = Xs.pcm(p_lab, ch.mi)
+tecm = Xs.pcm(p_lab, proc.mi)
 tecm=10.
 ```
 Here the momentum of the incoming particle in the Laboratory frame is set to `20.0` GeV, and the center-of-mass energy is calculated using the `Xs.pcm` function. The value of `tecm` can be set directly to `10.0` GeV if desired.
 
 ## Calculate
 
-The function `Xsection` takes the momentum in CMS (`tecm`), the information about the particles (`ch`), the axes representing invariant masses (`axes`), the total number of events (`nevtot`), the number of bins (`Nbin`), and additional parameters (`para`). The function uses the plab2pcm function to transform the momentum from the Laboratory frame to the center-of-mass frame.
+The function `Xsection` takes the momentum in CMS (`tecm`), the information about the physcial process (`proc`), the axes representing invariant masses (`axes`), the total number of events (`nevtot`), the number of bins (`Nbin`), and additional parameters (`para`). The function uses the plab2pcm function to transform the momentum from the Laboratory frame to the center-of-mass frame.
 
 Example usage:
 
@@ -202,7 +202,7 @@ end
 nevtot=Int64(1e7)
 pb = ProgressBar(1:nevtot)  
 callback = i -> progress_callback(pb)  
-res = Xs.Xsection(tecm, ch, callback,axes=[["p2","p3"], ["p1","p2"]], nevtot=Int64(1e7), Nbin=500, para=(p=p_lab, l=1.0),stype=2)
+res = Xs.Xsection(tecm, proc, callback,axes=[["p2","p3"], ["p1","p2"]], nevtot=Int64(1e7), Nbin=500, para=(p=p_lab, l=1.0),stype=2)
 ```
 
 The calculation results are stored in the variable `res` as a `NamedTuple` with the following fields:
@@ -220,12 +220,12 @@ addprocs(1; exeflags="--project")
 @everywhere using DalitzPlot.qBSE, DalitzPlot.FR, DalitzPlot.Xs, DalitzPlot.GEN, DalitzPlot.PLOT, DalitzPlot.AUXs
 Ecm = 20.0
 nevtot = Int64(1e7)
-@everywhere amps(tecm, kf, ch, para, p0) = 1.
-ch = (pf=["p1", "p2", "p3"],
+@everywhere amps(tecm, kf, proc, para, p0) = 1.
+proc = (pf=["p1", "p2", "p3"],
     mi=[1.0, 1.0], mf=[2.0 for i in 1:3],
     namei=["p^i_{1}", "p^i_{2}"], namef=["p^f_{1}", "p^f_{2}", "p^f_{3}"],
     amps=amps)
-res = Xs.Xsection(10.0, ch, axes=[["p2", "p3"], ["p1", "p2"]], nevtot=nevtot, Nbin=1000,
+res = Xs.Xsection(10.0, proc, axes=[["p2", "p3"], ["p1", "p2"]], nevtot=nevtot, Nbin=1000,
     para=(p=8000.0, l=1.0), stype=2)
 ```
 
@@ -265,11 +265,11 @@ This function takes an array of 5-component momentum vectors `momenta` and appli
  
 The function `binx` takes three arguments: `i`, which is an integer index, `bin`, which is a vector of bin edges, and `iaxis`, which is an integer representing the axis of the binning. The function returns the value of the bin corresponding to the index `i` for the specified axis.
 
-`function binrange(laxes::Vector{Vector{Int64}}, tecm, ch, stype)`
+`function binrange(laxes::Vector{Vector{Int64}}, tecm, proc, stype)`
 
-based on the axes of the binning, the function `binrange` calculates the range of values for each axis. The function takes three arguments: `laxes`, which is a vector of vectors representing the axes of the binning, `tecm`, which is the total energy in the center-of-mass frame, and `ch`, which contains information about the particles. The function returns a vector of ranges for each axis.
+based on the axes of the binning, the function `binrange` calculates the range of values for each axis. The function takes three arguments: `laxes`, which is a vector of vectors representing the axes of the binning, `tecm`, which is the total energy in the center-of-mass frame, and `proc`, which contains information about the particles. The function returns a vector of ranges for each axis.
 
-`function binrange(laxes::Vector{Vector{Vector{Int64}}}, tecm, ch, stype; Range=[])`
+`function binrange(laxes::Vector{Vector{Vector{Int64}}}, tecm, proc, stype; Range=[])`
 
 This function is similar to the previous one but for a vector of momenta. Range is a vector of vectors representing the given ranges for each axis. 
 
@@ -295,9 +295,9 @@ Key functions include:
 
 Converts the momentum of the incoming particle in the laboratory frame (`p`) and the masses of the initial particles (`mi`) to the total energy in the CMS frame.
 
-`function getkf(p, kf, ch)`
+`function getkf(p, kf, proc)`
 
- Retrieves the final state momenta in the desired frame, based on the process information `ch` and input parameters.
+ Retrieves the final state momenta in the desired frame, based on the process information `proc` and input parameters.
 
 `function plab(p, mi)`
 
