@@ -902,7 +902,7 @@ The `struct structSys` (often referenced as `SYS` in the code) stores informatio
 - `sp::Vector{Float64}`, `cp::Vector{Float64}`: Sine values and Cosine values of the discretized $\phi$ angles.
 - `cutoff_re_type::Symbol`: The type of cutoff used for the exponential regularization of the constituent particles. Use `:Lambda` for a fixed $\Lambda$, `:alpha` for $\Lambda = m + 0.22 \alpha$, where $m$ is the mass of the exchanged meson, and `:alpha_light` for using the mass of the light meson.
 - `cutoff_ex::Float64`, `cutoff_ex_type::Symbol`, `FF_ex_type::Int64`: The value and type of cutoff for the exchanged meson, and the type of the form factor applied to the exchanged meson.
-
+- `channel::Dict{Tuple{Symbol,Symbol},Int64}`: A dictionary storing the mapping between particle pairs and their corresponding channel number.
 
 These fields provide all necessary information for numerical integration over momentum and angular variables in the qBSE framework.
 
@@ -911,7 +911,7 @@ These fields provide all necessary information for numerical integration over mo
 The `struct structInterAction` structure (typically used as `IA` in the code) stores the properties of each interaction or exchange process. Its fields are:
 
 - `Nex::Int64`: Total number of exchange particles or processes.
-- `name_ex::Vector{String}`,`key_ex::Vector{Int64}`: Names and integer labels of the exchanged particles or interactions.
+- `key_ex::Vector{Symbol}`: Labels of the exchanged particles or interactions.
 - `J_ex::Vector{Int64}`, `Jh_ex::Vector{Int64}`, `P_ex::Vector{Int64}`, `m_ex::Vector{Float64}`: Spin, parity, and mass of  exchanged particles.
 - `dc::Vector{Int64}`: Indicates whether the exchange is direct or crossed.
 - `Ff::Vector{Float64}`: Flavor factors associated with each exchange.
@@ -927,9 +927,8 @@ In the qBSE approach, matrix dimensions for a coupled-channel system are organiz
 
 The `struct structChannel` structure encapsulates the properties of a physical channel in the qBSE package, often used as `CH` in the code. Its fields include:
 
-- `p::Vector{Float64}`, `anti::Vector{Int}`, `m::Vector{Float64}`, `J::Vector{Int64}`, `Jh::Vector{Int64}`, `P::Vector{Int64}`: Vectors specifying the index of partilce $p$,  label for antiparticle, mass $m$, spin $J$=`J/Jh`, and parity (`P`) for each particle in the channel. Here, `Jh = 1` for integer spin and `Jh = 2` for half-integer spin.
+- `p::Vector{Symbol}`,`p_name0::Vector{Symbol}`,`anti::Vector{Int}`, `m::Vector{Float64}`, `J::Vector{Int64}`, `Jh::Vector{Int64}`, `P::Vector{Int64}`: Vectors specifying the key of partilce $p$ and those without charge `p_name0`, label for antiparticle, mass $m$, spin $J$=`J/Jh`, and parity (`P`) for each particle in the channel. Here, `Jh = 1` for integer spin and `Jh = 2` for half-integer spin.
 - `cutoff::Float64` specifying the cutoff parameter for the channel.
-- `name::String`, `name0::String`  for the channel name, with and without charge. `name0` is used to define channels with definite isospin.
 - `IHb::Int64`, `IHe::Int64`, `IHn::Int64` indicating the starting and ending indices of independent helicities, and the total number of independent helicity states for the channel.
 
 These definitions ensure that each channel's quantum numbers and relevant parameters are explicitly tracked, supporting efficient matrix construction and manipulation in qBSE calculations.
@@ -977,23 +976,46 @@ The `mutable struct structHelicity` structure stores the helicity information fo
 - `i2::Int64`, `i2h::Int64`: Helicity and denominator for initial particle 2.
 - `f2::Int64`, `f2h::Int64`: Helicity and denominator for final particle 2.
 
+## Particle
+
 ### `structParticle`
 
-The `struct structParticle` structure defines the properties of a single particle. Its fields are:
+The `structParticle` structure defines the properties of a single particle.
 
-- `name::String`, `name0::String`, `nameL::String`: Particle name (with charge and without charge), LaTeX representation of the particle name.
-- `anti::Int`: Flags whether the particle is an antiparticle. **Note:** The labeling convention distinguishes between particles and antiparticles, with specific assignments depending on the particle type (e.g., all three  pions $\pi^\pm$ and $\pi^0$ are typically treated as particles `0`, while certain kaon states $\bar{K}^0$ and $K^-$ are treated as antiparticles `1`).
-- `m::Float64`: Mass of the particle.
-- `J::Int64`, `Jh::Int64`, `P::Int64`: Spin and Parity.
+**Fields:**
+- `name0::Symbol` — Particle key without charge (used for identification).
+- `nameL::String` — LaTeX representation of the particle name.
+- `anti::Int` — Flags antiparticle status: `0` for particle, `1` for antiparticle.  
+  **Note:** The labeling convention distinguishes between particles and antiparticles, with specific assignments depending on the particle type (e.g., all three pions $\pi^\pm$ and $\pi^0$ are typically treated as particles (`0`), while certain kaon states $\bar{K}^0$ and $K^-$ are treated as antiparticles (`1`)).
+- `m::Float64` — Particle mass.
+- `J::Int64` — Total angular momentum.
+- `Jh::Int64` — Related spin quantum number.
+- `P::Int64` — Parity.
 
-A function is also provided to read particle information from a file and populate the particle list and key dictionary:
+---
 
-`function particles!(particles::Vector{structParticle}, pkey::Dict{String,Int64}, filename::String)`
+### function to read partilce data file
 
-- `particles`: A global vector (`const p = structParticle[]`) storing all particle information.
-- `pkey`: A global dictionary (`const pkey = Dict{String,Int64}()`) mapping particle names to their indices.
+`function particles!(particles::Dict{Symbol,structParticle}, filename::String)`
 
-This setup allows efficient lookup and management of particle properties for use in qBSE calculations.
+Populates a dictionary of particle structures by reading particle information from a formatted data file.
+
+**Arguments:**
+- `particles::Dict{Symbol,structParticle}` — Dictionary mapping particle symbols to their corresponding `structParticle` instances.
+- `filename::String` — Path to the particle data file.
+
+**Behavior:**
+- Reads the file line by line, skipping the header.
+- Parses each column into the corresponding `structParticle` field.
+- Stores the constructed particle object in the dictionary using the first column (charged symbol) as the key.
+
+**Returns:**
+- Nothing (modifies the `particles` dictionary in place).
+
+`const p = Dict{Symbol,structParticle}()`
+
+store of information of particles in this global vector
+
 
 ## Functions for the qBSE
 
@@ -1013,25 +1035,26 @@ This function is designed to be called within `res` to prepare the system and ch
 Example for arguments:
 
 ```julia
-Sys == "KNcp"
-qn = (I=1, Ih=1, J=1, Jh=2, P=-1, C=-1, lRm=1)
-cutoff = (cutoff_re_type = :alpha_light,)
-channels = (
-    ("K_b0", "N_p", qBSE.p[qBSE.pkey["K"]].m + 0.22 * 1.63),
-    ("pi_0", "Sigma_p", qBSE.p[qBSE.pkey["pi"]].m + 0.22 * 1.63),
-    ("pi_p", "Sigma_0", qBSE.p[qBSE.pkey["pi"]].m + 0.22 * 1.63),
-    ("pi_p", "Lambda", qBSE.p[qBSE.pkey["pi"]].m + 0.22 * 1.63),
-    ("eta", "Sigma_p", qBSE.p[qBSE.pkey["eta"]].m + 0.22 * 1.63)
-	)
-
-Ff = Dict(
-    "K_b0:N_p-->K_b0:N_p" => ([["V", 1], 1.0],),
-    "K_b0:N_p-->pi_0:Sigma_p" => ([["V", 1], -sqrt(0.5)],),
-    "K_b0:N_p-->pi_p:Sigma_0" => ([["V", 1], sqrt(0.5)],),
-    "K_b0:N_p-->pi_p:Lambda" => ([["V", 1], -sqrt(1.5)],),
-    "K_b0:N_p-->eta:Sigma_p" => ([["V", 1], sqrt(1.5)],),
-    "pi_0:Sigma_p-->pi_p:Sigma_0" => ([["V", 1], -2.0],)
-	)
+if Sys == "KNcp"
+    qn = (I=1, Ih=1, J=1, Jh=2, P=-1, C=-1, lRm=1)
+    Range = (ERmin=1.2, ERmax=2.0, NER=200, EIt=0.200, NEI=20, Ep="cm")
+    cutoff = (cutoff_re_type=:alpha_light,)
+    channels = (
+        (:K_b0, :N_p, 1.63),
+        (:pi_0, :Sigma_p, 1.63),
+        (:pi_p, :Sigma_0, 1.63),
+        (:pi_p, :Lambda, 1.63),
+        (:eta, :Sigma_p, 1.63)
+      )
+    Ff = Dict{Tuple{Tuple{Symbol,Symbol},Tuple{Symbol,Symbol}},Any}(
+        ((:K_b0, :N_p), (:K_b0, :N_p)) => ([[:V, 1], 1.0],),
+        ((:K_b0, :N_p), (:pi_0, :Sigma_p)) => ([[:V, 1], -sqrt(0.5)],),
+        ((:K_b0, :N_p), (:pi_p, :Sigma_0)) => ([[:V, 1], sqrt(0.5)],),
+        ((:K_b0, :N_p), (:pi_p, :Lambda)) => ([[:V, 1], -sqrt(1.5)],),
+        (:K_b0, :N_p), (:eta, :Sigma_p)) => ([[:V, 1], sqrt(1.5)],),
+        ((:pi_0, :Sigma_p), (:pi_p, :Sigma_0)) => ([[:V, 1], -2.0],)
+        )
+end
 ```
 
 **Returns:**
@@ -1189,7 +1212,7 @@ This function constructs a channel tuple for use in decay width or cross section
 
 **Arguments:**
 
-- `pf`: List of final state particle names (e.g., `["pi_m", "pi_p", "pi_p", "Lambda"]`).
+- `pf`: List of final state particle names (e.g., `[:pi_m, :pi_p, :pi_p, :Lambda]`).
 - `pin`: List of initial state particle names (can be empty if not needed).
 - `amps`: Amplitude information or function.
 
@@ -1208,7 +1231,7 @@ A tuple of the form `(pf=pf, namef=namef, mf=mf, pin=pin, namei=namei, mi=mi, am
 To compute the decay width for $\Lambda_c \to \pi^- \pi^- \pi^+ \Lambda$:
 
 ```julia
-ch = qBSE.ch(["pi_m", "pi_p", "pi_p", "Lambda"], [], amps)
+ch = qBSE.ch([:pi_m, :pi_p, :pi_p, :Lambda], [], amps)
 ```
 
 The resulting `ch` can be passed directly to `Xs.Xsection`. See the `Xs.Xsection` documentation for further usage details.
@@ -1230,6 +1253,24 @@ This function performs a Lorentz boost and rotation to transform a particle's mo
 - `Pnew`: Total four-momentum vector after the same transformations.
 
 This function is useful for kinematic calculations where momenta need to be expressed in different reference frames, ensuring proper treatment of boosts and rotations.
+
+
+`function LorentzBoost(k::SVector{5,Float64}, p::SVector{5,Float64})`
+
+The function `LorentzBoost` takes two arguments: `k`, which is a 5-component momentum vector, and `p`, which is a 4-component momentum vector. The function performs a Lorentz boost on the momentum vector `k` using the momentum vector `p`.
+
+`function LorentzBoost(momenta::Vector{SVector{5,Float64}}, p::SVector{5,Float64})`
+
+Here the momenta is a vector of 5-component momentum vectors. The function applies the Lorentz boost to each momentum vector in the array `momenta` using the momentum vector `p`.
+
+
+`function Rotation(k::SVector{5,Float64}, ct::Float64, st::Float64, cp::Float64, sp::Float64)`
+
+The function `Rotation` takes a 5-component momentum vector `k` and performs a rotation on it using the provided cosine and sine values for the polar and azimuthal angles. The rotation is applied to the momentum vector `k`, resulting in a new momentum vector that has been rotated according to the specified angles.
+
+`function Rotation(momenta::Vector{SVector{5,Float64}}, ct::Float64, st::Float64, cp::Float64, sp::Float64)`
+
+This function takes an array of 5-component momentum vectors `momenta` and applies the same rotation to each momentum vector in the array using the provided cosine and sine values for the polar and azimuthal angles. The result is a new array of rotated momentum vectors.
 
 ### `function setTGA(par, sij, k, tecm, i, j)`
 
@@ -1254,8 +1295,8 @@ This function calculates the transition amplitude for a given final state `cfina
 **Arguments:**
 
 - `para`: The calculation parameters, as returned by `setTGA`.
-- `cfinal::Int64`: The index of final state configuration (e.g., channel and particle information for the outgoing particles).
-- `cinter::Tuple{NamedTuple{Int64, Float64, Function, NamedTuple}}`: The indices of intermediate channels (`ch::Int64`) with weights (`weight=Float64`), the corresponding vertex functions (`Vertex::Function`),  and associated data, including the vertex structure, precomputed spinors or polarization vectors ( `cached::NamedTuple` e.g., `cached=(ULc=GA1 * FR.U(para14.P, lLc),)`). The content in `cached` will be used in functions `Vertex`, such as `Vertex14(k, P, l, cached) = FR.U(k[4], l[4], bar=true) * cached.ULc`, defined in `function amps` in main file.
+- `cfinal::Tuple{Symbol,Symbol}`: The final state configuration (e.g., Symbols for the outgoing particles).
+- `cinter::Tuple{NamedTuple{Tuple{Symbol,Symbol}, Float64, Function, NamedTuple}}`: The indices of intermediate channels (`ch::Tuple{Symbol,Symbol}`) with weights (`weight=Float64`), the corresponding vertex functions (`Vertex::Function`),  and associated data, including the vertex structure, precomputed spinors or polarization vectors ( `cached::NamedTuple` e.g., `cached=(ULc=GA1 * FR.U(para14.P, lLc),)`). The content in `cached` will be used in functions `Vertex`, such as `Vertex14(k, P, l, cached) = FR.U(k[4], l[4], bar=true) * cached.ULc`, defined in `function amps` in main file.
 
 
 #### `function Vertex14(k, P, l, Vert)`

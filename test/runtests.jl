@@ -38,38 +38,38 @@ using Test, ProgressBars
         amps1(tecm, kf, proc, para, p0) = 1.
 
         # Two-particle channel definition
-        proc = (pf=["p1", "p2"],
+        proc = (pf=[:p1, :p2],
             mi=[1.0, 1.0], mf=[0.0 for i in 1:2],
             namei=["p^i_{1}", "p^i_{2}"], namef=["p^f_{1}", "p^f_{2}"],
             amps=amps1)
 
         pb = ProgressBar(1:nevtot)  # Create progress bar, range from 1 to nevtot
         callback = i -> progress_callback(pb)  # Create callback function, passing progress bar object
-        res = Xs.Xsection(Ecm, proc, callback, axes=[["p1", "p2"]], nevtot=nevtot, Nbin=1000,
+        res = Xs.Xsection(Ecm, proc, callback, axes=[[:p1, :p2]], nevtot=nevtot, Nbin=1000,
             para=(p=Ecm, l=1.0), stype=2)
         @show Ecm, res.cs0 / (pi / 2.)
 
         # Three-particle channel definition (final state masses 0)
-        proc = (pf=["p1", "p2", "p3"],
+        proc = (pf=[:p1, :p2, :p3],
             mi=[1.0, 1.0], mf=[0.0 for i in 1:3],
             namei=["p^i_{1}", "p^i_{2}"], namef=["p^f_{1}", "p^f_{2}", "p^f_{3}"],
             amps=amps1)
 
         pb = ProgressBar(1:nevtot)  # Create progress bar, range from 1 to nevtot
         callback = i -> progress_callback(pb)  # Create callback function, passing progress bar object
-        res = Xs.Xsection(Ecm, proc, callback, axes=[["p3", "p2"], ["p1", "p2"]], nevtot=nevtot, Nbin=1000,
+        res = Xs.Xsection(Ecm, proc, callback, axes=[[:p3, :p2], [:p1, :p2]], nevtot=nevtot, Nbin=1000,
             para=(p=Ecm, l=1.0), stype=2)
 
          @show Ecm, res.cs0 / (pi^2*Ecm^2/ 8.)
 
         # Three-particle channel definition (final state masses 2.0)
-        proc = (pf=["p1", "p2", "p3"],
+        proc = (pf=[:p1, :p2, :p3],
             mi=[1.0, 1.0], mf=[2.0 for i in 1:3],
             namei=["p^i_{1}", "p^i_{2}"], namef=["p^f_{1}", "p^f_{2}", "p^f_{3}"],
             amps=amps)
         pb = ProgressBar(1:nevtot)  # Create progress bar, range from 1 to nevtot
         callback = i -> progress_callback(pb)  # Create callback function, passing progress bar object
-        res = Xs.Xsection(10.0, proc, callback, axes=[["p2", "p3"], ["p1", "p2"]], nevtot=nevtot, Nbin=1000,
+        res = Xs.Xsection(10.0, proc, callback, axes=[[:p2, :p3], [:p1, :p2]], nevtot=nevtot, Nbin=1000,
             para=(p=8000.0, l=1.0), stype=2)
         PLOT.plotD(res)
     end

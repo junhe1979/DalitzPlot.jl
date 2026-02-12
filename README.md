@@ -87,7 +87,7 @@ using DalitzPlot.GEN
 using DalitzPlot.FR
 using DalitzPlot.qBSE
 using DalitzPlot.PLOT
-using DalitzPlot.AUX
+using DalitzPlot.AUXs
 ```
 
 # Xs Package: for decay width, cross section, invariant mass spectrum, and Dalitz plot
@@ -170,10 +170,10 @@ The function for amplitudes with factors is saved as `amp`.
 Example usage:
 
 ```julia
-proc = (pf=["p1","p2","p3"],mi=[mass_i_1, mass_i_2], mf=[mass_f_1, mass_f_2, mass_f_3], namei=["p^i_{1}", "p^i_{2}"], namef=["p^f_{1}", "p^f_{2}", "p^f_{3}"], amp=amp)
+proc = (pf=[:p1,:p2,:p3],mi=[1.,1.], mf=[1., 2., 3.], namei=["p^i_{1}", "p^i_{2}"], namef=["p^f_{1}", "p^f_{2}", "p^f_{3}"], amps=amps)
 ```
 
-Make sure to replace `mass_i_1`, `mass_i_2`, `mass_f_1`, `mass_f_2`, and `mass_f_3` with the actual masses of the particles (such as `1.0, 1.0, 1.0, 2.0, 3.0`).
+Here, the masses of the initial particles  `[mass_i_1, mass_i_2]` and final particles `[mass_f_1, mass_f_2, mass_f_3]`  are set to `1.0, 1.0, 1.0, 2.0, 3.0`, respectively.
 
 ## Define the momentum or total energy
 
@@ -202,7 +202,7 @@ end
 nevtot=Int64(1e7)
 pb = ProgressBar(1:nevtot)  
 callback = i -> progress_callback(pb)  
-res = Xs.Xsection(tecm, proc, callback,axes=[["p2","p3"], ["p1","p2"]], nevtot=Int64(1e7), Nbin=500, para=(p=p_lab, l=1.0),stype=2)
+res = Xs.Xsection(tecm, proc, callback,axes=[[:p2,:p3], [:p1,:p2]], nevtot=Int64(1e7), Nbin=500, para=(p=p_lab, l=1.0),stype=2)
 ```
 
 The calculation results are stored in the variable `res` as a `NamedTuple` with the following fields:
@@ -221,11 +221,11 @@ addprocs(1; exeflags="--project")
 Ecm = 20.0
 nevtot = Int64(1e7)
 @everywhere amps(tecm, kf, proc, para, p0) = 1.
-proc = (pf=["p1", "p2", "p3"],
+proc = (pf=[:p1, :p2, :p3],
     mi=[1.0, 1.0], mf=[2.0 for i in 1:3],
     namei=["p^i_{1}", "p^i_{2}"], namef=["p^f_{1}", "p^f_{2}", "p^f_{3}"],
     amps=amps)
-res = Xs.Xsection(10.0, proc, axes=[["p2", "p3"], ["p1", "p2"]], nevtot=nevtot, Nbin=1000,
+res = Xs.Xsection(10.0, proc, axes=[[:p2, :p3], [:p1, :p2]], nevtot=nevtot, Nbin=1000,
     para=(p=8000.0, l=1.0), stype=2)
 ```
 
@@ -239,35 +239,40 @@ DalitzPlot.PLOT.plotD(res)
 
 ## other functions
 
-### Lorentz boost
-
-`function LorentzBoost(k::SVector{5,Float64}, p::SVector{5,Float64})`
-
-The function `LorentzBoost` takes two arguments: `k`, which is a 5-component momentum vector, and `p`, which is a 4-component momentum vector. The function performs a Lorentz boost on the momentum vector `k` using the momentum vector `p`.
-
-`function LorentzBoost(momenta::Vector{SVector{5,Float64}}, p::SVector{5,Float64})`
-
-Here the momenta is a vector of 5-component momentum vectors. The function applies the Lorentz boost to each momentum vector in the array `momenta` using the momentum vector `p`.
-
-### Rotation
-
-`function Rotation(k::SVector{5,Float64}, ct::Float64, st::Float64, cp::Float64, sp::Float64)`
-
-The function `Rotation` takes a 5-component momentum vector `k` and performs a rotation on it using the provided cosine and sine values for the polar and azimuthal angles. The rotation is applied to the momentum vector `k`, resulting in a new momentum vector that has been rotated according to the specified angles.
-
-`function Rotation(momenta::Vector{SVector{5,Float64}}, ct::Float64, st::Float64, cp::Float64, sp::Float64)`
-
-This function takes an array of 5-component momentum vectors `momenta` and applies the same rotation to each momentum vector in the array using the provided cosine and sine values for the polar and azimuthal angles. The result is a new array of rotated momentum vectors.
-
 ### Bin
 
-`function binx(i::Int64, bin, iaxis::Int64)::Float64`
- 
-The function `binx` takes three arguments: `i`, which is an integer index, `bin`, which is a vector of bin edges, and `iaxis`, which is an integer representing the axis of the binning. The function returns the value of the bin corresponding to the index `i` for the specified axis.
+`binx(i::Int64, bin, iaxis::Int64)::Float64`
+
+The function returns the value of the bin corresponding to the index `i` for the specified axis.
+
+**Arguments:**
+- `i::Int64` — Bin index.
+- `bin` — Vector containing the bin edge definitions.
+- `iaxis::Int64` — Index of the binning axis.
+
+**Returns:**
+- `Float64` — The bin value corresponding to index `i` for the specified axis.
+
+
+`binrange(axis::Vector{Symbol}, tecm, proc, stype)`
+
+Computes the value range for each specified binning axis based on the given phase space dimensions. The function determines the extent of each axis using the total center-of-mass energy and particle information.
+
+**Arguments:**
+- `laxes`: `Vector{Vector}` — A vector of vectors specifying the binning axes.
+- `tecm`: `Float` — Total energy in the center-of-mass frame.
+- `proc`: `Process` — Contains particle definitions and kinematic properties.
+- `stype`: `Int` — Specifies the return type: `1` for mass, `2` for mass squared.
+
+**Returns:**
+- `Vector{UnitRange}` — A vector of ranges corresponding to each input axis.
+
+**Note:**
+The exact interpretation of each axis depends on its symbol and the provided process information. The function is typically used in phase space integration and event generation workflows.
 
 `function binrange(laxes::Vector{Vector{Int64}}, tecm, proc, stype)`
 
-based on the axes of the binning, the function `binrange` calculates the range of values for each axis. The function takes three arguments: `laxes`, which is a vector of vectors representing the axes of the binning, `tecm`, which is the total energy in the center-of-mass frame, and `proc`, which contains information about the particles. The function returns a vector of ranges for each axis.
+based on the axes of the binning, the function `binrange` calculates the range of values for each axis. Argument `laxes` is a vector of vectors representing the axes of the binning.
 
 `function binrange(laxes::Vector{Vector{Vector{Int64}}}, tecm, proc, stype; Range=[])`
 
@@ -399,7 +404,7 @@ A function `FR.GS` is provided for calculate $\gamma \cdot k$ as `function GS(k:
 
 `function LC(a::SVector, b::SVector, c::SVector, d::SVector)`: $\epsilon^{\mu\nu\rho\lambda}a_\mu b_\nu c_\rho d_\lambda$.
 
-***Note*** Here, the Levi-Civita tensor is defined with upper indices $\epsilon^{\mu\nu\rho\lambda}$, and all resultant quantities will likewise carry upper indices. The input vectors a, b, c, and d are also specified in their contravariant form (${\rm a}^{\mu}$,${\rm b}^{\mu}$,${\rm c}^{\mu}$,${\rm d}^{\mu}$).
+***Note*** Here, the Levi-Civita tensor is defined with upper indices $\epsilon^{\mu\nu\rho\lambda}$ with convention $=\epsilon^{0123}=-\epsilon_{0123}=1$, and all resultant quantities will likewise carry upper indices. The input vectors a, b, c, and d are also specified in their contravariant form (${\rm a}^{\mu}$,${\rm b}^{\mu}$,${\rm c}^{\mu}$,${\rm d}^{\mu}$).
 
 ## Additional defintions to operations
 
@@ -462,7 +467,7 @@ The PLOT package is used for plotting the results of the calculations. It provid
 
 ## Plotting the invariant mass spectrum and Daltiz plot
 
-`function plotD(res; cg=cgrad([:white, :green, :blue, :red], [0, 0.01, 0.1, 0.5, 1.0]), xx=[], xy=[], yx=[], yy=[])`
+`function plotD(res; cg=cgrad([:white, :green, :blue, :red], [0, 0.01, 0.1, 0.5, 1.0]), xx=[], xy=[], yx=[], yy=[], filename="DP.pdf")`
 
 This function takes the results of the calculation (`res`) and generates a plot. The optional parameters `cg`, `xx`, `xy`, `yx`, and `yy` allow customization of the plot's appearance, including color gradients and axis labels.
 
@@ -502,14 +507,32 @@ Define a function that extracts the full parameters from the result of the fit, 
 
 ## Variable Broadcasting
 
-`function broadcast_variable(varname::Symbol, value; filename="temp.jld2", cleanup=true)`
+`function broadcast_variable(varname::Symbol, value; filename="temp.jld2", cleanup=true, threshold=10*1024*1024)`
 
-This function allows you to broadcast a variable across multiple processes in Julia. It takes the variable name (`varname`), its value (`value`), and optional parameters for the filename and cleanup. The function uses the JLD2 package to save the variable to a file, which can then be accessed by other processes.
+Broadcasts a variable to all worker processes in a distributed Julia environment. The function automatically selects the optimal distribution method based on variable size.
 
-The variable named `string(varname)` is a global variable and can be accessed throughout the entire code.
+**Arguments:**
+- `varname::Symbol` — Name of the global variable to be defined on all workers.
+- `value` — The variable value to broadcast.
+- `filename::String="temp.jld2"` — Temporary file path for large variable distribution.
+- `cleanup::Bool=true` — Whether to remove the temporary file after broadcasting.
+- `threshold::Int=10*1024*1024` — Size threshold in bytes (default: 10 MB). Variables smaller than this use `@everywhere`; larger variables use file-based distribution.
+
+**Behavior:**
+- **Small variables** (< threshold): Uses `@everywhere const` for immediate in-memory broadcasting.
+- **Large variables** (≥ threshold): Saves to JLD2 file and loads asynchronously on all workers, defining a `const` global variable.
+
+**Returns:**
+- Nothing (defines a global constant `varname` on all processes).
+
+**Notes:**
+- The broadcasted variable is defined as a **constant global** on all workers and can be accessed throughout the entire codebase.
+- Broadcasting time is printed to stdout for performance monitoring.
+- Temporary file is automatically removed unless `cleanup=false`.
+- Requires `JLD2.jl` package for large variable handling.
 
 
-# Significance Calculation
+## Significance Calculation
 
 `function significance(chi2_diff,ndf_diff::Int64)`
 

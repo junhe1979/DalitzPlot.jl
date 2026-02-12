@@ -7,16 +7,16 @@ using ..GEN
 function binx(i::Int64, bin, iaxis::Int64)::Float64
     return bin.min[iaxis][1] + (i - 0.5) / bin.Nbin * (bin.max[iaxis][1] - bin.min[iaxis][1])
 end
+function binrange(axis::Vector{Symbol}, tecm, proc, stype)
+    laxes = [findfirst(==(element), proc.pf) for element in axis]
+    min = (proc.mf[laxes[1]] + proc.mf[laxes[2]])^stype
+    max = (tecm - sum(proc.mf) + proc.mf[laxes[1]] + proc.mf[laxes[2]])^stype
+    return min, max
 function binrange(laxes::Vector{Int64}, tecm, proc, stype)
     min = (proc.mf[laxes[1]] + proc.mf[laxes[2]])^stype
     max = (tecm - sum(proc.mf) + proc.mf[laxes[1]] + proc.mf[laxes[2]])^stype
     return min, max
 end
-function binrange(axis::Vector{String}, tecm, proc, stype)
-    laxes = [findfirst(==(element), proc.pf) for element in axis]
-    min = (proc.mf[laxes[1]] + proc.mf[laxes[2]])^stype
-    max = (tecm - sum(proc.mf) + proc.mf[laxes[1]] + proc.mf[laxes[2]])^stype
-    return min, max
 end
 function binrange(laxes::Vector{Vector{Int64}}, tecm, proc, stype)
     min = Float64[(proc.mf[axes0[1]] + proc.mf[axes0[2]])^stype for axes0 in laxes]
