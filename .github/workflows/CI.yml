@@ -20,15 +20,17 @@ jobs:
         version: '1.10'
 
     - name: Install dependencies
+      env:                      # 👈 加这三行
+        JULIA_PKG_SERVER: ""    # 👈
       run: julia -e 'using Pkg; Pkg.instantiate()'
-      working-directory: ./  # 设置为项目根目录
+      working-directory: ./
 
     - name: Install RegistryCI
       run: julia -e 'using Pkg; Pkg.add("RegistryCI")'
 
     - name: Run tests
       run: julia -e 'using Pkg; Pkg.activate("."); Pkg.test()'
-      working-directory: ./  # 设置为项目根目录
+      working-directory: ./
 
     - name: Check compatibility bounds
       run: julia -e 'using Pkg; Pkg.update()'
