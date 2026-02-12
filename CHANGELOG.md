@@ -1,6 +1,10 @@
 # Changelog
 
+<<<<<<< HEAD
 ## [0.3.8] - 2026-02-12
+=======
+## [0.3.9] - 2026-02-12
+>>>>>>> c60120a6e09f1d8c4f1ac278e3384c339accf23b
 
 ### Changed
 - The labels for partlces and channels were changed from `String` to `Symbol`.
