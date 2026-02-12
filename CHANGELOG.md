@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.3.8] - 2026-02-12
+
+### Changed
+- The labels for partlces and channels were changed from `String` to `Symbol`.
+- The `pkey` was deleted. Now the paticles can be cited with the symbol directly. Such as `:pi` for pion.
+
 ## [0.3.8] - 2026-01-04
 
 ### Added

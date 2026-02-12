@@ -21,12 +21,12 @@ struct structSys #SYS
     cutoff_ex::Float64
     cutoff_ex_type::Symbol
     FF_ex_type::Int64
+    channel::Dict{Tuple{Symbol,Symbol},Int64}
 end
 # store the information of a interaction
 struct structInterAction #IA[]
     Nex::Int64  #total number of exchanges
-    name_ex::Vector{String}  #exchange
-    key_ex::Vector{Int64} #label
+    key_ex::Vector{Symbol}  #exchange
     J_ex::Vector{Int64}  #J for integral spin, 2J for half  integral spin
     Jh_ex::Vector{Int64} #1 for integral spin, 2 for half  integral spin
     P_ex::Vector{Int64} #parity
@@ -36,15 +36,14 @@ struct structInterAction #IA[]
 end
 # store the information of a channel.
 struct structChannel #CH[] 
-    p::Vector{Int64} #particles of channel
+    p::Vector{Symbol}  #partilces of channel
+    p_name0::Vector{Symbol} #partilces of channel (without charge)
     anti::Vector{Int} #label for antiparticle 
     m::Vector{Float64} #particle masses of channel
     J::Vector{Int64} #particle spins of channel
     Jh::Vector{Int64} #particle  spins of channel
     P::Vector{Int64} #particle parities of channel
     cutoff::Float64 #cutoff of channel
-    name::Vector{String}  #name of channel
-    name0::Vector{String} #name of channel (without charge)
     IHb::Int64 # rank of first independent helicity
     IHe::Int64 # rank of last independent helicity
     IHn::Int64 #total number of helicity amplitudes of a channel
@@ -91,8 +90,7 @@ end
 #------------------------------------------------------------------------------------------
 #store the information of particles involved in the work. 
 struct structParticle
-    name::String #
-    name0::String #without charge, used for the cases with symmetry.
+    name0::Symbol #without charge, used for the cases with symmetry.
     nameL::String #Latex.
     anti::Int #antiparticle
     m::Float64 #mass
@@ -101,23 +99,21 @@ struct structParticle
     P::Int64 #parity
 end
 #* function to read the information of partilces from a file with "filename".
-function particles!(particles::Vector{structParticle}, pkey::Dict{String,Int64}, filename::String) #read the information 
+function particles!(particles::Dict{Symbol,structParticle}, filename::String) #read the information 
     open(filename, "r") do file
         readline(file)
         i = 1
         for line in eachline(file)
             parts = split(line)
-            particle = structParticle(parts[1], parts[2], parts[3], parse(Int, parts[4]),
+            particle = structParticle(Symbol(parts[2]), parts[3], parse(Int, parts[4]),
                 parse(Float64, parts[5]), parse(Int64, parts[6]), parse(Int64, parts[7]),
                 parse(Int64, parts[8]))
-            push!(particles, particle)
-            pkey[parts[1]] = i
+            particles[Symbol(parts[1])] = particle
             i += 1
         end
     end
 end
-const p = structParticle[] #store of information of particles in this global vector
-const pkey = Dict{String,Int64}() #store the dictionary for key and the number of particles
+const p = Dict{Symbol,structParticle}() #store of information of particles in this global vector
 #*******************************************************************************************
 # qBSE
 #*******************************************************************************************
@@ -128,9 +124,10 @@ function preprocessing(Sys, qn, channels, Ff, cutoff, Np, Nx, Nphi)
     CH = structChannel[]
     IH = structIndependentHelicity[]
     Nih, Nc = 1, 1
-
+    channel_dict = Dict{Tuple{Symbol,Symbol},Int64}()
     for channel in channels
-        p1, p2 = pkey[channel[1]], pkey[channel[2]]
+        p1, p2 = channel[1], channel[2]
+        channel_dict[(p1, p2)] = Nc
         anti1, anti2 = p[p1].anti, p[p2].anti
         m1, m2 = p[p1].m, p[p2].m
         J1, J2 = p[p1].J, p[p2].J
@@ -174,14 +171,13 @@ function preprocessing(Sys, qn, channels, Ff, cutoff, Np, Nx, Nphi)
         #channel information
         CH0 = structChannel(
             [p1, p2],
+            [p[p1].name0, p[p2].name0],
             [anti1, anti2],
             [m1, m2],
             [J1, J2],
             [Jh1, Jh2],
             [P1, P2],
             channel[3],
-            [p[p1].name, p[p2].name, "$(p[p1].name):$(p[p2].name)"],
-            [p[p1].name0, p[p2].name0, "$(p[p1].name0):$(p[p2].name0)"],
             Nih0,
             Nih0 + IHn - 1,
             IHn
@@ -194,43 +190,26 @@ function preprocessing(Sys, qn, channels, Ff, cutoff, Np, Nx, Nphi)
     Nih -= 1
 
     # interaction information.
-    chnamei = Vector{String}(undef, 1)
-    chnamef = Vector{String}(undef, 1)
-    IA = Matrix{structInterAction}(undef, Nc, Nc)
+    chnamei = Vector{Symbol}(undef, 1)
+    chnamef = Vector{Symbol}(undef, 1)
+    default_empty = structInterAction(0, [], [], [], [], [], [], [])
+    IA = fill(default_empty, Nc, Nc)
     for i1 in 1:Nc
         for i2 in 1:Nc
-            chnamei[1] = CH[i1].name[3]
-            chnamef[1] = CH[i2].name[3]
-            chname = "$(chnamei[1])-->$(chnamef[1])"
+            chname = ((CH[i1].p[1], CH[i1].p[2]), (CH[i2].p[1], CH[i2].p[2]))
+            if haskey(Ff, chname) == true
+                Nex = length(Ff[chname])
+                IA0 = structInterAction(
+                    Nex,
+                    [Ff[chname][i][1][1] for i in 1:Nex],  #key
+                    [p[Ff[chname][i][1][1]].J for i in 1:Nex],  #J
+                    [p[Ff[chname][i][1][1]].Jh for i in 1:Nex],  #Jh
+                    [p[Ff[chname][i][1][1]].P for i in 1:Nex],  #P
+                    [p[Ff[chname][i][1][1]].m for i in 1:Nex],  #m
+                    [Ff[chname][i][1][2] for i in 1:Nex],  #dc
+                    [Ff[chname][i][2] for i in 1:Nex]     #Ff
+                )
 
-            if i1 <= i2
-                if haskey(Ff, chname) == true
-                    Nex = length(Ff[chname])
-                    IA0 = structInterAction(
-                        Nex,
-                        [Ff[chname][i][1][1] for i in 1:Nex],  #name
-                        [pkey[Ff[chname][i][1][1]] for i in 1:Nex],  #key
-                        [p[pkey[Ff[chname][i][1][1]]].J for i in 1:Nex],  #J
-                        [p[pkey[Ff[chname][i][1][1]]].Jh for i in 1:Nex],  #Jh
-                        [p[pkey[Ff[chname][i][1][1]]].P for i in 1:Nex],  #P
-                        [p[pkey[Ff[chname][i][1][1]]].m for i in 1:Nex],  #m
-                        [Ff[chname][i][1][2] for i in 1:Nex],  #dc
-                        [Ff[chname][i][2] for i in 1:Nex]     #Ff
-                    )
-                else
-                    Nex = 0
-                    IA0 = structInterAction(
-                        Nex,
-                        [],  #name
-                        [],  #key
-                        [],  #J
-                        [],  #Jh
-                        [],  #P
-                        [],  #m
-                        [],  #dc
-                        []     #Ff
-                    )
-                end
                 IA[i1, i2] = IA0
                 IA[i2, i1] = IA0
             end
@@ -255,13 +234,11 @@ function preprocessing(Sys, qn, channels, Ff, cutoff, Np, Nx, Nphi)
     #xv = -1 .+ 2 / Nx .* ((1:Nx) .- 0.5)
     #wxv = fill(2 / Nx, Nx)
 
-
     wd = [wignerd(qn.J / qn.Jh, acos(xv[i])) for i in 1:Nx]
 
     pv, wpv = gausslegendre(Nphi)
     pv = pi * (pv .+ 1.0)   # to [0, 2π]
     wpv = wpv * pi
-
 
     sp = [sin(pv[i]) for i in 1:Nphi]
     cp = [cos(pv[i]) for i in 1:Nphi]
@@ -270,7 +247,8 @@ function preprocessing(Sys, qn, channels, Ff, cutoff, Np, Nx, Nphi)
         get(cutoff, :cutoff_re_type, :Lambda),
         get(cutoff, :cutoff_ex, 0.0),
         get(cutoff, :cutoff_ex_type, :Lambda),
-        get(cutoff, :FF_ex_type, 3))
+        get(cutoff, :FF_ex_type, 3),
+        channel_dict)
 
     return SYS, IA, CH, IH
 end
@@ -335,7 +313,7 @@ end
 #------------------------------------------------------------------------------------------
 # Potential kernel 
 # Form factor. ->fV
-function FFre(k, cutoffi, cutofff; cutoff_re_type=:Lambda, CHi=nothing, CHf=nothing, key_ex=0)
+function FFre(k, cutoffi, cutofff; cutoff_re_type=:Lambda, CHi=nothing, CHf=nothing, key_ex=:V)
 
     if cutoff_re_type == :alpha_light
         cutoffi = CHi.m[1] + 0.22 * cutoffi
@@ -378,7 +356,7 @@ function propFFex(k, key_ex, cutoff; cutoff_ex_type=:Lambda, FF_ex_type=3)
 
     prop = 1.0 + 0im #propagator
     FFex = 1.0 + 0im #form factor for exchanged particles
-    if p[key_ex].name != "V" #not contact interaction
+    if key_ex != :V #not contact interaction
         prop *= (1.0 + 0im) / (k.q2 - ComplexF64(m^2))
         if FF_ex_type == 1
             FFex *= ((cutoff^2 - m^2) / (cutoff^2 - k.q2))^2  #type 1
@@ -441,26 +419,25 @@ function fV(k, l, SYS, IA0, CHf, CHi, VVertex)
 
     KerV = 0.0  # Initialize kernel potential
     for le in 1:IA0.Nex  # Loop over all exchanged particles
-        name_ex = IA0.name_ex[le]  # Name of exchanged particle
-        if name_ex == "V"
+        key_ex = IA0.key_ex[le]  # Name of exchanged particle
+        if key_ex == :V
 
             # Calculate potential contribution:
             KerV = VVertex(k, pol_f1, pol_f2, pol_i1, pol_i2, SYS, IA0, CHi, CHf)
 
         else
-            key_ex = qBSE.pkey[name_ex]  # Index of exchanged particle
-            J_ex, Jh_ex, m_ex = qBSE.p[key_ex].J, qBSE.p[key_ex].Jh, qBSE.p[key_ex].m  # Quantum numbers and mass
+            J_ex, Jh_ex, m_ex = p[key_ex].J, p[key_ex].Jh, p[key_ex].m  # Quantum numbers and mass
 
             if IA0.dc[le] == 1  # Direct diagram
-                name1 = CHi.name0[1] * '-' * CHf.name0[1]  # Vertex 1 name (e.g., "D-D")
-                name2 = CHi.name0[2] * '-' * CHf.name0[2]  # Vertex 2 name
+                vertex_if1 = (CHi.p_name0[1], CHf.p_name0[1])  # Vertex 1 name (e.g., (:D,:D))
+                vertex_if2 = (CHi.p_name0[2], CHf.p_name0[2])  # Vertex 2 name
                 k1i, k1f, k2i, k2f = k.i1, k.f1, k.i2, k.f2  # Momenta assignment
                 m1i, m1f, m2i, m2f = CHi.m[1], CHf.m[1], CHi.m[2], CHf.m[2]  # Masses
                 pol_1i, pol_1f, pol_2i, pol_2f = pol_i1, pol_f1, pol_i2, pol_f2  # Polarizations
 
             elseif IA0.dc[le] == 2  # Crossed diagram
-                name1 = CHi.name0[1] * '-' * CHf.name0[2]  # Vertex 1 name (crossed)
-                name2 = CHi.name0[2] * '-' * CHf.name0[1]  # Vertex 2 name (crossed)
+                vertex_if1 = (CHi.p_name0[1], CHf.p_name0[2])  # Vertex 1 name (e.g., (:D,:D))
+                vertex_if2 = (CHi.p_name0[2], CHf.p_name0[1])  # Vertex 2 name
                 k1i, k2f, k2i, k1f = k.i1, k.f1, k.i2, k.f2  # Crossed momenta
                 m1i, m2f, m2i, m1f = CHi.m[1], CHf.m[1], CHi.m[2], CHf.m[2]  # Crossed masses
                 pol_1i, pol_2f, pol_2i, pol_1f = pol_i1, pol_f1, pol_i2, pol_f2  # Crossed polarizations
@@ -471,14 +448,13 @@ function fV(k, l, SYS, IA0, CHf, CHi, VVertex)
 
             # Calculate vertices (both vector and scalar parts)
             # Here the q is from upper vertex 1 to lower vertex 2 hence a minus sign appears in Vertex 1 for q
-            Ver1V, Ver1S = VVertex(k1i, m1i, pol_1i, k1f, m1f, pol_1f, -k.q, name1, name_ex, m_ex, anti=CHi.anti[1])
-            Ver2V, Ver2S = VVertex(k2i, m2i, pol_2i, k2f, m2f, pol_2f, k.q, name2, name_ex, m_ex, anti=CHi.anti[2])
-
+            Ver1V, Ver1S = VVertex(k1i, m1i, pol_1i, k1f, m1f, pol_1f, -k.q, vertex_if1, key_ex, m_ex, anti=CHi.anti[1])
+            Ver2V, Ver2S = VVertex(k2i, m2i, pol_2i, k2f, m2f, pol_2f, k.q, vertex_if2, key_ex, m_ex, anti=CHi.anti[2])
 
             # Compute propagator with form factor
 
-            FF = qBSE.FFre(k, cutoffi, cutofff, cutoff_re_type=SYS.cutoff_re_type, key_ex=key_ex) *
-                 qBSE.propFFex(k, key_ex, SYS.cutoff_ex, cutoff_ex_type=SYS.cutoff_ex_type, FF_ex_type=SYS.FF_ex_type)
+            FF = FFre(k, cutoffi, cutofff, cutoff_re_type=SYS.cutoff_re_type, key_ex=key_ex) *
+                 propFFex(k, key_ex, SYS.cutoff_ex, cutoff_ex_type=SYS.cutoff_ex_type, FF_ex_type=SYS.FF_ex_type)
 
             if J_ex == 0  # Scalar/pseudoscalar exchange
                 KerV -= Ver1S * Ver2S * IA0.Ff[le] * FF  # Scalar-scalar potential
@@ -626,7 +602,7 @@ function propagator(k, kv, w, wv, Ec, Np, CH, IH0, Dimo, lRm, eps)
 end
 #------------------------------------------------------------------------------------------
 # calculate V G I  -> res0
-function VGI(Ec, qn, SYS, IA, CH, IH, VVertex, lRm, eps)
+function fVGI(Ec, qn, SYS, IA, CH, IH, VVertex, lRm, eps)
     # Determine the dimension of the work matrix. 
     Np = length(SYS.kv)
     SYS, IH, Dim, = workSpace(Ec, lRm, Np, SYS, CH, IH)
@@ -658,6 +634,7 @@ function VGI(Ec, qn, SYS, IA, CH, IH, VVertex, lRm, eps)
             end
         end
     end
+
 
     # Populate lower triangular part of Vc based on conjugate symmetry
     for i_f = 2:Nt
@@ -704,7 +681,7 @@ function showSYSInfo(Range, qn, IA, CH, IH)
     println(dashline)
     @printf("I(J,P)= %1d(%1d,%2d)\n", qn.I, qn.J, qn.P)
     for ih in eachindex(IH)
-        @printf("%-15s: %2d/%1d, %2d/%1d;  cutoff = %5.3f GeV\n", CH[IH[ih].iCH].name[3], IH[ih].hel[1],
+        @printf("%-15s: %2d/%1d, %2d/%1d;  cutoff = %5.3f GeV\n", String(CH[IH[ih].iCH].p[1]) * ":" * String(CH[IH[ih].iCH].p[2]), IH[ih].hel[1],
             IH[ih].helh[1], IH[ih].hel[2], IH[ih].helh[2], CH[IH[ih].iCH].cutoff)
     end
     Nc = length(CH)
@@ -712,7 +689,7 @@ function showSYSInfo(Range, qn, IA, CH, IH)
     @printf("%-15s\n", "channel")
 
     for i1 in 1:Nc
-        @printf("%-15s", CH[i1].name[3])
+        @printf("%-15s", String(CH[IH[i1].iCH].p[1]) * ":" * String(CH[IH[i1].iCH].p[2]))
         for i in 1:Nc
             @printf("%2d ", IA[i1, i].Nex)
         end
@@ -761,7 +738,7 @@ function resc0(Range, iER, qn, SYS, IA, CH, IH, VVertex, eps)
     EI = 0.0
     if Range.Ep == "L" #here, we use the pL, so should be transfered to ER
         PL = Range.ERmax - iER * (Range.ERmax - Range.ERmin) / (Range.NER - 1)# Calculate ER
-        ER = sqrt((sqrt(PL^2 + qBSE.p[qBSE.pkey["K_m"]].m^2) + qBSE.p[qBSE.pkey["N_p"]].m)^2 - PL^2)
+        ER = sqrt((sqrt(PL^2 + p[:K_m].m^2) + p[:N_p].m)^2 - PL^2)
     end
     NEI = Range.NEI
     for iEI in -NEI:NEI
@@ -769,7 +746,7 @@ function resc0(Range, iER, qn, SYS, IA, CH, IH, VVertex, eps)
             EI = iEI * Range.EIt / NEI
         end
         Ec = ER + EI * im
-        Vc, Gc, II, IH, Dim = qBSE.VGI(Ec, qn, SYS, IA, CH, IH, VVertex, qn.lRm, eps) # Calculate the V, G, and unit matrix II
+        Vc, Gc, II, IH, Dim = fVGI(Ec, qn, SYS, IA, CH, IH, VVertex, qn.lRm, eps) # Calculate the V, G, and unit matrix II
         VGI = II - Vc * Gc
         detVGI = det(VGI)   # Compute determinant of (1 - VGc)
         logdetVGI = log(abs(detVGI)^2)
@@ -778,7 +755,7 @@ function resc0(Range, iER, qn, SYS, IA, CH, IH, VVertex, eps)
         if iEI == 0
             T = inv(VGI) * Vc
             TG = T * Gc
-            resM2 = qBSE.M2_channel(T, CH, IH)
+            resM2 = M2_channel(T, CH, IH)
         end
     end
 
@@ -788,17 +765,17 @@ function resc0(Range, iER, qn, SYS, IA, CH, IH, VVertex, eps)
     return Ect, reslogt, resM2, IH, Dim, TG
 end
 #* parallel computation based on res0
-function resc(Sys, qn, Range, channels, Ff, cutoff, VVertex;Np=10, Nx=10, Nphi=5,eps=+1e-4im)
+function resc(Sys, qn, Range, channels, Ff, cutoff, VVertex; Np=10, Nx=10, Nphi=5, eps=+1e-4im)
     # Initialize the qBSE system:
     # Generate the SYS struct which contains channel information, independent amplitudes, and interaction kernelI
-    SYS, IA, CH, IH =preprocessing(Sys, qn, channels, Ff, cutoff, Np, Nx, Nphi)
+    SYS, IA, CH, IH = preprocessing(Sys, qn, channels, Ff, cutoff, Np, Nx, Nphi)
 
     # Arrays to store pole search recsults
     Ec = ComplexF64[]      # Complex energy E = ER + i EI
     ER = Float64[]         # Real part of the energy
     reslog = Float64[]     # log|1 - VG|
     resM2 = Matrix{Float64}[]  # |M|^2 matrix at each energy point
-    TGt, IHt, Dimt = Matrix{ComplexF64}[], Vector{qBSE.structIndependentHelicity}[], Vector{qBSE.structDimension}[]
+    TGt, IHt, Dimt = Matrix{ComplexF64}[], Vector{structIndependentHelicity}[], Vector{structDimension}[]
     Nprocs = nworkers()  # Number of worker processes
 
     # Display system details
@@ -824,7 +801,7 @@ function resc(Sys, qn, Range, channels, Ff, cutoff, VVertex;Np=10, Nx=10, Nphi=5
     end
     #--------------------------------------------------------------------
     # Save pole information and log|1 - VG| for plotting
-    qBSE.showPoleInfo(qn, Ec, reslog, "res/output.txt")
+    showPoleInfo(qn, Ec, reslog, "res/output.txt")
 
     return Ec, reslog, resM2, ER, IHt, Dimt, TGt, SYS, IA, CH, IH
     #return ER, IHt, Dimt, TGt, SYS, IA, CH, IH
@@ -890,11 +867,11 @@ end
 #*******************************************************************************************
 #* product the complete informations about the physcial process.
 function proc(pf, pin, amps)
-    mf = [qBSE.p[qBSE.pkey[p]].m for p in pf]
-    namef = [qBSE.p[qBSE.pkey[p]].nameL for p in pf]
-    mi = [qBSE.p[qBSE.pkey[p]].m for p in pin]
-    namei = [qBSE.p[qBSE.pkey[p]].nameL for p in pin]
-    ranges = Tuple([-qBSE.p[qBSE.pkey[p]].J:qBSE.p[qBSE.pkey[p]].Jh:qBSE.p[qBSE.pkey[p]].J for p in pf])
+    mf = [p[p0].m for p0 in pf]
+    namef = [p[p0].nameL for p0 in pf]
+    mi = [p[p0].m for p0 in pin]
+    namei = [p[p0].nameL for p0 in pin]
+    ranges = Tuple([-p[p0].J:p[p0].Jh:p[p0].J for p0 in pf])
     ch = (pf=pf, namef=namef, mf=mf, pin=pin, namei=namei, mi=mi, amps=amps, ranges=ranges)
 end
 #------------------------------------------------------------------------------------------
@@ -956,8 +933,8 @@ end
 function setTGA(par, k, tecm, i, j)
     wij = sqrt((k[i] + k[j]) * (k[i] + k[j]))
     IHt, Dimt, TGt, Et, Range = par.IHt, par.Dimt, par.TGt, par.Et, par.Range
-    IH, Dim = qBSE.IHDim(wij, Et, Range, TGt, IHt, Dimt)
-    kn, Pn = qBSE.LorentzBoostRotation(k, tecm, i, j) #reference frame thansformation
+    IH, Dim = IHDim(wij, Et, Range, TGt, IHt, Dimt)
+    kn, Pn = LorentzBoostRotation(k, tecm, i, j) #reference frame thansformation
     return (E=wij, par=par, IH=IH, Dim=Dim, k=kn, P=Pn, resc=(i, j))
 end
 # auxiliary fuction for TGA to generate the full index for all final particles. ->TGA
@@ -1007,7 +984,7 @@ function TGA(para, cfinal, cinter, ranges)
     end
 
     # Independent helicities for final states
-    CHf = CH[cfinal]
+    CHf = CH[SYS.channel[cfinal]]
     IHfb, IHfe = CHf.IHb, CHf.IHe
     # Rank of dimensions for intermediate state
 
@@ -1029,7 +1006,7 @@ function TGA(para, cfinal, cinter, ranges)
             l = collect(l)
             TGA = 0.0
             for cinter0 in cinter
-                CHc = CH[cinter0.ch]
+                CHc = CH[SYS.channel[cinter0.ch]]
                 m1, m2 = CHc.m[1], CHc.m[2]
                 @inbounds for iIHc in CHc.IHb:CHc.IHe
                     IHc = IH[iIHc]
