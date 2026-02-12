@@ -301,7 +301,7 @@ res = Xs.Xsection(10.0, proc, axes=[[:p2, :p3], [:p1, :p2]], nevtot=nevtot, Nbin
 DalitzPlot.PLOT.plotD(res)
 ```
 
-`<img src="test/DP.png" alt="描述文字" width="500" height="500">`{=html}
+<img src="test/DP.png" alt="描述文字" width="500" height="500">
 
 ## other functions
 
