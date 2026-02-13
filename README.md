@@ -303,9 +303,9 @@ res = Xs.Xsection(10.0, proc, axes=[[:p2, :p3], [:p1, :p2]], nevtot=nevtot, Nbin
 DalitzPlot.PLOT.plotD(res)
 ```
 
-you will get following plot
+This will generate the following Dalitz plot:
 
-<img src="test/DP.png" alt="描述文字" width="500" height="500">`
+<img src="test/DP.png" alt="描述文字" width="500" height="500">
 
 ## other functions
 
