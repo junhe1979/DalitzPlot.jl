@@ -902,7 +902,6 @@ The `struct structSys` (often referenced as `SYS` in the code) stores informatio
 - `cutoff_ex::Float64`, `cutoff_ex_type::Symbol`, `FF_ex_type::Int64`: The value and type of cutoff for the exchanged meson, and the type of the form factor applied to the exchanged meson.
 - `channel::Dict{Tuple{Symbol,Symbol},Int64}`: A dictionary storing the mapping between particle pairs and their corresponding channel number.
 
-These fields provide all necessary information for numerical integration over momentum and angular variables in the qBSE framework.
 
 ### `structInterAction`
 
@@ -974,7 +973,7 @@ The `mutable struct structHelicity` structure stores the helicity information fo
 - `i2::Int64`, `i2h::Int64`: Helicity and denominator for initial particle 2.
 - `f2::Int64`, `f2h::Int64`: Helicity and denominator for final particle 2.
 
-## Particle
+## Particle 
 
 ### `structParticle`
 
@@ -989,7 +988,7 @@ The `structParticle` structure defines the properties of a single particle.
 - `J::Int64` — Total angular momentum.
 - `Jh::Int64` — Related spin quantum number.
 - `P::Int64` — Parity.
-
+  
 ---
 
 ### function to read partilce data file

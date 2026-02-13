@@ -206,11 +206,13 @@ The function for amplitudes with factors is saved as `amp`.
 
 Example usage:
 
-```julia
+``` julia
 proc = (pf=[:p1,:p2,:p3],mi=[1.,1.], mf=[1., 2., 3.], namei=["p^i_{1}", "p^i_{2}"], namef=["p^f_{1}", "p^f_{2}", "p^f_{3}"], amps=amps)
 ```
 
-Here, the masses of the initial particles  `[mass_i_1, mass_i_2]` and final particles `[mass_f_1, mass_f_2, mass_f_3]`  are set to `1.0, 1.0, 1.0, 2.0, 3.0`, respectively.
+Here, the masses of the initial particles `[mass_i_1, mass_i_2]` and
+final particles `[mass_f_1, mass_f_2, mass_f_3]` are set to
+`1.0, 1.0, 1.0, 2.0, 3.0`, respectively.
 
 ## Define the momentum or total energy
 
@@ -301,7 +303,7 @@ res = Xs.Xsection(10.0, proc, axes=[[:p2, :p3], [:p1, :p2]], nevtot=nevtot, Nbin
 DalitzPlot.PLOT.plotD(res)
 ```
 
-<img src="test/DP.png" alt="描述文字" width="500" height="500">
+<img src="test/DP.png" alt="描述文字" width="500" height="500">`
 
 ## other functions
 
@@ -309,36 +311,40 @@ DalitzPlot.PLOT.plotD(res)
 
 `binx(i::Int64, bin, iaxis::Int64)::Float64`
 
-The function returns the value of the bin corresponding to the index `i` for the specified axis.
+The function returns the value of the bin corresponding to the index `i`
+for the specified axis.
 
-**Arguments:**
-- `i::Int64` — Bin index.
-- `bin` — Vector containing the bin edge definitions.
-- `iaxis::Int64` — Index of the binning axis.
+**Arguments:** - `i::Int64` --- Bin index. - `bin` --- Vector containing
+the bin edge definitions. - `iaxis::Int64` --- Index of the binning
+axis.
 
-**Returns:**
-- `Float64` — The bin value corresponding to index `i` for the specified axis.
-
+**Returns:** - `Float64` --- The bin value corresponding to index `i`
+for the specified axis.
 
 `binrange(axis::Vector{Symbol}, tecm, proc, stype)`
 
-Computes the value range for each specified binning axis based on the given phase space dimensions. The function determines the extent of each axis using the total center-of-mass energy and particle information.
+Computes the value range for each specified binning axis based on the
+given phase space dimensions. The function determines the extent of each
+axis using the total center-of-mass energy and particle information.
 
-**Arguments:**
-- `laxes`: `Vector{Vector}` — A vector of vectors specifying the binning axes.
-- `tecm`: `Float` — Total energy in the center-of-mass frame.
-- `proc`: `Process` — Contains particle definitions and kinematic properties.
-- `stype`: `Int` — Specifies the return type: `1` for mass, `2` for mass squared.
+**Arguments:** - `laxes`: `Vector{Vector}` --- A vector of vectors
+specifying the binning axes. - `tecm`: `Float` --- Total energy in the
+center-of-mass frame. - `proc`: `Process` --- Contains particle
+definitions and kinematic properties. - `stype`: `Int` --- Specifies the
+return type: `1` for mass, `2` for mass squared.
 
-**Returns:**
-- `Vector{UnitRange}` — A vector of ranges corresponding to each input axis.
+**Returns:** - `Vector{UnitRange}` --- A vector of ranges corresponding
+to each input axis.
 
-**Note:**
-The exact interpretation of each axis depends on its symbol and the provided process information. The function is typically used in phase space integration and event generation workflows.
+**Note:** The exact interpretation of each axis depends on its symbol
+and the provided process information. The function is typically used in
+phase space integration and event generation workflows.
 
 `function binrange(laxes::Vector{Vector{Int64}}, tecm, proc, stype)`
 
-based on the axes of the binning, the function `binrange` calculates the range of values for each axis. Argument `laxes` is a vector of vectors representing the axes of the binning.
+based on the axes of the binning, the function `binrange` calculates the
+range of values for each axis. Argument `laxes` is a vector of vectors
+representing the axes of the binning.
 
 `function binrange(laxes::Vector{Vector{Vector{Int64}}}, tecm, proc, stype; Range=[])`
 
@@ -521,7 +527,12 @@ $\epsilon^{\mu\nu\rho\lambda}$
 `function LC(a::SVector, b::SVector, c::SVector, d::SVector)`:
 $\epsilon^{\mu\nu\rho\lambda}a_\mu b_\nu c_\rho d_\lambda$.
 
-***Note*** Here, the Levi-Civita tensor is defined with upper indices $\epsilon^{\mu\nu\rho\lambda}$ with convention $=\epsilon^{0123}=-\epsilon_{0123}=1$, and all resultant quantities will likewise carry upper indices. The input vectors a, b, c, and d are also specified in their contravariant form (${\rm a}^{\mu}$,${\rm b}^{\mu}$,${\rm c}^{\mu}$,${\rm d}^{\mu}$).
+***Note*** Here, the Levi-Civita tensor is defined with upper indices
+$\epsilon^{\mu\nu\rho\lambda}$ with convention
+$=\epsilon^{0123}=-\epsilon_{0123}=1$, and all resultant quantities will
+likewise carry upper indices. The input vectors a, b, c, and d are also
+specified in their contravariant form
+(${\rm a}^{\mu}$,${\rm b}^{\mu}$,${\rm c}^{\mu}$,${\rm d}^{\mu}$).
 
 ## Additional defintions to operations
 
@@ -665,6 +676,16 @@ Broadcasts a variable to all worker processes in a distributed Julia environment
 `@everywhere const` for immediate in-memory broadcasting. - **Large
 variables** (≥ threshold): Saves to JLD2 file and loads asynchronously
 on all workers, defining a `const` global variable.
+
+**Returns:** - Nothing (defines a global constant `varname` on all
+processes).
+
+**Notes:** - The broadcasted variable is defined as a **constant
+global** on all workers and can be accessed throughout the entire
+codebase. - Broadcasting time is printed to stdout for performance
+monitoring. - Temporary file is automatically removed unless
+`cleanup=false`. - Requires `JLD2.jl` package for large variable
+handling.
 
 ## Significance Calculation
 
