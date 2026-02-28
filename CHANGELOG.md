@@ -1,12 +1,18 @@
 # Changelog
 
-## [0.3.9] - 2026-02-12
+## [0.4.0] - 2026-02-28
 
 ### Changed
 
-- **Particle Identification Optimization**: Removed the original pkey mechanism. Particles can now be referenced directly by their names. For example, use qBSE.p("pi") to directly access the π particle. This change makes the code more intuitive and user-friendly.
+-  Conducted a comprehensive review and unification of symbols related to channels and vertices to enhance code standardization and consistency. Related descriptions have also been refined.
 
--  **Symbol System Unification**: Conducted a comprehensive review and unification of symbols related to channels and vertices to enhance code standardization and consistency. Related descriptions have also been refined.
+- The labels for partlces and channels were changed from `:Symobl` backto `:String`.
+
+## [0.3.9] - 2026-02-12
+
+### Changed
+- The labels for partlces and channels were changed from `String` to `Symbol`.
+- The `pkey` was deleted. Now the paticles can be cited with the symbol directly. Such as `:pi` for pion.
 
 ## [0.3.8] - 2026-01-04
 
