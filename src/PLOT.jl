@@ -30,7 +30,7 @@ function readdata(filename)
     end
     return data_groups
 end
-function plotD(res; cg=cgrad([:white, :green, :blue, :red], [0, 0.01, 0.1, 0.5, 1.0]), xx=[], xy=[], yx=[], yy=[], filename="DP.pdf")
+function plotD(res; cg=cgrad([:white, :green, :blue, :red], [0, 0.01, 0.1, 0.5, 1.0]), topx=[], topy=[], topye=[], rightx=[], righty=[], rightye=[], toprightx=[], toprighty=[], toprightye=[], filename="DP.pdf")
     ENV["GKSwstype"] = "100"
     cs1 = res.cs1
     cs2 = res.cs2
@@ -40,8 +40,8 @@ function plotD(res; cg=cgrad([:white, :green, :blue, :red], [0, 0.01, 0.1, 0.5, 
 
     laxes1 = [laxes0[1] for laxes0 in laxes]
     Laxes = [proc.namef[laxes1[1][1]] * proc.namef[laxes1[1][2]], proc.namef[laxes1[2][1]] * proc.namef[laxes1[2][2]]]
-    
-  
+
+
     Nbin = length(axesV[1])
     x1 = axesV[1]
     xlims = (minimum(x1), maximum(x1))
@@ -57,14 +57,20 @@ function plotD(res; cg=cgrad([:white, :green, :blue, :red], [0, 0.01, 0.1, 0.5, 
         if maximum(y1) / dx > y1max
             y1max = maximum(y1) / dx
         end
-        Plots.plot!(p0, x1, y1 / dx, xlims=xlims, ylims=(y1min, y1max * 1.005))
+        Plots.plot!(p0, x1, y1 / dx, xlims=xlims, ylims=(y1min, y1max * 1.1))
     end
 
-    if !isempty(xx)
-        p1 = Plots.scatter!(xx, xy, markersize=1)
+    if !isempty(topx)
+        p1 = if isempty(topye)
+            Plots.scatter!(topx, topy, markersize=1)
+        else
+            Plots.scatter!(topx, topy, yerr=topye, markersize=1)
+        end
     else
         p1 = p0
     end
+
+
 
     y2 = axesV[2]
     ylims = (minimum(y2), maximum(y2))
@@ -80,14 +86,21 @@ function plotD(res; cg=cgrad([:white, :green, :blue, :red], [0, 0.01, 0.1, 0.5, 
         if maximum(x2) / dx > x2max
             x2max = maximum(x2) / dy
         end
-        p0 = Plots.plot!(x2 / dy, y2, xlims=(x2min, x2max * 1.005), ylims=ylims)
+        p0 = Plots.plot!(x2 / dy, y2, xlims=(x2min, x2max * 1.1), ylims=ylims)
     end
 
-    if !isempty(yy)
-        p2 = Plots.scatter!(yy, yx, markersize=1)
+
+    if !isempty(topx)
+        p2 = if isempty(rightye)
+            Plots.scatter!(righty, rightx, markersize=1)
+        else
+            Plots.scatter!(righty, rightx, xerr=rightye, markersize=1)
+        end
     else
         p2 = p0
     end
+
+
 
     x = axesV[1]
     y = axesV[2]
@@ -96,12 +109,43 @@ function plotD(res; cg=cgrad([:white, :green, :blue, :red], [0, 0.01, 0.1, 0.5, 
     dx = (maximum(x) - minimum(x)) / Nbin
     dy = (maximum(y) - minimum(y)) / Nbin
     z = [cs2[1][ix, iy] / (dx * dy) for iy in 1:Nbin, ix in 1:Nbin]
-    p3 = Plots.heatmap(x, y, z, xlims=xlims, ylims=ylims, c=cg, xlabel=latexstring(Laxes[1]), ylabel=latexstring(Laxes[2]), framestyle=:box, cb=:none)
+    p = Plots.heatmap(x, y, z, xlims=xlims, ylims=ylims, c=cg, xlabel=latexstring(Laxes[1]), ylabel=latexstring(Laxes[2]), framestyle=:box, cb=:none)
 
+    if length(axesV) >= 3
+        Nbin = length(axesV[3])
+        x3 = axesV[3]
+        xlims = (minimum(x3), maximum(x3))
+        dx = (maximum(x3) - minimum(x3)) / Nbin
 
-    l = @layout [a _
-        b{0.8w,0.8h} c]
-    DP = Plots.plot(p1, p3, p2, layout=l, titleloc=:left, titlefont=10, size=(1000, 1000), left_margin=1mm, right_margin=1mm, bottom_margin=1mm, top_margin=1mm, link=:all)
+        p0 = Plots.plot(xticks=:auto, ylabel=latexstring("d\\sigma/m^2_{" * Laxes[1] * "} (\\textrm{ barn/GeV^2})"), framestyle=:box, xmirror=true, ymirror=true, legend=:none, linetype=:steppre)
+        y3min, y3max = 1e20, 0.
+        for i in eachindex(cs1)
+            y3 = cs1[i][3, :]
+            if minimum(y3) / dx < y3min
+                y3min = minimum(y3) / dx
+            end
+            if maximum(y3) / dx > y3max
+                y3max = maximum(y3) / dx
+            end
+            Plots.plot!(p0, x3, y3 / dx, xlims=xlims, ylims=(y3min, y3max * 1.1))
+        end
+
+        if !isempty(toprightx)
+            p3 = Plots.scatter!(toprightx, toprighty, yerr=toprightye, markersize=1)
+        else
+            p3 = p0
+        end
+
+        l = @layout [a b
+            b{0.7w,0.7h} c]
+        DP = Plots.plot(p1, p3, p, p2, layout=l, titleloc=:left, titlefont=10, size=(880, 800), left_margin=1mm, right_margin=1mm, bottom_margin=1mm, top_margin=1mm, link=:all)
+    else
+        l = @layout [
+            a _
+            b{0.7w,0.7h} c
+        ]
+        DP = Plots.plot(p1, p, p2, layout=l, titleloc=:left, titlefont=10, size=(800, 800), left_margin=1mm, right_margin=1mm, bottom_margin=1mm, top_margin=1mm, link=:all)
+    end
 
     Plots.savefig(filename)
     return DP

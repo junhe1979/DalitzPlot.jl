@@ -85,18 +85,22 @@ end
     if !bar
         if !V
             return l == 1 ? SVector{4,ComplexF64}(zk0m * ct2dexp, zk0m * st2, zkk * ct2dexp, zkk * st2) :
-                   SVector{4,ComplexF64}(-zk0m * st2, zk0m * ct2exp, zkk * st2, -zkk * ct2exp)
+                   l == -1 ? SVector{4,ComplexF64}(-zk0m * st2, zk0m * ct2exp, zkk * st2, -zkk * ct2exp) :
+                   error("only l=1 or -1 allowed")
         else
             return l == 1 ? SVector{4,ComplexF64}(zkk * ct2dexp, zkk * st2, zk0m * ct2dexp, zk0m * st2) :
-                   SVector{4,ComplexF64}(zkk * st2, -zkk * ct2exp, -zk0m * st2, zk0m * ct2exp)
+                   l == -1 ? SVector{4,ComplexF64}(zkk * st2, -zkk * ct2exp, -zk0m * st2, zk0m * ct2exp) :
+                   error("only l=1 or -1 allowed")
         end
     else
         if !V
             return l == 1 ? SVector{4,ComplexF64}(zk0m * ct2exp, zk0m * st2, -zkk * ct2exp, -zkk * st2) :
-                   SVector{4,ComplexF64}(-zk0m * st2, zk0m * ct2dexp, -zkk * st2, zkk * ct2dexp)
+                   l == -1 ? SVector{4,ComplexF64}(-zk0m * st2, zk0m * ct2dexp, -zkk * st2, zkk * ct2dexp) :
+                   error("only l=1 or -1 allowed")
         else
             return l == 1 ? SVector{4,ComplexF64}(zkk * ct2exp, zkk * st2, -zk0m * ct2exp, -zk0m * st2) :
-                   SVector{4,ComplexF64}(zkk * st2, -zkk * ct2dexp, zk0m * st2, -zk0m * ct2dexp)
+                   l == -1 ? SVector{4,ComplexF64}(zkk * st2, -zkk * ct2dexp, zk0m * st2, -zk0m * ct2dexp) :
+                   error("only l=1 or -1 allowed")
         end
     end
 
@@ -115,6 +119,8 @@ end
 
         elseif l == -1
             eps = SVector((im * sp + ct * cp) * expdsqrt2, (-im * cp + ct * sp) * expdsqrt2, -st * expdsqrt2, 0.0im, 0.0im)
+        else
+            error("only l = 1, 0, or -1 allowed")
         end
     else #eps*
         if l == 1
@@ -124,6 +130,8 @@ end
             eps = SVector(zk0 / zm * st * cp + 0.0im, zk0 / zm * st * sp + 0.0im, zk0 / zm * ct + 0.0im, zkk / zm + 0.0im, 0.0im)
         elseif l == -1
             eps = SVector((-im * sp + ct * cp) * dexpdsqrt2, (im * cp + ct * sp) * dexpdsqrt2, -st * dexpdsqrt2, 0.0im, 0.0im)
+        else
+            error("only l = 1, 0, or -1 allowed")
         end
     end
 
@@ -154,8 +162,8 @@ end
                 xe_12 = (-im * cp - ct * sp) * dexpdsqrt2
                 xe_13 = st * dexpdsqrt2
                 U3_1 = (sqrt2_3 * xe_01) * xu_1 + (sqrt1_3 * xe_11) * xu_m1
-                U3_2 = (sqrt2_3 * xe_02) * xu_1 +  (sqrt1_3 * xe_12) * xu_m1
-                U3_3 = (sqrt2_3 * xe_03) * xu_1 +  (sqrt1_3 * xe_13) * xu_m1
+                U3_2 = (sqrt2_3 * xe_02) * xu_1 + (sqrt1_3 * xe_12) * xu_m1
+                U3_3 = (sqrt2_3 * xe_03) * xu_1 + (sqrt1_3 * xe_13) * xu_m1
                 U3_4 = (sqrt2_3 * xe_04) * xu_1
             elseif l == -1
                 xu_m1 = SVector{4,ComplexF64}(-zk0m * st2, zk0m * ct2exp, zkk * st2, -zkk * ct2exp)
@@ -167,9 +175,9 @@ end
                 xe_m11 = (im * sp + ct * cp) * expdsqrt2
                 xe_m12 = (-im * cp + ct * sp) * expdsqrt2
                 xe_m13 = -st * expdsqrt2
-                U3_1 = (sqrt2_3 * xe_01) * xu_m1 +  (sqrt1_3 * xe_m11) * xu_1
-                U3_2 = (sqrt2_3 * xe_02) * xu_m1 +  (sqrt1_3 * xe_m12) * xu_1
-                U3_3 = (sqrt2_3 * xe_03) * xu_m1 +  (sqrt1_3 * xe_m13) * xu_1
+                U3_1 = (sqrt2_3 * xe_01) * xu_m1 + (sqrt1_3 * xe_m11) * xu_1
+                U3_2 = (sqrt2_3 * xe_02) * xu_m1 + (sqrt1_3 * xe_m12) * xu_1
+                U3_3 = (sqrt2_3 * xe_03) * xu_m1 + (sqrt1_3 * xe_m13) * xu_1
                 U3_4 = (sqrt2_3 * xe_04) * xu_m1
             elseif l == 3
                 xu_1 = SVector{4,ComplexF64}(zk0m * ct2dexp, zk0m * st2, zkk * ct2dexp, zkk * st2)
@@ -190,9 +198,11 @@ end
                 U3_2 = xe_m12 * xu_m1
                 U3_3 = xe_m13 * xu_m1
                 U3_4 = SVector{4,ComplexF64}(0.0im, 0.0im, 0.0im, 0.0im)
+            else
+                error("only l= -3, -1, 1 or 3 allowed")
             end
         else
-            if l == 1 
+            if l == 1
                 xu_m1 = SVector{4,ComplexF64}(zkk * st2, -zkk * ct2exp, -zk0m * st2, zk0m * ct2exp)
                 xu_1 = SVector{4,ComplexF64}(zkk * ct2dexp, zkk * st2, zk0m * ct2dexp, zk0m * st2)
                 xe_01 = zk0_zm * st * cp
@@ -202,9 +212,9 @@ end
                 xe_11 = (im * sp - ct * cp) * dexpdsqrt2
                 xe_12 = (-im * cp - ct * sp) * dexpdsqrt2
                 xe_13 = st * dexpdsqrt2
-                U3_1 = (sqrt2_3 * xe_01) * xu_1 +  (sqrt1_3 * xe_11) * xu_m1
-                U3_2 = (sqrt2_3 * xe_02) * xu_1 +  (sqrt1_3 * xe_12) * xu_m1
-                U3_3 = (sqrt2_3 * xe_03) * xu_1 +  (sqrt1_3 * xe_13) * xu_m1
+                U3_1 = (sqrt2_3 * xe_01) * xu_1 + (sqrt1_3 * xe_11) * xu_m1
+                U3_2 = (sqrt2_3 * xe_02) * xu_1 + (sqrt1_3 * xe_12) * xu_m1
+                U3_3 = (sqrt2_3 * xe_03) * xu_1 + (sqrt1_3 * xe_13) * xu_m1
                 U3_4 = (sqrt2_3 * xe_04) * xu_1
             elseif l == -1
                 xu_m1 = SVector{4,ComplexF64}(zkk * st2, -zkk * ct2exp, -zk0m * st2, zk0m * ct2exp)
@@ -217,9 +227,9 @@ end
                 xe_m12 = (-im * cp + ct * sp) * expdsqrt2
                 xe_m13 = -st * expdsqrt2
 
-                U3_1 = (sqrt2_3 * xe_01) * xu_m1 +  (sqrt1_3 * xe_m11) * xu_1
-                U3_2 = (sqrt2_3 * xe_02) * xu_m1 +  (sqrt1_3 * xe_m12) * xu_1
-                U3_3 = (sqrt2_3 * xe_03) * xu_m1 +  (sqrt1_3 * xe_m13) * xu_1
+                U3_1 = (sqrt2_3 * xe_01) * xu_m1 + (sqrt1_3 * xe_m11) * xu_1
+                U3_2 = (sqrt2_3 * xe_02) * xu_m1 + (sqrt1_3 * xe_m12) * xu_1
+                U3_3 = (sqrt2_3 * xe_03) * xu_m1 + (sqrt1_3 * xe_m13) * xu_1
                 U3_4 = (sqrt2_3 * xe_04) * xu_m1
             elseif l == 3
                 xu_1 = SVector{4,ComplexF64}(zkk * ct2dexp, zkk * st2, zk0m * ct2dexp, zk0m * st2)
@@ -241,6 +251,8 @@ end
                 U3_2 = xe_m12 * xu_m1
                 U3_3 = xe_m13 * xu_m1
                 U3_4 = xe_m14 * xu_m1
+            else
+                error("only l= -3, -1, 1 or 3 allowed")
             end
         end
         return SVector{5,SVector{4,ComplexF64}}(U3_1, U3_2, U3_3, U3_4, SVector{4,ComplexF64}(0.0im, 0.0im, 0.0im, 0.0im))
@@ -258,9 +270,9 @@ end
                 xe_12 = (im * cp - ct * sp) * expdsqrt2
                 xe_13 = st * expdsqrt2
 
-                U3_1 = (sqrt2_3 * xe_01) * xu_1 +  (sqrt1_3 * xe_11) * xu_m1
-                U3_2 = (sqrt2_3 * xe_02) * xu_1 +  (sqrt1_3 * xe_12) * xu_m1
-                U3_3 = (sqrt2_3 * xe_03) * xu_1 +  (sqrt1_3 * xe_13) * xu_m1
+                U3_1 = (sqrt2_3 * xe_01) * xu_1 + (sqrt1_3 * xe_11) * xu_m1
+                U3_2 = (sqrt2_3 * xe_02) * xu_1 + (sqrt1_3 * xe_12) * xu_m1
+                U3_3 = (sqrt2_3 * xe_03) * xu_1 + (sqrt1_3 * xe_13) * xu_m1
                 U3_4 = (sqrt2_3 * xe_04) * xu_1
             elseif l == -1
                 xu_m1 = SVector{4,ComplexF64}(-zk0m * st2, zk0m * ct2dexp, -zkk * st2, zkk * ct2dexp)
@@ -272,9 +284,9 @@ end
                 xe_m11 = (-im * sp + ct * cp) * dexpdsqrt2
                 xe_m12 = (im * cp + ct * sp) * dexpdsqrt2
                 xe_m13 = -st * dexpdsqrt2
-                U3_1 = (sqrt2_3 * xe_01) * xu_m1 +  (sqrt1_3 * xe_m11) * xu_1
-                U3_2 = (sqrt2_3 * xe_02) * xu_m1 +  (sqrt1_3 * xe_m12) * xu_1
-                U3_3 = (sqrt2_3 * xe_03) * xu_m1 +  (sqrt1_3 * xe_m13) * xu_1
+                U3_1 = (sqrt2_3 * xe_01) * xu_m1 + (sqrt1_3 * xe_m11) * xu_1
+                U3_2 = (sqrt2_3 * xe_02) * xu_m1 + (sqrt1_3 * xe_m12) * xu_1
+                U3_3 = (sqrt2_3 * xe_03) * xu_m1 + (sqrt1_3 * xe_m13) * xu_1
                 U3_4 = (sqrt2_3 * xe_04) * xu_m1
             elseif l == 3
                 xu_1 = SVector{4,ComplexF64}(zk0m * ct2exp, zk0m * st2 + 0.0im, -zkk * ct2exp, -zkk * st2 + 0.0im)
@@ -295,6 +307,8 @@ end
                 U3_2 = xe_m12 * xu_m1
                 U3_3 = xe_m13 * xu_m1
                 U3_4 = SVector{4,ComplexF64}(0.0im, 0.0im, 0.0im, 0.0im)
+            else
+                error("only l= -3, -1, 1 or 3 allowed")
             end
         else
             if l == 1
@@ -308,9 +322,9 @@ end
                 xe_12 = (im * cp - ct * sp) * expdsqrt2
                 xe_13 = st * expdsqrt2
 
-                U3_1 = (sqrt2_3 * xe_01) * xu_1 +  (sqrt1_3 * xe_11) * xu_m1
-                U3_2 = (sqrt2_3 * xe_02) * xu_1 +  (sqrt1_3 * xe_12) * xu_m1
-                U3_3 = (sqrt2_3 * xe_03) * xu_1 +  (sqrt1_3 * xe_13) * xu_m1
+                U3_1 = (sqrt2_3 * xe_01) * xu_1 + (sqrt1_3 * xe_11) * xu_m1
+                U3_2 = (sqrt2_3 * xe_02) * xu_1 + (sqrt1_3 * xe_12) * xu_m1
+                U3_3 = (sqrt2_3 * xe_03) * xu_1 + (sqrt1_3 * xe_13) * xu_m1
                 U3_4 = (sqrt2_3 * xe_04) * xu_1
             elseif l == -1
                 xu_m1 = SVector{4,ComplexF64}(zkk * st2, -zkk * ct2exp, -zk0m * st2, zk0m * ct2exp)
@@ -323,9 +337,9 @@ end
                 xe_m12 = (im * cp + ct * sp) * dexpdsqrt2
                 xe_m13 = -st * dexpdsqrt2
 
-                U3_1 = (sqrt2_3 * xe_01) * xu_m1 +  (sqrt1_3 * xe_m11) * xu_1
-                U3_2 = (sqrt2_3 * xe_02) * xu_m1 +  (sqrt1_3 * xe_m12) * xu_1
-                U3_3 = (sqrt2_3 * xe_03) * xu_m1 +  (sqrt1_3 * xe_m13) * xu_1
+                U3_1 = (sqrt2_3 * xe_01) * xu_m1 + (sqrt1_3 * xe_m11) * xu_1
+                U3_2 = (sqrt2_3 * xe_02) * xu_m1 + (sqrt1_3 * xe_m12) * xu_1
+                U3_3 = (sqrt2_3 * xe_03) * xu_m1 + (sqrt1_3 * xe_m13) * xu_1
                 U3_4 = (sqrt2_3 * xe_04) * xu_m1
             elseif l == 3
                 xu_1 = SVector{4,ComplexF64}(zkk * ct2dexp, zkk * st2, zk0m * ct2dexp, zk0m * st2)
@@ -346,6 +360,8 @@ end
                 U3_2 = xe_m12 * xu_m1
                 U3_3 = xe_m13 * xu_m1
                 U3_4 = SVector{4,ComplexF64}(0.0im, 0.0im, 0.0im, 0.0im)
+            else
+                error("only l= -3, -1, 1 or 3 allowed")
             end
         end
 
@@ -354,21 +370,21 @@ end
     end
 end
 #############################################################################
-@inline function LC(a::SVector{5, T}, b::SVector{5, T}, c::SVector{5, T}) where {T}
+@inline function LC(a::SVector{5,T}, b::SVector{5,T}, c::SVector{5,T}) where {T}
     # a, b, c 是上标四矢量，分量顺序为 (kx, ky, kz, k0)
     # 输出为上标四矢量 V^μ，顺序一致
 
-    V0 = -a[1]*b[2]*c[3] + a[1]*b[3]*c[2] + a[2]*b[1]*c[3] - a[2]*b[3]*c[1] -
-          a[3]*b[1]*c[2] + a[3]*b[2]*c[1]
+    V0 = -a[1] * b[2] * c[3] + a[1] * b[3] * c[2] + a[2] * b[1] * c[3] - a[2] * b[3] * c[1] -
+         a[3] * b[1] * c[2] + a[3] * b[2] * c[1]
 
-    V1 = -a[4]*b[2]*c[3] + a[4]*b[3]*c[2] + a[2]*b[4]*c[3] - a[2]*b[3]*c[4] -
-          a[3]*b[4]*c[2] + a[3]*b[2]*c[4]
+    V1 = -a[4] * b[2] * c[3] + a[4] * b[3] * c[2] + a[2] * b[4] * c[3] - a[2] * b[3] * c[4] -
+         a[3] * b[4] * c[2] + a[3] * b[2] * c[4]
 
-    V2 =  a[4]*b[1]*c[3] - a[4]*b[3]*c[1] - a[1]*b[4]*c[3] + a[1]*b[3]*c[4] +
-          a[3]*b[4]*c[1] - a[3]*b[1]*c[4]
+    V2 = a[4] * b[1] * c[3] - a[4] * b[3] * c[1] - a[1] * b[4] * c[3] + a[1] * b[3] * c[4] +
+         a[3] * b[4] * c[1] - a[3] * b[1] * c[4]
 
-    V3 = -a[4]*b[1]*c[2] + a[4]*b[2]*c[1] + a[1]*b[4]*c[2] - a[1]*b[2]*c[4] -
-          a[2]*b[4]*c[1] + a[2]*b[1]*c[4]
+    V3 = -a[4] * b[1] * c[2] + a[4] * b[2] * c[1] + a[1] * b[4] * c[2] - a[1] * b[2] * c[4] -
+         a[2] * b[4] * c[1] + a[2] * b[1] * c[4]
 
     return @SVector [V1, V2, V3, V0, zero(T)]  # 上标矢量 (kx, ky, kz, k0)
 end
@@ -413,15 +429,15 @@ end
 end
 #############################################################################
 import Base: *
-function *(Q::SVector{5,T1}, W::SVector{5,T2}) where {T1<:Number, T2<:Number}
+function *(Q::SVector{5,T1}, W::SVector{5,T2}) where {T1<:Number,T2<:Number}
     return Q[4] * W[4] - Q[1] * W[1] - Q[2] * W[2] - Q[3] * W[3]
 end
 
-function *(Q::SVector{5,T1}, W::SVector{5,T2}) where {T1<:SVector{4,ComplexF64}, T2<:Number}
+function *(Q::SVector{5,T1}, W::SVector{5,T2}) where {T1<:SVector{4,ComplexF64},T2<:Number}
     return Q[4] * W[4] - Q[1] * W[1] - Q[2] * W[2] - Q[3] * W[3]
 end
 
-function *(Q::SVector{5,T1}, W::SVector{5,T2}) where {T2<:SVector{4,ComplexF64}, T1<:Number}
+function *(Q::SVector{5,T1}, W::SVector{5,T2}) where {T2<:SVector{4,ComplexF64},T1<:Number}
     return Q[4] * W[4] - Q[1] * W[1] - Q[2] * W[2] - Q[3] * W[3]
 end
 
@@ -433,19 +449,19 @@ function *(A::SVector{4,ComplexF64}, B::SVector{4,ComplexF64})
 end
 
 import Base: -
-function -(A::T, B::SMatrix{4,4,ComplexF64,16}) where {T <: Number}
-    return A*I-B
+function -(A::T, B::SMatrix{4,4,ComplexF64,16}) where {T<:Number}
+    return A * I - B
 end
-function -(B::SMatrix{4,4,ComplexF64,16},A::T) where {T <: Number}
-    return B-A*I
+function -(B::SMatrix{4,4,ComplexF64,16}, A::T) where {T<:Number}
+    return B - A * I
 end
 
 import Base: +
-function +(A::T, B::SMatrix{4,4,ComplexF64,16}) where {T <: Number}
-    return A*I+B
+function +(A::T, B::SMatrix{4,4,ComplexF64,16}) where {T<:Number}
+    return A * I + B
 end
-function +(B::SMatrix{4,4,ComplexF64,16},A::T) where {T <: Number}
-    return B+A*I
+function +(B::SMatrix{4,4,ComplexF64,16}, A::T) where {T<:Number}
+    return B + A * I
 end
 
 end

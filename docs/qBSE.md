@@ -100,7 +100,7 @@ the center of mass frame where $P=(W,{\boldsymbol 0})$ with particle 2 being on 
 
 $$
 \begin{align}
-\tilde{G}_0=\frac{1}{(k_1^2-m_1^2)(k_2^2-m_2^2)}\to g=2\pi i\frac{\delta^+(k_2^2-m_2^2)}{k_1^2-m_1^2}=2\pi
+\tilde{G}_0=\frac{-1}{(k_1^2-m_1^2)(k_2^2-m_2^2)}\to g=2\pi i\frac{\delta^+(k_2^2-m_2^2)}{k_1^2-m_1^2}=2\pi
 i\frac{\delta(k^0_2-E_2)}{2E_2[(W-E_2)^2-E_1^2]},
 \end{align}
 $$
@@ -898,9 +898,9 @@ The `struct structSys` (often referenced as `SYS` in the code) stores informatio
 - `d::Vector{Matrix{Float64}}`: Precomputed Wigner $d$-matrices of $\theta$.
 - `pv::Vector{Float64}`, `wpv::Vector{Float64}`: Discretized azimuthal angles and weight of $\phi$ discretization.
 - `sp::Vector{Float64}`, `cp::Vector{Float64}`: Sine values and Cosine values of the discretized $\phi$ angles.
-- `cutoff_re_type::Symbol`: The type of cutoff used for the exponential regularization of the constituent particles. Use `:Lambda` for a fixed $\Lambda$, `:alpha` for $\Lambda = m + 0.22 \alpha$, where $m$ is the mass of the exchanged meson, and `:alpha_light` for using the mass of the light meson.
-- `cutoff_ex::Float64`, `cutoff_ex_type::Symbol`, `FF_ex_type::Int64`: The value and type of cutoff for the exchanged meson, and the type of the form factor applied to the exchanged meson.
-- `channel::Dict{Tuple{Symbol,Symbol},Int64}`: A dictionary storing the mapping between particle pairs and their corresponding channel number.
+- `cutoff_re_type::String`: The type of cutoff used for the exponential regularization of the constituent particles. Use `"Lambda"` for a fixed $\Lambda$, `"alpha"` for $\Lambda = m + 0.22 \alpha$, where $m$ is the mass of the exchanged meson, and `"alpha_light"` for using the mass of the light meson.
+- `cutoff_ex::Float64`, `cutoff_ex_type::String`, `FF_ex_type::Int64`: The value and type of cutoff for the exchanged meson, and the type of the form factor applied to the exchanged meson.
+- `channel::string,Int64}`: A dictionary storing the mapping between particle pairs and their corresponding channel number.
 
 
 ### `structInterAction`
@@ -908,7 +908,7 @@ The `struct structSys` (often referenced as `SYS` in the code) stores informatio
 The `struct structInterAction` structure (typically used as `IA` in the code) stores the properties of each interaction or exchange process. Its fields are:
 
 - `Nex::Int64`: Total number of exchange particles or processes.
-- `key_ex::Vector{Symbol}`: Labels of the exchanged particles or interactions.
+- `key_ex::Vector{String}`: Labels of the exchanged particles or interactions.
 - `J_ex::Vector{Int64}`, `Jh_ex::Vector{Int64}`, `P_ex::Vector{Int64}`, `m_ex::Vector{Float64}`: Spin, parity, and mass of  exchanged particles.
 - `dc::Vector{Int64}`: Indicates whether the exchange is direct or crossed.
 - `Ff::Vector{Float64}`: Flavor factors associated with each exchange.
@@ -924,7 +924,7 @@ In the qBSE approach, matrix dimensions for a coupled-channel system are organiz
 
 The `struct structChannel` structure encapsulates the properties of a physical channel in the qBSE package, often used as `CH` in the code. Its fields include:
 
-- `p::Vector{Symbol}`,`p_name0::Vector{Symbol}`,`anti::Vector{Int}`, `m::Vector{Float64}`, `J::Vector{Int64}`, `Jh::Vector{Int64}`, `P::Vector{Int64}`: Vectors specifying the key of partilce $p$ and those without charge `p_name0`, label for antiparticle, mass $m$, spin $J$=`J/Jh`, and parity (`P`) for each particle in the channel. Here, `Jh = 1` for integer spin and `Jh = 2` for half-integer spin.
+- `p::Tuple{String,String}`,`p_name0::Tuple{String,String}`,`Tuple{Int,Int}`, `m::Tuple{Float64,Float64}`, `Tuple{Int64,Int64}`, `Jh::Tuple{Int64,Int64}`, `P::Tuple{Int64,Int64}`: Vectors specifying the key of partilce $p$ and those without charge `p_name0`, label for antiparticle, mass $m$, spin $J$=`J/Jh`, and parity (`P`) for each particle in the channel. Here, `Jh = 1` for integer spin and `Jh = 2` for half-integer spin.
 - `cutoff::Float64` specifying the cutoff parameter for the channel.
 - `IHb::Int64`, `IHe::Int64`, `IHn::Int64` indicating the starting and ending indices of independent helicities, and the total number of independent helicity states for the channel.
 
@@ -935,7 +935,7 @@ These definitions ensure that each channel's quantum numbers and relevant parame
 The `mutable struct structIndependentHelicity` structure defines the independent helicity states in the qBSE package, commonly referenced as `IH` in the code. Its fields are:
 
 - `iCH::Int64`: Index of the channel to which this independent helicity belongs.
-- `hel::Vector{Int64}`, `helh::Vector{Int64}`: Vector of helicity values for the independent helicity states, with `helh` indicating whether each helicity state corresponds to a fermion or boson.
+- `hel::Tuple{Int64,Int64}`, `helh::Tuple{Int64,Int64}`: Vector of helicity values for the independent helicity states, with `helh` indicating whether each helicity state corresponds to a fermion or boson.
 - `Dimb::Int64`, `Dime::Int64`, `Dimn::Int64` for the starting index, ending index, and total count of independent helicities (i.e., the dimension range).
 - `Dimo::Int64`: Indicates whether an extra on-shell dimension is present (`+1` if $W > \sum m$, otherwise `0`). The total number of momentum discretization points for an independent helicity is `Np + Dimo`.
 
@@ -980,7 +980,7 @@ The `mutable struct structHelicity` structure stores the helicity information fo
 The `structParticle` structure defines the properties of a single particle.
 
 **Fields:**
-- `name0::Symbol` — Particle key without charge (used for identification).
+- `name0::String` — Particle key without charge (used for identification).
 - `nameL::String` — LaTeX representation of the particle name.
 - `anti::Int` — Flags antiparticle status: `0` for particle, `1` for antiparticle.  
   **Note:** The labeling convention distinguishes between particles and antiparticles, with specific assignments depending on the particle type (e.g., all three pions $\pi^\pm$ and $\pi^0$ are typically treated as particles (`0`), while certain kaon states $\bar{K}^0$ and $K^-$ are treated as antiparticles (`1`)).
@@ -993,23 +993,23 @@ The `structParticle` structure defines the properties of a single particle.
 
 ### function to read partilce data file
 
-`function particles!(particles::Dict{Symbol,structParticle}, filename::String)`
+`function particles!(particles::Dict{String,structParticle}, filename::String)`
 
 Populates a dictionary of particle structures by reading particle information from a formatted data file.
 
 **Arguments:**
-- `particles::Dict{Symbol,structParticle}` — Dictionary mapping particle symbols to their corresponding `structParticle` instances.
+- `particles::Dict{String,structParticle}` — Dictionary mapping particle  to their corresponding `structParticle` instances.
 - `filename::String` — Path to the particle data file.
 
 **Behavior:**
 - Reads the file line by line, skipping the header.
 - Parses each column into the corresponding `structParticle` field.
-- Stores the constructed particle object in the dictionary using the first column (charged symbol) as the key.
+- Stores the constructed particle object in the dictionary using the first column (charged) as the key.
 
 **Returns:**
 - Nothing (modifies the `particles` dictionary in place).
 
-`const p = Dict{Symbol,structParticle}()`
+`const p = Dict{String,structParticle}()`
 
 store of information of particles in this global vector
 
@@ -1026,32 +1026,32 @@ This function is designed to be called within `res` to prepare the system and ch
 - `qn`: Quantum numbers for the process, and labels for Riemann sheets.
 - `channels`: List of channels to be included in the calculation, stored in `IA[]`.
 - `Ff`: Flavor factors, stored in `IA[]`.
-- `cutoff`: A `NamedTuple` for the last four keys of `structSys`. The user may provide only the required fields; the omitted ones will be set to default as `cutoff = (cutoff_re_type = :Lambda, cutoff_ex = 0.0, cutoff_ex_type = :Lambda, FF_ex_type = 3)`.
+- `cutoff`: A `NamedTuple` for the last four keys of `structSys`. The user may provide only the required fields; the omitted ones will be set to default as `cutoff = (cutoff_re_type = "Lambda", cutoff_ex = 0.0, cutoff_ex_type = "Lambda", FF_ex_type = 3)`.
 - `Np`, `Nx`, `Nphi`: Number of momentum discretization points, $\cos\theta$ discretization points , azimuthal angle discretization points.
 
 Example for arguments:
 
 ```julia
-if Sys == "KNcp"
-    qn = (I=1, Ih=1, J=1, Jh=2, P=-1, C=-1, lRm=1)
-    Range = (ERmin=1.2, ERmax=2.0, NER=200, EIt=0.200, NEI=20, Ep="cm")
-    cutoff = (cutoff_re_type=:alpha_light,)
-    channels = (
-        (:K_b0, :N_p, 1.63),
-        (:pi_0, :Sigma_p, 1.63),
-        (:pi_p, :Sigma_0, 1.63),
-        (:pi_p, :Lambda, 1.63),
-        (:eta, :Sigma_p, 1.63)
-      )
-    Ff = Dict{Tuple{Tuple{Symbol,Symbol},Tuple{Symbol,Symbol}},Any}(
-        ((:K_b0, :N_p), (:K_b0, :N_p)) => ([[:V, 1], 1.0],),
-        ((:K_b0, :N_p), (:pi_0, :Sigma_p)) => ([[:V, 1], -sqrt(0.5)],),
-        ((:K_b0, :N_p), (:pi_p, :Sigma_0)) => ([[:V, 1], sqrt(0.5)],),
-        ((:K_b0, :N_p), (:pi_p, :Lambda)) => ([[:V, 1], -sqrt(1.5)],),
-        (:K_b0, :N_p), (:eta, :Sigma_p)) => ([[:V, 1], sqrt(1.5)],),
-        ((:pi_0, :Sigma_p), (:pi_p, :Sigma_0)) => ([[:V, 1], -2.0],)
+    if Sys == "KNcp"
+        qn = (I=1, Ih=1, J=1, Jh=2, P=-1, C=-1, lRm=1)
+        Range = (ERmin=1.2, ERmax=2.0, NER=200, EIt=0.200, NEI=20, Ep=("cm",))
+        cutoff = (cutoff_re_type="alpha_light",)
+        channels = (
+            ("K_b0:N_p", 1.63),
+            ("pi_0:Sigma_p", 1.63),
+            ("pi_p:Sigma_0", 1.63),
+            ("pi_p:Lambda", 1.63),
+            ("eta:Sigma_p", 1.63)
         )
-end
+        Ff = Dict{String,Any}(
+            "K_b0:N_p-->K_b0:N_p" => ([["V", 1], 1.0],),
+            "K_b0:N_p-->pi_0:Sigma_p" => ([["V", 1], -sqrt(0.5)],),
+            "K_b0:N_p-->pi_p:Sigma_0" => ([["V", 1], sqrt(0.5)],),
+            "K_b0:N_p-->pi_p:Lambda" => ([["V", 1], -sqrt(1.5)],),
+            "K_b0:N_p-->eta:Sigma_p" => ([["V", 1], sqrt(1.5)],),
+            "pi_0:Sigma_p-->pi_p:Sigma_0" => ([["V", 1], -2.0],)
+        )
+    end
 ```
 
 **Returns:**
@@ -1061,7 +1061,7 @@ end
 - `CH::Vector{structChannel}`: The processed channel objects, each describing a physical channel.
 - `IH::Vector{structIndependentHelicity}`: The processed independent helicity objects, ready for use in qBSE calculations.
 
-### `function FFre(k, cutoffi, cutofff; cutoff_re_type=:Lambda, CHi=nothing, CHf=nothing, key_ex=0)`
+### `function FFre(k, cutoffi, cutofff; cutoff_re_type="Lambda", CHi=nothing, CHf=nothing, key_ex=0)`
 
 In the `fV` function, form factors for constituent partilces can be included via the auxiliary function `FFre` for the regulization, which is used to regulate the interaction kernel.
 
@@ -1069,7 +1069,7 @@ In the `fV` function, form factors for constituent partilces can be included via
 
 - `k::structMomentum`: The kinematic information for the process.
 - `cutoffi::Float64`, `cutofff::Float64`: Cutoff parameters for the initial and final particles, typically set as `cutoffi = CHi.cutoff`, `cutofff = CHf.cutoff`.
-- `cutoff_re_type`: The type of cutoff used for the exponential regularization of the constituent particles. Use `:Lambda` for a fixed $\Lambda$, `:alpha` for $\Lambda = m + 0.22 \alpha$, where $m$ is the mass of the exchanged meson, and `:alpha_light` for using the mass of the light meson.
+- `cutoff_re_type`: The type of cutoff used for the exponential regularization of the constituent particles. Use `"Lambda"` for a fixed $\Lambda$, `"alpha"` for $\Lambda = m + 0.22 \alpha$, where $m$ is the mass of the exchanged meson, and `"alpha_light"` for using the mass of the light meson.
 - `CHi,CHf`,`ex::Int64`: Used for the type `alpha_light` and `alpha`, respectively.
 - `key_ex::Int64`: Index of the exchanged particle, usually set as `key_ex = IA0.key_ex[le]`, where `le` runs over the exchanged mesons in `1:IA0.Nex`.
 
@@ -1077,7 +1077,7 @@ In the `fV` function, form factors for constituent partilces can be included via
 
 These options allow flexible control over the inclusion and type of form factors in the potential kernel, supporting different regularization schemes as needed for the physical system under study.
 
-### `function propFFex(k, key_ex, cutoff; cutoff_ex_type=:Lambda, FF_ex_type=3)`
+### `function propFFex(k, key_ex, cutoff; cutoff_ex_type="Lambda", FF_ex_type=3)`
 
 In the `fV` function, form factors for the exchanged mesons can be included via the auxiliary function `propFFex`.
 
@@ -1086,7 +1086,7 @@ In the `fV` function, form factors for the exchanged mesons can be included via 
 - `k::structMomentum`: The kinematic information for the process.
 - `ex::Int64`: Index of the exchanged particle, usually set as `ex = IA0.key_ex[le]`, where `le` runs over the exchanged mesons in `1:IA0.Nex`.
 - `cutoff::Float64`: The cutoff parameter for the exchanged meson, often chosen as the same as the regulations.
-- `cutoff_ex_type`: The type of cutoff used for the exchanged mesons. Use `:Lambda` for a fixed $\Lambda$, `:alpha` for $\Lambda = m + 0.22 \alpha$, where $m$ is the mass of the exchanged meson.
+- `cutoff_ex_type`: The type of cutoff used for the exchanged mesons. Use `"Lambda"` for a fixed $\Lambda$, `"alpha"` for $\Lambda = m + 0.22 \alpha$, where $m$ is the mass of the exchanged meson.
 - `FF_ex_type::Int64`: Type of form factor for the exchanged meson:
   - `0`: No form factor.
   - `1`: $\frac{L^2 - m^2}{L^2 - q^2}$
@@ -1166,7 +1166,7 @@ This function, which employs parallel computation to model the rescattering proc
 - `Range`: The range of energies to be considered. For example `Range = (ERmin=1.2, ERmax=2.0, NER=200, EIt=0.200, NEI=20, Ep="cm")`
 - `channels`: List of channels to be included in the calculation, stored in `IA[]`.
 - `Ff`: Flavor factors, stored in `IA[]`.
-- `cutoff`: A `NamedTuple` for the last four keys of `structSys`. The user may provide only the required fields; the omitted ones will be set to default as `cutoff = (cutoff_re_type = :Lambda, cutoff_ex = 0.0, cutoff_ex_type = :Lambda, FF_ex_type = 3)`.
+- `cutoff`: A `NamedTuple` for the last four keys of `structSys`. The user may provide only the required fields; the omitted ones will be set to default as `cutoff = (cutoff_re_type = "Lambda", cutoff_ex = 0.0, cutoff_ex_type = "Lambda", FF_ex_type = 3)`.
 - `Np`, `Nx`, `Nphi`: Number of momentum discretization points, $\cos\theta$ discretization points , azimuthal angle discretization points.
 
 **Returns:**
@@ -1179,7 +1179,7 @@ This function, which employs parallel computation to model the rescattering proc
 - `TG::Matrix{ComplexF64}`: The $TG$ matrix used for decays.
 
 
-### `function simpleXsection(ER, resM2, CH, qn; Ep="cm")`
+### `function simpleXsection(ER, resM2, CH, qn; Ep=("cm",))`
 
 This function computes the total cross section for a $2 \to 2$ scattering process using the squared amplitude matrix and channel information.
 
@@ -1189,7 +1189,7 @@ This function computes the total cross section for a $2 \to 2$ scattering proces
 - `resM2::Matrix{Float64}`: Matrix of squared amplitudes $|M|^2$ for the process, as obtained from the qBSE calculation.
 - `CH`: Vector of channel structures, as described above.
 - `qn`: Quantum numbers for the process.
-- `Ep`: Energy frame to use (`"cm"` for center-of-mass, `"L"` for laboratory; default: `"cm"`).
+- `Ep`: Energy frame to use (`("cm",)` for center-of-mass, `("L",p1,p2)` for laboratory; default: `"cm"`).
 
 **Returns:**
 A `Vector{Matrix{Float64}}` value representing the total cross section at each energy point.
@@ -1209,7 +1209,7 @@ This function constructs a channel tuple for use in decay width or cross section
 
 **Arguments:**
 
-- `pf`: List of final state particle names (e.g., `[:pi_m, :pi_p, :pi_p, :Lambda]`).
+- `pf`: List of final state particle names (e.g., `["pi_m", "pi_p", "pi_p", "Lambda"]`).
 - `pin`: List of initial state particle names (can be empty if not needed).
 - `amps`: Amplitude information or function.
 
@@ -1228,7 +1228,7 @@ A tuple of the form `(pf=pf, namef=namef, mf=mf, pin=pin, namei=namei, mi=mi, am
 To compute the decay width for $\Lambda_c \to \pi^- \pi^- \pi^+ \Lambda$:
 
 ```julia
-ch = qBSE.ch([:pi_m, :pi_p, :pi_p, :Lambda], [], amps)
+ch = qBSE.ch(["pi_m", "pi_p", "pi_p", "Lambda"], [], amps)
 ```
 
 The resulting `ch` can be passed directly to `Xs.Xsection`. See the `Xs.Xsection` documentation for further usage details.
@@ -1292,8 +1292,8 @@ This function calculates the transition amplitude for a given final state `cfina
 **Arguments:**
 
 - `para`: The calculation parameters, as returned by `setTGA`.
-- `cfinal::Tuple{Symbol,Symbol}`: The final state configuration (e.g., Symbols for the outgoing particles).
-- `cinter::Tuple{NamedTuple{Tuple{Symbol,Symbol}, Float64, Function, NamedTuple}}`: The indices of intermediate channels (`ch::Tuple{Symbol,Symbol}`) with weights (`weight=Float64`), the corresponding vertex functions (`Vertex::Function`),  and associated data, including the vertex structure, precomputed spinors or polarization vectors ( `cached::NamedTuple` e.g., `cached=(ULc=GA1 * FR.U(para14.P, lLc),)`). The content in `cached` will be used in functions `Vertex`, such as `Vertex14(k, P, l, cached) = FR.U(k[4], l[4], bar=true) * cached.ULc`, defined in `function amps` in main file.
+- `cfinal::String`: The final state configuration (e.g., String with `":"` for the outgoing particles).
+- `cinter::Tuple{String, Float64, Function, NamedTuple}}`: The indices of intermediate channels (`ch=::String`) with weights (`weight=::Float64`), the corresponding vertex functions (`Vertex=::Function`),  and associated data, including the vertex structure, precomputed spinors or polarization vectors ( `cached=::NamedTuple` e.g., `cached=(ULc=GA1 * FR.U(para14.P, lLc),)`). The content in `cached` will be used in functions `Vertex`, such as `Vertex14(k, P, l, cached) = FR.U(k[4], l[4], bar=true) * cached.ULc`, defined in `function amps` in main file.
 
 
 #### `function Vertex14(k, P, l, Vert)`

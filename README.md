@@ -207,7 +207,7 @@ The function for amplitudes with factors is saved as `amp`.
 Example usage:
 
 ``` julia
-proc = (pf=[:p1,:p2,:p3],mi=[1.,1.], mf=[1., 2., 3.], namei=["p^i_{1}", "p^i_{2}"], namef=["p^f_{1}", "p^f_{2}", "p^f_{3}"], amps=amps)
+proc = (pf=["p1","p2","p3"],mi=[1.,1.], mf=[1., 2., 3.], namei=["p^i_{1}", "p^i_{2}"], namef=["p^f_{1}", "p^f_{2}", "p^f_{3}"], amps=amps)
 ```
 
 Here, the masses of the initial particles `[mass_i_1, mass_i_2]` and
@@ -251,7 +251,7 @@ end
 nevtot=Int64(1e7)
 pb = ProgressBar(1:nevtot)  
 callback = i -> progress_callback(pb)  
-res = Xs.Xsection(tecm, proc, callback,axes=[[:p2,:p3], [:p1,:p2]], nevtot=Int64(1e7), Nbin=500, para=(p=p_lab, l=1.0),stype=2)
+res = Xs.Xsection(tecm, proc, callback,axes=["p2:p3", "p1:p2"], nevtot=Int64(1e7), Nbin=500, para=(p=p_lab, l=1.0),stype=2)
 ```
 
 The calculation results are stored in the variable `res` as a
@@ -289,11 +289,11 @@ addprocs(1; exeflags="--project")
 Ecm = 20.0
 nevtot = Int64(1e7)
 @everywhere amps(tecm, kf, proc, para, p0) = 1.
-proc = (pf=[:p1, :p2, :p3],
+proc = (pf=["p1", "p2", "p3"],
     mi=[1.0, 1.0], mf=[2.0 for i in 1:3],
     namei=["p^i_{1}", "p^i_{2}"], namef=["p^f_{1}", "p^f_{2}", "p^f_{3}"],
     amps=amps)
-res = Xs.Xsection(10.0, proc, axes=[[:p2, :p3], [:p1, :p2]], nevtot=nevtot, Nbin=1000,
+res = Xs.Xsection(10.0, proc, axes=["p2:p3", "p1:p2"], nevtot=nevtot, Nbin=1000,
     para=(p=8000.0, l=1.0), stype=2)
 ```
 
@@ -323,16 +323,23 @@ axis.
 **Returns:** - `Float64` --- The bin value corresponding to index `i`
 for the specified axis.
 
-`binrange(axis::Vector{Symbol}, tecm, proc, stype)`
+`binrange(axis::String, tecm, proc, stype)`
 
 Computes the value range for each specified binning axis based on the
 given phase space dimensions. The function determines the extent of each
 axis using the total center-of-mass energy and particle information.
 
-**Arguments:** - `laxes`: `Vector{Vector}` --- A vector of vectors
-specifying the binning axes. - `tecm`: `Float` --- Total energy in the
-center-of-mass frame. - `proc`: `Process` --- Contains particle
-definitions and kinematic properties. - `stype`: `Int` --- Specifies the
+**Arguments:** 
+
+- `axis::String` --- A string with `:` specifying the binning axes. 
+
+- `tecm::Float` --- Total energy in the
+center-of-mass frame. 
+
+- `proc::Process` --- Contains particle
+definitions and kinematic properties. 
+
+- `stype::Int` --- Specifies the
 return type: `1` for mass, `2` for mass squared.
 
 **Returns:** - `Vector{UnitRange}` --- A vector of ranges corresponding

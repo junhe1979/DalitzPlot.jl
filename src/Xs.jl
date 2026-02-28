@@ -7,8 +7,8 @@ using ..GEN
 function binx(i::Int64, bin, iaxis::Int64)::Float64
     return bin.min[iaxis][1] + (i - 0.5) / bin.Nbin * (bin.max[iaxis][1] - bin.min[iaxis][1])
 end
-function binrange(axis::Vector{Symbol}, tecm, proc, stype)
-    laxes = [findfirst(==(element), proc.pf) for element in axis]
+function binrange(axis::String, tecm, proc, stype)
+    laxes = [findfirst(==(element), proc.pf) for element in split(axis,":")]
     min = (proc.mf[laxes[1]] + proc.mf[laxes[2]])^stype
     max = (tecm - sum(proc.mf) + proc.mf[laxes[1]] + proc.mf[laxes[2]])^stype
     return min, max
@@ -125,7 +125,7 @@ function Xsection(tecm, proc, callback; axes=[], Range=[], nevtot=Int64(1e6),
     Nf = length(proc.pf)
     laxes = Vector{Vector{Int64}}[]
     for axis in axes
-        positions = [findall(==(element), proc.pf) for element in axis]
+        positions = [findall(==(element), proc.pf) for element in split(axis,":")]
         laxes0 = Vector{Int64}[]
         for p1 in positions[1], p2 in positions[2]
             push!(laxes0, [p1, p2])
@@ -206,7 +206,7 @@ function worker_Xsection(tecm, proc, axes, Range, nevt, Nbin, para, p0, stype, p
     end
     return Xsection(tecm, proc, callback, axes=axes, Range=Range, nevtot=nevt, Nbin=Nbin, para=para, p0=p0, stype=stype)
 end
-function Xsection(tecm, proc; axes=[23, 21], Range=[], nevtot=Int64(1e6), Nbin=100, para=(l = 1.0), p0=[], stype=1, progressbar=true)
+function Xsection(tecm, proc; axes=[], Range=[], nevtot=Int64(1e6), Nbin=100, para=(l = 1.0), p0=[], stype=1, progressbar=true)
     num_workers = nworkers()
     nevt_per_worker = div(nevtot, num_workers)
     ranges = [(i * nevt_per_worker + 1, Base.min((i + 1) * nevt_per_worker, nevtot)) for i in 0:(num_workers-1)]
