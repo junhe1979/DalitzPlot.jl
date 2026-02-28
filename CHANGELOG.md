@@ -6,7 +6,7 @@
 
 -  Conducted a comprehensive review and unification of symbols related to channels and vertices to enhance code standardization and consistency. Related descriptions have also been refined.
 
-- The labels for partlces and channels were changed from `::Symobl` backto `::String`.
+- The labels for partlces and channels were changed from `::Symobl` back to `::String`.
 
 ## [0.3.9] - 2026-02-12
 
