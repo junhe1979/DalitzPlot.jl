@@ -2,7 +2,7 @@
 
 julia_version = "1.12.5"
 manifest_format = "2.0"
-project_hash = "b35d1a8dedfbdd04c6f70674a7a7116b67d385be"
+project_hash = "2ba356d71c08ddeefbd52f2de6aa2c2a8598c337"
 
 [[deps.AliasTables]]
 deps = ["PtrArrays", "Random"]
@@ -17,11 +17,6 @@ version = "1.1.2"
 [[deps.Artifacts]]
 uuid = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
 version = "1.11.0"
-
-[[deps.BSON]]
-git-tree-sha1 = "4c3e506685c527ac6a54ccc0c8c76fd6f91b42fb"
-uuid = "fbb218c0-5317-5bc6-957e-2ee96dd4b1f0"
-version = "0.3.9"
 
 [[deps.Base64]]
 uuid = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
@@ -126,7 +121,7 @@ uuid = "d38c429a-6771-53c6-b99e-75d170b6e991"
 version = "0.6.3"
 
 [[deps.DalitzPlot]]
-deps = ["BSON", "Colors", "Compose", "DelimitedFiles", "Distributed", "Distributions", "FastGaussQuadrature", "JLD2", "LaTeXStrings", "LinearAlgebra", "Mmap", "Plots", "Printf", "ProgressBars", "StaticArrays", "Statistics", "WignerD"]
+deps = ["Colors", "Compose", "DelimitedFiles", "Distributed", "Distributions", "FastGaussQuadrature", "JLD2", "LaTeXStrings", "LinearAlgebra", "Mmap", "Plots", "Printf", "ProgressBars", "ProgressMeter", "SharedArrays", "StaticArrays", "Statistics", "WignerD"]
 path = "."
 uuid = "d7968580-7d6f-4f79-bc09-617baf523457"
 version = "0.4.0"
@@ -775,6 +770,12 @@ git-tree-sha1 = "b437cdb0385ed38312d91d9c00c20f3798b30256"
 uuid = "49802e3a-d2f1-5c88-81d8-b72133a6f568"
 version = "1.5.1"
 
+[[deps.ProgressMeter]]
+deps = ["Distributed", "Printf"]
+git-tree-sha1 = "fbb92c6c56b34e1a2c4c36058f68f332bec840e7"
+uuid = "92933f4c-e287-5a05-a399-4b506db050ca"
+version = "1.11.0"
+
 [[deps.PtrArrays]]
 git-tree-sha1 = "4fbbafbc6251b883f4d2705356f3641f3652a7fe"
 uuid = "43287f4e-b6f4-7ad1-bb20-aadabca52c3d"
@@ -885,6 +886,11 @@ version = "1.3.0"
 
 [[deps.Serialization]]
 uuid = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
+version = "1.11.0"
+
+[[deps.SharedArrays]]
+deps = ["Distributed", "Mmap", "Random", "Serialization"]
+uuid = "1a1011a3-84de-559e-8e89-a11a2f7dc383"
 version = "1.11.0"
 
 [[deps.Showoff]]

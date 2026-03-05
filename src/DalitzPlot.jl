@@ -5,12 +5,12 @@
 #*******************************************************************************************
 
 module DalitzPlot
+include("AUXs.jl")
 include("GEN.jl")
 include("Xs.jl")
 include("FR.jl")
 include("qBSE.jl")
 include("PLOT.jl")
-include("AUXs.jl")
 using .GEN
 using .Xs
 using .FR

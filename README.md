@@ -517,13 +517,19 @@ polarized vector with a complex conjugation.
 
 `function U(k, l::Int64; bar=false, V=false)::SVector{4,ComplexF64}`
 
+with normalization $\bar{u}_\lambda(k)u_{\lambda'}(k)=\delta_{\lambda\lambda'}$
+
 ### Polarized vector for $S=1$
 
 `function eps(k, l::Int64; star=false)::SVector{5,ComplexF64}`
 
+with normalization $\varepsilon^{\mu*}_\lambda(k)\varepsilon_{\lambda'\mu}(k)=-\delta_{\lambda\lambda'}$
+
 ### Rarita-Schwinger Spinor for $S=3/2$
 
 `function U3(k, l::Int64; bar=false, V=false)::SVector{5,SVector{4, ComplexF64}}`
+
+with normalization $\bar{u}^\mu_\lambda(k)u_{\lambda'\mu}(k)=-\delta_{\lambda\lambda'}$
 
 ### Levi-Civita tensor
 

@@ -1,6 +1,6 @@
 # module for quasipotential Bethe-Salpeter equation
 module qBSE
-using Distributed, FastGaussQuadrature, StaticArrays, WignerD, LinearAlgebra, Printf, ProgressBars
+using Distributed, FastGaussQuadrature, StaticArrays, WignerD, LinearAlgebra, Printf, ProgressBars, SharedArrays, ProgressMeter
 using ..Xs, ..FR
 #*******************************************************************************************
 # Structures used
@@ -17,9 +17,9 @@ struct structSys #SYS
     wpv::Vector{Float64} #weights of discreting
     sp::Vector{Float64} #sin phi
     cp::Vector{Float64} #cos phi
-    cutoff_re_type::String
+    cutoff_re_type::Symbol
     cutoff_ex::Float64
-    cutoff_ex_type::String
+    cutoff_ex_type::Symbol
     FF_ex_type::Int64
     channel::Dict{String,Int64}
 end
@@ -38,7 +38,7 @@ end
 struct structChannel #CH[] 
     p::Tuple{String,String}  #partilces of channel
     p_name0::Tuple{String,String} #partilces of channel (without charge)
-    anti::Tuple{Int,Int} #label for antiparticle 
+    anti::Tuple{Int64,Int64} #label for antiparticle 
     m::Tuple{Float64,Float64} #particle masses of channel
     J::Tuple{Int64,Int64} #particle spins of channel
     Jh::Tuple{Int64,Int64} #particle  spins of channel
@@ -55,15 +55,8 @@ mutable struct structIndependentHelicity #IH[]
     helh::Tuple{Int64,Int64} # fermion or boson
     Dimb::Int64 #the rank of begin dimension in this independent helicities
     Dime::Int64 #the rank of end dimension in this independent helicities
-    Dimn::Int64 #the number of dimensions in this independent helicities
-    Dimo::Int64 # +1 or not for onshell W>sum m. Np+Dimo is the total dimensions of a independent helicities
-end
-# store the information of each dimension for matrix
-mutable struct structDimension #Dim[]
-    iIH::Int64 # which independent helicity this dimension belongs to 
     k::ComplexF64 #momenta of discreting
     w::Float64 #weights of discreting
-    Dimo::Int64 # +1 or not for onshell W>sum m. Np+Dimo is the total dimensions of a independent helicities
 end
 #------------------------------------------------------------------------------------------
 # momenta of partilces of a 2-2 interaction.
@@ -137,7 +130,7 @@ function preprocessing(Sys, qn, channels, Ff, cutoff, Np, Nx, Nphi)
         #independent helicities
         Nih0 = Nih
         IH0 = structIndependentHelicity[]
-        IH00 = structIndependentHelicity(0, (0, 0), (0, 0), 0, 0, 0, 0)
+        IH00 = structIndependentHelicity(0, (0, 0), (0, 0), 0, 0, 0., 0.)
         for i1 in -p[p1].J:p[p1].Jh:p[p1].J
             for i2 in -p[p2].J:p[p2].Jh:p[p2].J
 
@@ -244,9 +237,9 @@ function preprocessing(Sys, qn, channels, Ff, cutoff, Np, Nx, Nphi)
     sp = [sin(pv[i]) for i in 1:Nphi]
     cp = [cos(pv[i]) for i in 1:Nphi]
     SYS = structSys(Sys, kv, wv, xv, wxv, wd, pv, wpv, sp, cp,
-        get(cutoff, :cutoff_re_type, "Lambda"),
+        get(cutoff, :cutoff_re_type, :Lambda),
         get(cutoff, :cutoff_ex, 0.0),
-        get(cutoff, :cutoff_ex_type, "Lambda"),
+        get(cutoff, :cutoff_ex_type, :Lambda),
         get(cutoff, :FF_ex_type, 3),
         channel_dict)
 
@@ -254,71 +247,85 @@ function preprocessing(Sys, qn, channels, Ff, cutoff, Np, Nx, Nphi)
 end
 # generate the workspace. -> VGI, 
 function workSpace(Ec, lRm, Np, SYS, CH, IH)
-    #produce the dimensions in a independent helicity amplitudes, especially for the onshell dimension.
+
     Ec += Complex{Float64}(0.0, 1e-15)
-    Dim = structDimension[]
+
     Nih = length(IH)
+
+    # 先计算总维度 Nt
     Nt = 0
     for i1 in 1:Nih
-        IH[i1].Dimo = 0
-        IH[i1].Dimb = 0
-        IH[i1].Dime = 0
-        IH[i1].Dimn = 0
-    end
-    for i1 in 1:Nih
-        IH[i1].Dimb = Nt + 1
         mass1 = p[CH[IH[i1].iCH].p[1]].m
         mass2 = p[CH[IH[i1].iCH].p[2]].m
 
-        lRm0 = if isa(lRm, Int)
-            lRm
-        elseif isa(lRm, Tuple{Vararg{Int}})
-            lRm[IH[i1].iCH]
-        else
-            error("lRm should be Int or Tuple of Int")
-        end
+        lRm0 = isa(lRm, Int) ? lRm : lRm[IH[i1].iCH]
+        temp = real(Ec) < (mass1 + mass2)
+        Rm = !((lRm0 == 0 || lRm0 == 1) && temp)
 
+        Nt += Rm ? (Np + 1) : Np
+    end
+
+    # 预分配 3×Nt 矩阵
+    Dim = zeros(Int, 3, Nt)
+
+    # 第二遍真正填充
+    Nt_count = 0
+
+    for i1 in 1:Nih
+
+        IH[i1].Dimb = Nt_count + 1
+
+        mass1 = p[CH[IH[i1].iCH].p[1]].m
+        mass2 = p[CH[IH[i1].iCH].p[2]].m
+
+        lRm0 = isa(lRm, Int) ? lRm : lRm[IH[i1].iCH]
         temp = real(Ec) < (mass1 + mass2)
         Rm = !((lRm0 == 0 || lRm0 == 1) && temp)
 
         if Rm
-            kon = sqrt((Ec^2 - (mass1 + mass2)^2) * (Ec^2 - (mass1 - mass2)^2)) / (2.0 * Ec)
-            IH[i1].Dimo = 1
-            Nt += Np + IH[i1].Dimo
-            IH[i1].Dime = Nt
-            IH[i1].Dimn = Np + IH[i1].Dimo
+            kon = sqrt((Ec^2 - (mass1 + mass2)^2) *
+                       (Ec^2 - (mass1 - mass2)^2)) / (2.0 * Ec)
+
+            # Np 个 offshell
             for idim in 1:Np
-                Dim0 = structDimension(i1, SYS.kv[idim], SYS.wv[idim], 0)
-                push!(Dim, Dim0)
+                Nt_count += 1
+                Dim[1, Nt_count] = i1
+                Dim[2, Nt_count] = idim
+                Dim[3, Nt_count] = 0
             end
-            Dim0 = structDimension(i1, kon, 0.0, 1)
-            push!(Dim, Dim0)
+
+            IH[i1].k = kon
+            IH[i1].w = 0.0
+
+            # onshell
+            Nt_count += 1
+            Dim[1, Nt_count] = i1
+            Dim[2, Nt_count] = Np + 1
+            Dim[3, Nt_count] = 1
+
         else
-            Nt += Np
-            IH[i1].Dime = Nt
-            IH[i1].Dimn = Np
-
             for idim in 1:Np
-                Dim0 = structDimension(i1, SYS.kv[idim], SYS.wv[idim], 0)
-                push!(Dim, Dim0)
-
+                Nt_count += 1
+                Dim[1, Nt_count] = i1
+                Dim[2, Nt_count] = idim
+                Dim[3, Nt_count] = 0
             end
         end
 
+        IH[i1].Dime = Nt_count
     end
-
 
     return SYS, IH, Dim
 end
 #------------------------------------------------------------------------------------------
 # Potential kernel 
 # Form factor. ->fV
-function FFre(k, cutoffi, cutofff; cutoff_re_type="Lambda", CHi=nothing, CHf=nothing, key_ex="V")
+function FFre(k, cutoffi, cutofff; cutoff_re_type=:Lambda, CHi=nothing, CHf=nothing, key_ex="V")
 
-    if cutoff_re_type == "alpha_light"
+    if cutoff_re_type == :alpha_light
         cutoffi = CHi.m[1] + 0.22 * cutoffi
         cutofff = CHf.m[1] + 0.22 * cutofff
-    elseif cutoff_re_type == "alpha"
+    elseif cutoff_re_type == :alpha
         cutoffi = p[key_ex].m + 0.22 * cutoffi
         cutofff = p[key_ex].m + 0.22 * cutofff
     end
@@ -346,12 +353,11 @@ function FFre(k, cutoffi, cutofff; cutoff_re_type="Lambda", CHi=nothing, CHf=not
     return exp(FFre)
 
 end
-
-function propFFex(k, key_ex, cutoff; cutoff_ex_type="Lambda", FF_ex_type=3)
+function propFFex(k, key_ex, cutoff; cutoff_ex_type=:Lambda, FF_ex_type=3)
 
     m = p[key_ex].m
 
-    if cutoff_ex_type == "alpha"
+    if cutoff_ex_type == :alpha
         cutoff = m + 0.22 * cutoff
     end
 
@@ -607,7 +613,7 @@ function fVGI(Ec, qn, SYS, IA, CH, IH, VVertex, lRm, eps)
     # Determine the dimension of the work matrix. 
     Np = length(SYS.kv)
     SYS, IH, Dim, = workSpace(Ec, lRm, Np, SYS, CH, IH)
-    Nt = length(Dim)
+    Nt = size(Dim, 2)
 
     # Initialize matrices
     Vc = zeros(Complex{Float64}, Nt, Nt)
@@ -615,22 +621,21 @@ function fVGI(Ec, qn, SYS, IA, CH, IH, VVertex, lRm, eps)
     II = zeros(Float64, Nt, Nt)
 
     # Populate Vc, Gc, and II
-    for i_f = 1:Nt
-        Dimf = Dim[i_f]
-        kf = Dimf.k
-
-        for i_i = i_f:Nt
-            Dimi = Dim[i_i]
-            ki = Dimi.k
-
+    for i_f in 1:Nt
+        IHf = IH[Dim[1, i_f]]
+        kf = Dim[3, i_f] == 1 ? IHf.k : real(SYS.kv[Dim[2, i_f]])
+        for i_i in i_f:Nt
+            IHi = IH[Dim[1, i_i]]
+            ki = Dim[3, i_i] == 1 ? IHi.k : real(SYS.kv[Dim[2, i_i]])
             # Compute Vc for upper triangular part
-            Vc[i_f, i_i] = kernel(kf, ki, Ec, qn, SYS, IA, CH, IH[Dimf.iIH], IH[Dimi.iIH], VVertex)::ComplexF64
+            Vc[i_f, i_i] = kernel(kf, ki, Ec, qn, SYS, IA, CH, IHf, IHi, VVertex)::ComplexF64
             #@show Vc[i_f, i_i] 
             #exit()
 
             # Compute Gc and II only on the diagonal
             if i_i == i_f
-                Gc[i_f, i_i] = propagator(kf, SYS.kv, Dimf.w, SYS.wv, Ec, Np, CH, IH[Dimf.iIH], Dimf.Dimo, lRm, eps)
+                w = Dim[3, i_f] == 1 ? 0. : real(SYS.wv[Dim[2, i_f]])
+                Gc[i_f, i_i] = propagator(kf, SYS.kv, w, SYS.wv, Ec, Np, CH, IHf, Dim[3, i_f], lRm, eps)
                 II[i_f, i_i] = 1.0
             end
         end
@@ -638,11 +643,11 @@ function fVGI(Ec, qn, SYS, IA, CH, IH, VVertex, lRm, eps)
 
 
     # Populate lower triangular part of Vc based on conjugate symmetry
-    for i_f = 2:Nt
-        Dimf_IH = IH[Dim[i_f].iIH]
+    for i_f in 2:Nt
+        Dimf_IH = IH[Dim[1, i_f]]
 
-        for i_i = 1:i_f-1
-            Dimi_IH = IH[Dim[i_i].iIH]
+        for i_i in 1:i_f-1
+            Dimi_IH = IH[Dim[1, i_i]]
 
             if Dimf_IH.iCH != Dimi_IH.iCH
                 Vc[i_f, i_i] = conj(Vc[i_i, i_f])
@@ -667,9 +672,9 @@ function M2_channel(T, CH, IH)
     for iCHf in 1:NCH
         for iCHi in 1:NCH
             for f in CH[iCHf].IHb:CH[iCHf].IHe, i in CH[iCHi].IHb:CH[iCHi].IHe
-                if IH[f].Dimo == 1 && IH[i].Dimo == 1
-                    resM2[iCHf, iCHi] += abs2(T[IH[f].Dime, IH[i].Dime])
-                end
+                #if IH[f].Dimo == 1 && IH[i].Dimo == 1
+                resM2[iCHf, iCHi] += abs2(T[IH[f].Dime, IH[i].Dime])
+                #end
             end
         end
     end
@@ -679,16 +684,10 @@ end
 # Show  informations ->res
 function showSYSInfo(Range, qn, IA, CH, IH)
 
-    dashline = repeat('-', 70)
-    println(dashline)
-    @printf("I(J,P)= %1d(%1d,%2d)\n", qn.I, qn.J, qn.P)
-    for ih in eachindex(IH)
-        @printf("%-15s: %2d/%1d, %2d/%1d \n", String(CH[IH[ih].iCH].p[1]) * ":" * String(CH[IH[ih].iCH].p[2]), IH[ih].hel[1],
-            IH[ih].helh[1], IH[ih].hel[2], IH[ih].helh[2])
-    end
+    dashline = repeat('-', 90)
     Nc = eachindex(CH)
     println(dashline)
-    @printf("%-15s\n", "channel")
+    @printf("%-16s%-15s\n", "channel","number of exchanges", )
 
     for i1 in Nc
         @printf("%-15s", String(CH[i1].p[1]) * ":" * String(CH[i1].p[2]))
@@ -697,6 +696,23 @@ function showSYSInfo(Range, qn, IA, CH, IH)
         end
         @printf(";  cutoff = %5.3f GeV\n", CH[i1].cutoff)
     end
+    println(dashline)
+         P = if isdefined(qn, :P) && !isnothing(qn.P)
+           qn.P == 1 ? "+" : qn.P == -1 ? "-" : " "
+       else
+           " "
+       end
+     C = if isdefined(qn, :C) && !isnothing(qn.C)
+           qn.C == 1 ? "+" : qn.C == -1 ? "-" : " "
+       else
+           " "
+       end
+    println("I(J,P,C)=$(qn.I)($(qn.J)/$(qn.Jh),$P,$C): independent helicities")
+    for ih in eachindex(IH)
+        @printf("%-15s: %2d/%1d, %2d/%1d \n", String(CH[IH[ih].iCH].p[1]) * ":" * String(CH[IH[ih].iCH].p[2]), IH[ih].hel[1],
+            IH[ih].helh[1], IH[ih].hel[2], IH[ih].helh[2])
+    end
+
     println(dashline)
     println("ER=$(Range.ERmax) to $(Range.ERmin) GeV, NER=$(Range.NER)  ;   EI=$(Range.EIt*1e3) MeV, NEI=$(Range.NEI)")
     println(dashline)
@@ -720,93 +736,224 @@ function showPoleInfo(qn, Ec, reslog, filename)
     end
 
 
-    dashline = repeat('-', 70)
+    dashline = repeat('-', 90)
     println(dashline)
-    println("I(J,P)=$(qn.I)($(qn.J),$(qn.P))  pole= $Ampmin at $(Ampminx * 1e3), $Ampminy")
+     P = if isdefined(qn, :P) && !isnothing(qn.P)
+           qn.P == 1 ? "+" : qn.P == -1 ? "-" : " "
+       else
+           " "
+       end
+     C = if isdefined(qn, :C) && !isnothing(qn.C)
+           qn.C == 1 ? "+" : qn.C == -1 ? "-" : " "
+       else
+           " "
+       end
+    println("I(J,P,C)=$(qn.I)($(qn.J)/$(qn.Jh),$P,$C)  pole= $Ampmin at $(Ampminx * 1e3), $Ampminy")
     println(dashline)
     return Ampmin, Ampminx, Ampminy
 end
 # Calculate the rescattering process   ->resc
 function resc0(Range, iER, qn, SYS, IA, CH, IH, VVertex, eps)
-    Ect = ComplexF64[] # Array to store complex total energy Ec=ER+EI*im
-    reslogt = Float64[] # Array to store log|1-VG|
+    # ⚠ 复制 IH 防止并行修改共享引用
+    IH_local = deepcopy(IH)
+
+    Ect = ComplexF64[]        # 复数能量
+    reslogt = Float64[]       # log|1 - VG|
     Dim = nothing
     TG = nothing
     NCH = length(CH)
     resM2 = zeros(Float64, NCH, NCH)
-    ER = Range.ERmax - iER * (Range.ERmax - Range.ERmin) / (Range.NER - 1) # Calculate ER
 
+    # 计算 ER
+    ER = Range.ERmax - (iER - 1) * (Range.ERmax - Range.ERmin) / (Range.NER - 1)
 
-    EI = 0.0
-    if Range.Ep[1] == "L" #here, we use the pL, so should be transfered to ER
-        PL = Range.ERmax - iER * (Range.ERmax - Range.ERmin) / (Range.NER - 1)# Calculate ER
+    # 如果使用 PL 方案，则转换 ER
+    if Range.Ep[1] == "L"
+        PL = Range.ERmax - iER * (Range.ERmax - Range.ERmin) / (Range.NER - 1)
         ER = sqrt((sqrt(PL^2 + p[Range.Ep[2]].m^2) + p[Range.Ep[3]].m)^2 - PL^2)
     end
+
+    # 循环虚部 EI
     NEI = Range.NEI
     for iEI in -NEI:NEI
-        if NEI != 0
-            EI = iEI * Range.EIt / NEI
-        end
+        EI = (NEI != 0) ? iEI * Range.EIt / NEI : 0.0
         Ec = ER + EI * im
-        Vc, Gc, II, IH, Dim = fVGI(Ec, qn, SYS, IA, CH, IH, VVertex, qn.lRm, eps) # Calculate the V, G, and unit matrix II
+
+        # 调用 fVGI 时使用本地 IH_local，避免 race condition
+        Vc, Gc, II, IH_local, Dim = fVGI(Ec, qn, SYS, IA, CH, IH_local, VVertex, qn.lRm, eps)
         VGI = II - Vc * Gc
-        detVGI = det(VGI)   # Compute determinant of (1 - VGc)
+        detVGI = det(VGI)
         logdetVGI = log(abs(detVGI)^2)
+
         push!(Ect, Ec)
         push!(reslogt, logdetVGI)
+
+        # 仅在 EI=0 时计算 T、TG 和 resM2
         if iEI == 0
             T = inv(VGI) * Vc
             TG = T * Gc
-            resM2 = M2_channel(T, CH, IH)
+            resM2 = M2_channel(T, CH, IH_local)
         end
     end
 
+    # 如果使用 PL，替换第一个能量
     if Range.Ep[1] == "L"
         Ect[1] = PL
     end
-    return Ect, reslogt, resM2, IH, Dim, TG
+
+    return Ect, reslogt, resM2, IH_local, Dim, TG
 end
-#* parallel computation based on res0
-function resc(Sys, qn, Range, channels, Ff, cutoff, VVertex; Np=10, Nx=10, Nphi=5, eps=+1e-4im)
-    # Initialize the qBSE system:
-    # Generate the SYS struct which contains channel information, independent amplitudes, and interaction kernelI
+# parallel calculation 
+function worker_resc(r_range, Range, iER_start, qn, SYS, IA, CH, IH, VVertex, eps, progressbar)
+    # r_range 是迭代范围，iER_start 是起始索引（用于回调）
+
+    Ec_local = ComplexF64[]
+    ER_local = Float64[]
+    reslog_local = Float64[]
+    resM2_local = Matrix{Float64}[]  # 应该是 Vector{Matrix{Float64}}
+    TGt_local = Matrix{ComplexF64}[]
+    IHt_local = Vector{structIndependentHelicity}[]
+    Dimt_local = Matrix{Int64}[]
+
+    # 进度条回调函数（仅在工作进程2且需要进度条时有效）
+    function progress_callback(pb, idx)
+        ProgressBars.update(pb)
+    end
+
+    # 根据工作进程ID和progressbar标志决定是否创建进度条
+    if myid() == 2 && progressbar
+        # 需要知道总迭代次数，这里使用r_range的长度
+        pb = ProgressBar(collect(r_range))  # 创建进度条
+        callback = i -> progress_callback(pb, i)  # 回调函数
+    else
+        callback = _ -> nothing
+    end
+
+    for (local_idx, iER) in enumerate(r_range)
+        res0 = resc0(Range, iER, qn, SYS, IA, CH, deepcopy(IH), VVertex, eps)
+
+        append!(Ec_local, res0[1])
+        append!(reslog_local, res0[2])
+        push!(resM2_local, res0[3])
+        push!(ER_local, real(res0[1][1]))
+        push!(IHt_local, res0[4])
+        push!(Dimt_local, res0[5])
+        push!(TGt_local, res0[6])
+
+        # 回调更新进度条，传入全局索引
+        callback(iER_start + local_idx - 1)
+    end
+
+    # 返回块起始索引 + 本块结果，确保顺序可控
+    return (iER_start, Ec_local, reslog_local, resM2_local,
+        ER_local, IHt_local, Dimt_local, TGt_local)
+end
+function paddingshare(TGt_vec::Vector{Matrix{ComplexF64}})
+    # 找出最大维度
+    max_dim = maximum(size(m, 1) for m in TGt_vec)
+    N_total = length(TGt_vec)
+    TGt_padded = zeros(ComplexF64, max_dim, max_dim, N_total)
+    # 记录实际矩阵维度
+    valid_dims = Vector{Int}(undef, N_total)
+    # 多线程填充
+    Threads.@threads for i in 1:N_total
+        src = TGt_vec[i]
+        r, c = size(src)
+        valid_dims[i] = r
+        copyto!(view(TGt_padded, 1:r, 1:c, i), src)
+    end
+    # 清理原向量
+    TGt_vec = nothing
+    TGt_shared = SharedArray(TGt_padded)
+    TGt_padded = nothing
+    return TGt_shared, valid_dims
+end
+function dim_to_3d_filled(Dimt::Vector{Matrix{Int}})
+    n_vectors = length(Dimt)
+    if n_vectors == 0
+        return Array{Int}(undef, 3, 0, 0)
+    end
+    # 找最大 Nt
+    max_len = maximum(size(m, 2) for m in Dimt)
+    # 分配
+    result = zeros(Int, 3, max_len, n_vectors)
+    @inbounds for k in eachindex(Dimt)
+        mat = Dimt[k]          # 3 × Nt
+        Nt = size(mat, 2)
+        result[:, 1:Nt, k] .= mat
+    end
+    Dim = SharedArray(result)
+    return Dim
+end
+function resc(Sys, qn, Range, channels, Ff, cutoff, VVertex; Np=10, Nx=10, Nphi=5, eps=+1e-4im, progressbar=true)
+
+    # -------------------------
+    # 初始化系统
+    # -------------------------
     SYS, IA, CH, IH = preprocessing(Sys, qn, channels, Ff, cutoff, Np, Nx, Nphi)
 
-    # Arrays to store pole search recsults
-    Ec = ComplexF64[]      # Complex energy E = ER + i EI
-    ER = Float64[]         # Real part of the energy
-    reslog = Float64[]     # log|1 - VG|
-    resM2 = Matrix{Float64}[]  # |M|^2 matrix at each energy point
-    TGt, IHt, Dimt = Matrix{ComplexF64}[], Vector{structIndependentHelicity}[], Vector{structDimension}[]
-    Nprocs = nworkers()  # Number of worker processes
+    Ec = ComplexF64[]
+    ER = Float64[]
+    reslog = Float64[]
+    resM2 = Matrix{Float64}[]  # Vector{Matrix{Float64}}
+    TGt = Matrix{ComplexF64}[]
+    IHt = Vector{structIndependentHelicity}[]
+    Dimt = Matrix{Int}[]
 
-    # Display system details
     showSYSInfo(Range, qn, IA, CH, IH)
 
-    # Loop over energy grid and compute pole information in parallel
-    for iER0 in ProgressBar(0:Range.NER÷Nprocs-1)  # Loop over real energy bins
-        results = pmap(i -> resc0(Range, iER0 * Nprocs + i - 1, qn, SYS, IA, CH, IH, VVertex, eps), 1:Nprocs)
-        for res0 in results
-            append!(Ec, res0[1])           # Complex pole position
-            append!(reslog, res0[2])       # log|1 - VG|
-            push!(resM2, res0[3])          # |M|^2 matrix
-            push!(ER, real(res0[1][1])) #ER 顺序是从大到小
-            push!(IHt, res0[4])  # IH 
-            push!(Dimt, res0[5]) # Dim
-            push!(TGt, res0[6]) #TG
-        end
+    # -------------------------
+    # 分块并行设置
+    # -------------------------
+    Ntot = Range.NER
+    num_workers = nworkers()
+    nevt_per_worker = div(Ntot, num_workers)
+    # 确保覆盖所有索引
+    ranges = []
+    start_indices = []
+    for i in 0:(num_workers-1)
+        start_idx = i * nevt_per_worker + 1
+        end_idx = (i == num_workers - 1) ? Ntot : (i + 1) * nevt_per_worker
+        push!(ranges, start_idx:end_idx)
+        push!(start_indices, start_idx)
     end
 
-    # Save spectrum results
-    open("res/" * Sys * ".txt", "w") do f
-        # 打开文件写入模式会自动清空内容
+    # 使用pmap并行计算
+    results = pmap(1:num_workers) do worker_id
+        worker_resc(ranges[worker_id], Range, start_indices[worker_id],
+            qn, SYS, IA, CH, IH, VVertex, eps,
+            progressbar && worker_id == 1)  # 只在第一个工作进程显示进度条
     end
-    #--------------------------------------------------------------------
-    # Save pole information and log|1 - VG| for plotting
+
+    # -------------------------
+    # 主进程合并 (按块 start 索引排序)
+    # -------------------------
+    sort!(results, by=x -> x[1])  # 按块起始 iER 排序
+    for block in results
+        append!(Ec, block[2])
+        append!(reslog, block[3])
+        append!(resM2, block[4])
+        append!(ER, block[5])
+        append!(IHt, block[6])
+        append!(Dimt, block[7])
+        append!(TGt, block[8])
+    end
+
+    # -------------------------
+    # 后处理
+    # -------------------------
+    # 确保输出目录存在
+    mkpath("res")
+
+    open("res/" * Sys * ".txt", "w") do f
+    end
     showPoleInfo(qn, Ec, reslog, "res/output.txt")
+    
+    #填充成array
+    TGt = paddingshare(TGt)
+    Dimt = dim_to_3d_filled(Dimt)
 
     return Ec, reslog, resM2, ER, IHt, Dimt, TGt, SYS, IA, CH, IH
-    #return ER, IHt, Dimt, TGt, SYS, IA, CH, IH
 end
 #------------------------------------------------------------------------------------------
 # functions used to calculate the cross section.
@@ -878,16 +1025,19 @@ function proc(pf, pin, amps)
 end
 #------------------------------------------------------------------------------------------
 # Get the corresponding IH and Dim for the given case. Note: Interpolation is not performed here simultaneously, as it may cause memory leaks for unknown reasons. -> setTGA
-function IHDim(E, Et, Range, Tt, IHt, Dimt)
+function IHDim(E, Et, Range, TGt, IHt, Dimt)
     ii = Range.NER - Xs.Nsij(E, Range.ERmin, Range.ERmax, Range.NER - 1)
     Emin, Emax = Et[ii+1], Et[ii]
-    Tmin, Tmax = Tt[ii+1], Tt[ii]
-    if size(Tmin) == size(Tmax)
-        return IHt[ii], Dimt[ii]
+    dmin, dmax = TGt[2][ii+1], TGt[2][ii]
+    if dmin == dmax
+        #Tmin, Tmax = TGt[ii+1], TGt[ii]
+        #if size(Tmin) == size(Tmax)
+
+        return IHt[ii], Dimt[:, :, ii]
     else
         mid = 0.5 * (Emin + Emax)
         idx = (E < mid) + 1
-        return IHt[ii+idx-1], Dimt[ii+idx-1]
+        return IHt[ii+idx-1], Dimt[:, :, ii+idx-1]
     end
 end
 # Frame transition from the static frame of total system  to  cms of two partilce. -> setTGA
@@ -932,8 +1082,7 @@ function LorentzBoostRotation(k, tecm, p1, p2)
     return knew, Pnew
 end
 #* set the frame and other things for calculating TGA    The output will flow to -> TGA
-function setTGA(para, data, k, tecm, i, j)
-    para = merge(para, data)
+function setTGA(para, k, tecm, i, j)
     wij = sqrt((k[i] + k[j]) * (k[i] + k[j]))
     IHt, Dimt, TGt, Et, Range = para.IHt, para.Dimt, para.TGt, para.Et, para.Range
     IH, Dim = IHDim(wij, Et, Range, TGt, IHt, Dimt)
@@ -975,8 +1124,12 @@ function TGA(para, cfinal, cinter, ranges)
     # Interpolation: placing interpolation here helps prevent memory leaks
     ii = Range.NER - Xs.Nsij(E, Range.ERmin, Range.ERmax, Range.NER - 1)
     Emin, Emax = Et[ii+1], Et[ii]
-    Tmin, Tmax = TGt[ii+1], TGt[ii]
-    TeT = size(Tmin) == size(Tmax)
+    dmin, dmax = TGt[2][ii+1], TGt[2][ii]
+    Tmin, Tmax = view(TGt[1], :, :, ii + 1), view(TGt[1], :, :, ii)
+    TeT = dmin == dmax
+    #Tmin, Tmax = TGt[ii+1], TGt[ii]
+    #TeT = size(Tmin) == size(Tmax)
+
     if TeT
         inv_dE = 1.0 / (Emax - Emin)
         ww = (E - Emin) * inv_dE
@@ -984,11 +1137,13 @@ function TGA(para, cfinal, cinter, ranges)
     else
         mid = 0.5 * (Emin + Emax)
         idx = (E < mid) + 1
-        TG = TGt[ii+idx-1]
+        TG = view(TGt[1], :, :, ii + idx - 1)
+        #TG = TGt[ii+idx-1]
+
     end
 
     # Independent helicities for final states
-    CHf = CH[SYS.channel[cfinal]]
+    CHf = CH[cfinal isa String ? SYS.channel[cfinal] : cfinal]
     IHfb, IHfe = CHf.IHb, CHf.IHe
     # Rank of dimensions for intermediate state
 
@@ -1010,7 +1165,9 @@ function TGA(para, cfinal, cinter, ranges)
             l = collect(l)
             TGA = 0.0
             for cinter0 in cinter
-                CHc = CH[SYS.channel[cinter0.ch]]
+                #CHc = CH[SYS.channel[cinter0.ch]]
+                ch = cinter0.ch
+                CHc = CH[ch isa String ? SYS.channel[ch] : ch]
                 m1, m2 = CHc.m[1], CHc.m[2]
                 @inbounds for iIHc in CHc.IHb:CHc.IHe
                     IHc = IH[iIHc]
@@ -1022,7 +1179,8 @@ function TGA(para, cfinal, cinter, ranges)
                     lp = build_full_idx(l, resc, [la, lb], length(ranges))
                     lm = build_full_idx(l, resc, [-la, -lb], length(ranges))
                     @inbounds for iDim in IHc.Dimb:IHc.Dime
-                        kc = real(Dim[iDim].k)
+
+                        kc = Dim[3, iDim] == 1 ? real(IHc.k) : real(SYS.kv[Dim[2, iDim]])
                         Eon = sqrt(kc^2 + (m1 > m2 ? m1^2 : m2^2))  # 较重粒子能量
                         E1 = m1 > m2 ? Eon : E - Eon                # 粒子1能量
                         E2 = m1 > m2 ? E - Eon : Eon                # 粒子2能量

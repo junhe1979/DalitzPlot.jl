@@ -23,7 +23,6 @@
   - [Data Structures for the Dimensions](#data-structures-for-the-dimensions)
     - [`structChannel`](#structchannel)
     - [`structIndependentHelicity`](#structindependenthelicity)
-    - [`structDimension`](#structdimension)
   - [Additional Data Structures](#additional-data-structures)
     - [`structMomentum`](#structmomentum)
     - [`structHelicity`](#structhelicity)
@@ -39,7 +38,7 @@
     - [auxiliary function](#auxiliary-function)
     - [`function resc0(Range, iER, qn, SYS, IA, CH, IH, VVertex; eps)`](#function-resc0range-ier-qn-sys-ia-ch-ih-vvertex-eps)
     - [`function resc(Sys, qn, Range, channels, Ff, cutoff, VVertex; Np=10, Nx=10, Nphi=5,eps=+1e-4im)`](#function-rescsys-qn-range-channels-ff-cutoff-vvertex-np10-nx10-nphi5eps1e-4im)
-    - [`function simpleXsection(ER, resM2, CH, qn; Ep="cm")`](#function-simplexsectioner-resm2-ch-qn-epcm)
+    - [`function simpleXsection(ER, resM2, CH, qn; Ep=("cm",))`](#function-simplexsectioner-resm2-ch-qn-epcm)
     - [`function lambda(m1, m2, m3)`](#function-lambdam1-m2-m3)
   - [Decay](#decay)
     - [`function proc(pf, pin, amps)`](#function-procpf-pin-amps)
@@ -898,9 +897,9 @@ The `struct structSys` (often referenced as `SYS` in the code) stores informatio
 - `d::Vector{Matrix{Float64}}`: Precomputed Wigner $d$-matrices of $\theta$.
 - `pv::Vector{Float64}`, `wpv::Vector{Float64}`: Discretized azimuthal angles and weight of $\phi$ discretization.
 - `sp::Vector{Float64}`, `cp::Vector{Float64}`: Sine values and Cosine values of the discretized $\phi$ angles.
-- `cutoff_re_type::String`: The type of cutoff used for the exponential regularization of the constituent particles. Use `"Lambda"` for a fixed $\Lambda$, `"alpha"` for $\Lambda = m + 0.22 \alpha$, where $m$ is the mass of the exchanged meson, and `"alpha_light"` for using the mass of the light meson.
+- `cutoff_re_type::String`: The type of cutoff used for the exponential regularization of the constituent particles. Use `:Lambda` for a fixed $\Lambda$, `:alpha` for $\Lambda = m + 0.22 \alpha$, where $m$ is the mass of the exchanged meson, and `:alpha_light` for using the mass of the light meson.
 - `cutoff_ex::Float64`, `cutoff_ex_type::String`, `FF_ex_type::Int64`: The value and type of cutoff for the exchanged meson, and the type of the form factor applied to the exchanged meson.
-- `channel::string,Int64}`: A dictionary storing the mapping between particle pairs and their corresponding channel number.
+- `channel::Dict{String,Int64}`: A dictionary storing the mapping between particle pairs and their corresponding channel number.
 
 
 ### `structInterAction`
@@ -932,24 +931,28 @@ These definitions ensure that each channel's quantum numbers and relevant parame
 
 ### `structIndependentHelicity`
 
-The `mutable struct structIndependentHelicity` structure defines the independent helicity states in the qBSE package, commonly referenced as `IH` in the code. Its fields are:
+The `mutable struct structIndependentHelicity` defines the independent helicity states in the qBSE package, commonly referred to as `IH` in the code. Its fields are:
 
 - `iCH::Int64`: Index of the channel to which this independent helicity belongs.
-- `hel::Tuple{Int64,Int64}`, `helh::Tuple{Int64,Int64}`: Vector of helicity values for the independent helicity states, with `helh` indicating whether each helicity state corresponds to a fermion or boson.
-- `Dimb::Int64`, `Dime::Int64`, `Dimn::Int64` for the starting index, ending index, and total count of independent helicities (i.e., the dimension range).
-- `Dimo::Int64`: Indicates whether an extra on-shell dimension is present (`+1` if $W > \sum m$, otherwise `0`). The total number of momentum discretization points for an independent helicity is `Np + Dimo`.
+- `hel::Tuple{Int64,Int64}`, `helh::Tuple{Int64,Int64}`: Tuples containing the helicity values and corresponding fermion/boson indicators for the independent helicity states, respectively.
+- `Dimb::Int64`, `Dime::Int64`: The starting and ending indices, defining the dimension range for this helicity state.
+- `k::ComplexF64`, `w::Float64`: The discretized momentum value and its associated integration weight, used in numerical quadrature.
 
-These fields help manage the indexing and dimensionality of helicities, especially when handling on-shell and off-shell contributions in the qBSE framework.
+These fields facilitate the indexing and dimensionality management of helicities, particularly in handling both on-shell and off-shell contributions within the qBSE framework.
 
-### `structDimension`
+---
 
-The `mutable struct structDimension` structure stores information about each dimension in total matrix. Its fields are:
+`Dim::Matrix{Int64, 3, N}` and `Dimt::Array{Int64, 3, N, NE}`
 
-- `iIH::Int64`: Index indicating which independent helicity this dimension belongs to.
-- `k::ComplexF64`, `w::Float64`: The discretized momentum value and its corresponding integration weight for this dimension (used in numerical integration).
-- `Dimo::Int64`: Indicates whether an extra on-shell dimension is present (`+1` if $W > \sum m$, otherwise `0`). The total number of discretization points for an independent helicity is `Np + Dimo`.
+The `Dim` matrix stores three pieces of information for each dimension in the total matrix:
 
-This structure is auxiliary one to above structures and ensures that each discretized momentum point is properly associated with its helicity and integration weight, supporting accurate matrix construction and numerical calculations in the qBSE framework.
+- Element 1: Index of the independent helicity to which this dimension belongs.
+- Element 2: Sequential order of this dimension within its corresponding helicity.
+- Element 3: Indicator for an extra on-shell dimension (`+1` if $W > \sum m$, otherwise `0`).
+
+Here, `N` denotes the total number of dimensions, and `NE` represents the number of energy points. The `Dimt` array extends this structure across multiple energy points.
+
+These auxiliary data structures ensure proper association between each discretized momentum point and its corresponding helicity and integration weight, thereby enabling accurate matrix construction and numerical computations in the qBSE framework.
 
 
 ## Additional Data Structures
@@ -1026,7 +1029,7 @@ This function is designed to be called within `res` to prepare the system and ch
 - `qn`: Quantum numbers for the process, and labels for Riemann sheets.
 - `channels`: List of channels to be included in the calculation, stored in `IA[]`.
 - `Ff`: Flavor factors, stored in `IA[]`.
-- `cutoff`: A `NamedTuple` for the last four keys of `structSys`. The user may provide only the required fields; the omitted ones will be set to default as `cutoff = (cutoff_re_type = "Lambda", cutoff_ex = 0.0, cutoff_ex_type = "Lambda", FF_ex_type = 3)`.
+- `cutoff`: A `NamedTuple` for the last four keys of `structSys`. The user may provide only the required fields; the omitted ones will be set to default as `cutoff = (cutoff_re_type = :Lambda, cutoff_ex = 0.0, cutoff_ex_type = :Lambda, FF_ex_type = 3)`.
 - `Np`, `Nx`, `Nphi`: Number of momentum discretization points, $\cos\theta$ discretization points , azimuthal angle discretization points.
 
 Example for arguments:
@@ -1035,7 +1038,7 @@ Example for arguments:
     if Sys == "KNcp"
         qn = (I=1, Ih=1, J=1, Jh=2, P=-1, C=-1, lRm=1)
         Range = (ERmin=1.2, ERmax=2.0, NER=200, EIt=0.200, NEI=20, Ep=("cm",))
-        cutoff = (cutoff_re_type="alpha_light",)
+        cutoff = (cutoff_re_type=:alpha_light,)
         channels = (
             ("K_b0:N_p", 1.63),
             ("pi_0:Sigma_p", 1.63),
@@ -1061,7 +1064,7 @@ Example for arguments:
 - `CH::Vector{structChannel}`: The processed channel objects, each describing a physical channel.
 - `IH::Vector{structIndependentHelicity}`: The processed independent helicity objects, ready for use in qBSE calculations.
 
-### `function FFre(k, cutoffi, cutofff; cutoff_re_type="Lambda", CHi=nothing, CHf=nothing, key_ex=0)`
+### `function FFre(k, cutoffi, cutofff; cutoff_re_type=:Lambda, CHi=nothing, CHf=nothing, key_ex=0)`
 
 In the `fV` function, form factors for constituent partilces can be included via the auxiliary function `FFre` for the regulization, which is used to regulate the interaction kernel.
 
@@ -1069,7 +1072,7 @@ In the `fV` function, form factors for constituent partilces can be included via
 
 - `k::structMomentum`: The kinematic information for the process.
 - `cutoffi::Float64`, `cutofff::Float64`: Cutoff parameters for the initial and final particles, typically set as `cutoffi = CHi.cutoff`, `cutofff = CHf.cutoff`.
-- `cutoff_re_type`: The type of cutoff used for the exponential regularization of the constituent particles. Use `"Lambda"` for a fixed $\Lambda$, `"alpha"` for $\Lambda = m + 0.22 \alpha$, where $m$ is the mass of the exchanged meson, and `"alpha_light"` for using the mass of the light meson.
+- `cutoff_re_type`: The type of cutoff used for the exponential regularization of the constituent particles. Use `:Lambda` for a fixed $\Lambda$, `:alpha` for $\Lambda = m + 0.22 \alpha$, where $m$ is the mass of the exchanged meson, and `:alpha_light` for using the mass of the light meson.
 - `CHi,CHf`,`ex::Int64`: Used for the type `alpha_light` and `alpha`, respectively.
 - `key_ex::Int64`: Index of the exchanged particle, usually set as `key_ex = IA0.key_ex[le]`, where `le` runs over the exchanged mesons in `1:IA0.Nex`.
 
@@ -1077,7 +1080,7 @@ In the `fV` function, form factors for constituent partilces can be included via
 
 These options allow flexible control over the inclusion and type of form factors in the potential kernel, supporting different regularization schemes as needed for the physical system under study.
 
-### `function propFFex(k, key_ex, cutoff; cutoff_ex_type="Lambda", FF_ex_type=3)`
+### `function propFFex(k, key_ex, cutoff; cutoff_ex_type=:Lambda, FF_ex_type=3)`
 
 In the `fV` function, form factors for the exchanged mesons can be included via the auxiliary function `propFFex`.
 
@@ -1086,7 +1089,7 @@ In the `fV` function, form factors for the exchanged mesons can be included via 
 - `k::structMomentum`: The kinematic information for the process.
 - `ex::Int64`: Index of the exchanged particle, usually set as `ex = IA0.key_ex[le]`, where `le` runs over the exchanged mesons in `1:IA0.Nex`.
 - `cutoff::Float64`: The cutoff parameter for the exchanged meson, often chosen as the same as the regulations.
-- `cutoff_ex_type`: The type of cutoff used for the exchanged mesons. Use `"Lambda"` for a fixed $\Lambda$, `"alpha"` for $\Lambda = m + 0.22 \alpha$, where $m$ is the mass of the exchanged meson.
+- `cutoff_ex_type`: The type of cutoff used for the exchanged mesons. Use `:Lambda` for a fixed $\Lambda$, `:alpha` for $\Lambda = m + 0.22 \alpha$, where $m$ is the mass of the exchanged meson.
 - `FF_ex_type::Int64`: Type of form factor for the exchanged meson:
   - `0`: No form factor.
   - `1`: $\frac{L^2 - m^2}{L^2 - q^2}$
@@ -1166,7 +1169,7 @@ This function, which employs parallel computation to model the rescattering proc
 - `Range`: The range of energies to be considered. For example `Range = (ERmin=1.2, ERmax=2.0, NER=200, EIt=0.200, NEI=20, Ep="cm")`
 - `channels`: List of channels to be included in the calculation, stored in `IA[]`.
 - `Ff`: Flavor factors, stored in `IA[]`.
-- `cutoff`: A `NamedTuple` for the last four keys of `structSys`. The user may provide only the required fields; the omitted ones will be set to default as `cutoff = (cutoff_re_type = "Lambda", cutoff_ex = 0.0, cutoff_ex_type = "Lambda", FF_ex_type = 3)`.
+- `cutoff`: A `NamedTuple` for the last four keys of `structSys`. The user may provide only the required fields; the omitted ones will be set to default as `cutoff = (cutoff_re_type = :Lambda, cutoff_ex = 0.0, cutoff_ex_type = :Lambda, FF_ex_type = 3)`.
 - `Np`, `Nx`, `Nphi`: Number of momentum discretization points, $\cos\theta$ discretization points , azimuthal angle discretization points.
 
 **Returns:**

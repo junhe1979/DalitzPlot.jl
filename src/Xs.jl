@@ -207,6 +207,12 @@ function worker_Xsection(tecm, proc, axes, Range, nevt, Nbin, para, p0, stype, p
     return Xsection(tecm, proc, callback, axes=axes, Range=Range, nevtot=nevt, Nbin=Nbin, para=para, p0=p0, stype=stype)
 end
 function Xsection(tecm, proc; axes=[], Range=[], nevtot=Int64(1e6), Nbin=100, para=(l = 1.0), p0=[], stype=1, progressbar=true)
+    println(repeat('-', 70))
+    printstyled("⚙️ Current parameters:"; color=:blue)
+    println()
+    @show p0
+    printstyled("⚙️ Calculating cross section:"; color=:blue)
+    println()
     num_workers = nworkers()
     nevt_per_worker = div(nevtot, num_workers)
     ranges = [(i * nevt_per_worker + 1, Base.min((i + 1) * nevt_per_worker, nevtot)) for i in 0:(num_workers-1)]

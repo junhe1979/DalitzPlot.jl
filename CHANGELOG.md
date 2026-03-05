@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.4.1] - 2026-03-05
+
+### Changed
+
+- **Performance Optimization**: Refactored `structDimension` from a struct to a matrix to improve runtime efficiency.
+- **Broadcasting Enhancement**: Refactored the `resc` function and applied padding to the `Dimt` and `TGt` variables to enable efficient broadcasting. These variables can now be broadcast quickly using methods such as `@everywhere const para_g = $para`.
+- **Output Formatting**: Enhanced the output format for improved readability and visual appeal.
+
+### Removed
+
+- **Code Cleanup**: Removed the unused fields `Dimn` and `Dimo` from `structIndependentHelicity` to streamline the codebase.
+
 ## [0.4.0] - 2026-02-28
 
 ### Changed
