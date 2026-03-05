@@ -1,5 +1,5 @@
 module PLOT
-using Plots, LaTeXStrings, Colors, Compose, DelimitedFiles
+using Plots, LaTeXStrings, Colors, Compose, DelimitedFiles, Printf
 function readdata(filename)
     data_groups = []              # Stores all data groups
     current_group = []           # Temporary storage for current data group
@@ -31,6 +31,9 @@ function readdata(filename)
     return data_groups
 end
 function plotD(res; cg=cgrad([:white, :green, :blue, :red], [0, 0.01, 0.1, 0.5, 1.0]), topx=[], topy=[], topye=[], rightx=[], righty=[], rightye=[], toprightx=[], toprighty=[], toprightye=[], filename="DP.pdf")
+    println(repeat('-', 90))
+    t_start = time_ns()
+    printstyled("⏳ Plotting... "; color=:blue)
     ENV["GKSwstype"] = "100"
     cs1 = res.cs1
     cs2 = res.cs2
@@ -148,6 +151,10 @@ function plotD(res; cg=cgrad([:white, :green, :blue, :red], [0, 0.01, 0.1, 0.5, 
     end
 
     Plots.savefig(filename)
+    t_end = time_ns()
+    elapsed_sec = (t_end - t_start) / 1e9
+    @printf("✅ Plotting completed successfully!  ⏱️ Total elapsed time: %.4f seconds\n", elapsed_sec)
+    println(repeat('-', 90))
     return DP
 end
 function plotWeb(res)

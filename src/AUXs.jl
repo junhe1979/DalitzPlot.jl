@@ -1,5 +1,5 @@
 module AUXs
-using Statistics, JLD2, Distributed, Distributions
+using Statistics, JLD2, Distributed, Distributions, Printf, Dates
 #############################################################################
 # Define a wrapper function that automatically merges fixed and free parameters
 # based on the mask, and extracts lower and upper bounds for free parameters
@@ -95,10 +95,10 @@ function significance(chi2_diff, ndf_diff::Int64)
     return sigma
 end
 #############################################################################
-function broadcast_variable(varname::Symbol, value; filename="temp.jld2", cleanup=true, threshold=10*1024*1024)  # 默认阈值10MB
+function broadcast_variable(varname::Symbol, value; filename="temp.jld2", cleanup=true, threshold=10 * 1024 * 1024)  # 默认阈值10MB
     # 估算变量大小（近似）
     approx_size = Base.summarysize(value)
-    
+
     if approx_size < threshold
         # 小变量：直接使用 @everywhere
         println("Variable size: $(approx_size) bytes < $(threshold) bytes, using @everywhere")
@@ -123,10 +123,56 @@ function broadcast_variable(varname::Symbol, value; filename="temp.jld2", cleanu
         end
         load_time = time() - timer
         println("Broadcast time: $(load_time)s")
-        
+
         cleanup && rm(filename, force=true)
     end
 end
 
+macro broadcast(expr)
+    quote
+        # 显示开始信息
+        printstyled("⏳ Broadcasting... "; color=:blue)
+        t_start = time_ns()
+        
+        # 执行传入的广播表达式
+        $(esc(expr))
+        
+        # 计算并显示结束信息
+        t_end = time_ns()
+        elapsed_sec = (t_end - t_start) / 1e9
+        @printf("✅ Broadcast finished successfully!     ⏱️ Total elapsed time: %.4f seconds\n", elapsed_sec)
+    end
+end
+
+
+macro run(ex)
+    quote
+        # 开始信息
+        println("╔════════════════════════════════════╗")
+        println("║     🚀 PROGRAM BEGINNING           ║")
+        println("╚════════════════════════════════════╝")
+        printstyled("Started at: ", now(); color=:cyan)
+        println(" \n")
+
+        # 记录开始时间
+        t_start = time_ns()
+
+        # 运行传入的表达式
+        result = $(esc(ex))
+
+        # 计算执行时间
+        t_end = time_ns()
+        elapsed_sec = (t_end - t_start) / 1e9
+
+        # 结束信息
+        @printf("⏱️  Total execution time: %.4f seconds\n", elapsed_sec)
+        printstyled("Ended at: ", now(); color=:cyan)
+        println()
+        println(repeat('-', 90))
+
+        # 返回表达式的执行结果
+        result
+    end
+end
 
 end

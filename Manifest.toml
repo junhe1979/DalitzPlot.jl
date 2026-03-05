@@ -2,7 +2,7 @@
 
 julia_version = "1.12.5"
 manifest_format = "2.0"
-project_hash = "2ba356d71c08ddeefbd52f2de6aa2c2a8598c337"
+project_hash = "85de36dab17eca0bd29c1d840a17e46738c6359a"
 
 [[deps.AliasTables]]
 deps = ["PtrArrays", "Random"]
@@ -121,10 +121,10 @@ uuid = "d38c429a-6771-53c6-b99e-75d170b6e991"
 version = "0.6.3"
 
 [[deps.DalitzPlot]]
-deps = ["Colors", "Compose", "DelimitedFiles", "Distributed", "Distributions", "FastGaussQuadrature", "JLD2", "LaTeXStrings", "LinearAlgebra", "Mmap", "Plots", "Printf", "ProgressBars", "ProgressMeter", "SharedArrays", "StaticArrays", "Statistics", "WignerD"]
+deps = ["Colors", "Compose", "Dates", "DelimitedFiles", "Distributed", "Distributions", "FastGaussQuadrature", "JLD2", "LaTeXStrings", "LinearAlgebra", "Mmap", "Plots", "Printf", "ProgressBars", "ProgressMeter", "SharedArrays", "StaticArrays", "Statistics", "WignerD"]
 path = "."
 uuid = "d7968580-7d6f-4f79-bc09-617baf523457"
-version = "0.4.0"
+version = "0.4.1"
 
 [[deps.DataAPI]]
 git-tree-sha1 = "abe83f3a2f1b857aac70ef8b269080af17764bbe"

@@ -707,7 +707,7 @@ function showSYSInfo(Range, qn, IA, CH, IH)
        else
            " "
        end
-    println("I(J,P,C)=$(qn.I)($(qn.J)/$(qn.Jh),$P,$C): independent helicities")
+    println("I(J,P,C)=$(qn.I)/$(qn.Ih)($(qn.J)/$(qn.Jh),$P,$C): independent helicities")
     for ih in eachindex(IH)
         @printf("%-15s: %2d/%1d, %2d/%1d \n", String(CH[IH[ih].iCH].p[1]) * ":" * String(CH[IH[ih].iCH].p[2]), IH[ih].hel[1],
             IH[ih].helh[1], IH[ih].hel[2], IH[ih].helh[2])
@@ -748,7 +748,7 @@ function showPoleInfo(qn, Ec, reslog, filename)
        else
            " "
        end
-    println("I(J,P,C)=$(qn.I)($(qn.J)/$(qn.Jh),$P,$C)  pole= $Ampmin at $(Ampminx * 1e3), $Ampminy")
+    println("I(J,P,C)=$(qn.I)/$(qn.Ih)($(qn.J)/$(qn.Jh),$P,$C)  pole= $Ampmin at $(Ampminx * 1e3), $Ampminy")
     println(dashline)
     return Ampmin, Ampminx, Ampminy
 end
