@@ -1,6 +1,6 @@
 name = "DalitzPlot"
 uuid = "d7968580-7d6f-4f79-bc09-617baf523457"
-version = "0.4.1"
+version = "0.4.2"
 authors = ["junhe@njnu.edu.cn"]
 
 [deps]
