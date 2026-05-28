@@ -1,5 +1,18 @@
 # Changelog
 
+
+## [0.4.3] - 2026-03-28
+
+### Added
+
+- Added a new default option to generate events using a fixed seed for each processor when `fixed=true` in the `Xs.Xsection` function. When `fixed=false`, true random generation is used.
+
+- Removed rotation in qBSE and modified the relevant code in `setTGA` and `TGA` functions accordingly.
+
+- Added a new parameter form in fitting, with the transformation provided in the `extract_parameters` function of the `AUxs` package.
+
+- The invaitant mass can be for more than two particle. For example `"p1:p2:p2"`.
+
 ## [0.4.1] - 2026-03-05
 
 ### Changed

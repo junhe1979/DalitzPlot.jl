@@ -17,6 +17,7 @@ struct structSys #SYS
     wpv::Vector{Float64} #weights of discreting
     sp::Vector{Float64} #sin phi
     cp::Vector{Float64} #cos phi
+    expphi::Matrix{Complex{Float64}}
     cutoff_re_type::Symbol
     cutoff_ex::Float64
     cutoff_ex_type::Symbol
@@ -231,12 +232,14 @@ function preprocessing(Sys, qn, channels, Ff, cutoff, Np, Nx, Nphi)
     wd = [wignerd(qn.J / qn.Jh, acos(xv[i])) for i in 1:Nx]
 
     pv, wpv = gausslegendre(Nphi)
-    pv = pi * (pv .+ 1.0)   # to [0, 2π]
-    wpv = wpv * pi
+    pv = pi .* (pv .+ 1.0)   # to [0, 2π]
+    wpv = wpv .* pi
 
-    sp = [sin(pv[i]) for i in 1:Nphi]
-    cp = [cos(pv[i]) for i in 1:Nphi]
-    SYS = structSys(Sys, kv, wv, xv, wxv, wd, pv, wpv, sp, cp,
+    sp = sin.(pv)
+    cp = cos.(pv)
+    expphi = [exp(-im * pv[i] * (iM - 1 - qn.J / qn.Jh)) for iM in 1:2*qn.J/qn.Jh+1, i in 1:Nphi]
+
+    SYS = structSys(Sys, kv, wv, xv, wxv, wd, pv, wpv, sp, cp, expphi,
         get(cutoff, :cutoff_re_type, :Lambda),
         get(cutoff, :cutoff_ex, 0.0),
         get(cutoff, :cutoff_ex_type, :Lambda),
@@ -474,7 +477,6 @@ function fV(k, l, SYS, IA0, CHf, CHi, VVertex)
         end
 
         fV = KerV  # Set final potential value
-
     end
 
     return fV  # Return computed potential
@@ -684,10 +686,10 @@ end
 # Show  informations ->res
 function showSYSInfo(Range, qn, IA, CH, IH)
 
-    dashline = repeat('-', 90)
+
     Nc = eachindex(CH)
-    println(dashline)
-    @printf("%-16s%-15s\n", "channel","number of exchanges", )
+    println(repeat('-', 90))
+    @printf("%-16s%-15s\n", "channel", "number of exchanges",)
 
     for i1 in Nc
         @printf("%-15s", String(CH[i1].p[1]) * ":" * String(CH[i1].p[2]))
@@ -696,26 +698,26 @@ function showSYSInfo(Range, qn, IA, CH, IH)
         end
         @printf(";  cutoff = %5.3f GeV\n", CH[i1].cutoff)
     end
-    println(dashline)
-         P = if isdefined(qn, :P) && !isnothing(qn.P)
-           qn.P == 1 ? "+" : qn.P == -1 ? "-" : " "
-       else
-           " "
-       end
-     C = if isdefined(qn, :C) && !isnothing(qn.C)
-           qn.C == 1 ? "+" : qn.C == -1 ? "-" : " "
-       else
-           " "
-       end
+    println(repeat('-', 81))
+    P = if isdefined(qn, :P) && !isnothing(qn.P)
+        qn.P == 1 ? "+" : qn.P == -1 ? "-" : " "
+    else
+        " "
+    end
+    C = if isdefined(qn, :C) && !isnothing(qn.C)
+        qn.C == 1 ? "+" : qn.C == -1 ? "-" : " "
+    else
+        " "
+    end
     println("I(J,P,C)=$(qn.I)/$(qn.Ih)($(qn.J)/$(qn.Jh),$P,$C): independent helicities")
     for ih in eachindex(IH)
         @printf("%-15s: %2d/%1d, %2d/%1d \n", String(CH[IH[ih].iCH].p[1]) * ":" * String(CH[IH[ih].iCH].p[2]), IH[ih].hel[1],
             IH[ih].helh[1], IH[ih].hel[2], IH[ih].helh[2])
     end
 
-    println(dashline)
+    println(repeat('-', 81))
     println("ER=$(Range.ERmax) to $(Range.ERmin) GeV, NER=$(Range.NER)  ;   EI=$(Range.EIt*1e3) MeV, NEI=$(Range.NEI)")
-    println(dashline)
+    println(repeat('-', 81))
 end
 function showPoleInfo(qn, Ec, reslog, filename)
     open(filename, "w") do f
@@ -736,20 +738,19 @@ function showPoleInfo(qn, Ec, reslog, filename)
     end
 
 
-    dashline = repeat('-', 90)
-    println(dashline)
-     P = if isdefined(qn, :P) && !isnothing(qn.P)
-           qn.P == 1 ? "+" : qn.P == -1 ? "-" : " "
-       else
-           " "
-       end
-     C = if isdefined(qn, :C) && !isnothing(qn.C)
-           qn.C == 1 ? "+" : qn.C == -1 ? "-" : " "
-       else
-           " "
-       end
+    println(repeat('-', 81))
+    P = if isdefined(qn, :P) && !isnothing(qn.P)
+        qn.P == 1 ? "+" : qn.P == -1 ? "-" : " "
+    else
+        " "
+    end
+    C = if isdefined(qn, :C) && !isnothing(qn.C)
+        qn.C == 1 ? "+" : qn.C == -1 ? "-" : " "
+    else
+        " "
+    end
     println("I(J,P,C)=$(qn.I)/$(qn.Ih)($(qn.J)/$(qn.Jh),$P,$C)  pole= $Ampmin at $(Ampminx * 1e3), $Ampminy")
-    println(dashline)
+    println(repeat('-', 90))
     return Ampmin, Ampminx, Ampminy
 end
 # Calculate the rescattering process   ->resc
@@ -877,7 +878,7 @@ function dim_to_3d_filled(Dimt::Vector{Matrix{Int}})
     max_len = maximum(size(m, 2) for m in Dimt)
     # 分配
     result = zeros(Int, 3, max_len, n_vectors)
-    @inbounds for k in eachindex(Dimt)
+    for k in eachindex(Dimt)
         mat = Dimt[k]          # 3 × Nt
         Nt = size(mat, 2)
         result[:, 1:Nt, k] .= mat
@@ -885,7 +886,7 @@ function dim_to_3d_filled(Dimt::Vector{Matrix{Int}})
     Dim = SharedArray(result)
     return Dim
 end
-function resc(Sys, qn, Range, channels, Ff, cutoff, VVertex; Np=10, Nx=10, Nphi=5, eps=+1e-4im, progressbar=true)
+function resc(Sys, qn, Range, channels, Ff, cutoff, VVertex; Np=10, Nx=10, Nphi=5, eps=+1e-4im, progressbar=true,output="res/output.txt")
 
     # -------------------------
     # 初始化系统
@@ -947,8 +948,8 @@ function resc(Sys, qn, Range, channels, Ff, cutoff, VVertex; Np=10, Nx=10, Nphi=
 
     open("res/" * Sys * ".txt", "w") do f
     end
-    showPoleInfo(qn, Ec, reslog, "res/output.txt")
-    
+    showPoleInfo(qn, Ec, reslog, output)
+
     #填充成array
     TGt = paddingshare(TGt)
     Dimt = dim_to_3d_filled(Dimt)
@@ -1002,7 +1003,7 @@ function simpleXsection(ER, M2, CH, qn; Ep=("cm",))
                 fac2m = fac2mi1 * fac2mi2 * fac2mf1 * fac2mf2
                 fac = lam * fac2m * cons * (2.0 * qn.J + 1.0) / jitilde
 
-                @inbounds Xs0[iM2, fM2] = M2[i][iM2, fM2] * fac
+                Xs0[iM2, fM2] = M2[i][iM2, fM2] * fac
             end
         end
 
@@ -1041,7 +1042,6 @@ function IHDim(E, Et, Range, TGt, IHt, Dimt)
     end
 end
 # Frame transition from the static frame of total system  to  cms of two partilce. -> setTGA
-#############################################################################
 function LorentzBoost(k::SVector{5,Float64}, p::SVector{5,Float64})
     kp = k[1] * p[1] + k[2] * p[2] + k[3] * p[3]  # 点积 k ⋅ p
     p5 = sqrt(p[4]^2 - p[1]^2 - p[2]^2 - p[3]^2)
@@ -1060,36 +1060,24 @@ end
 function LorentzBoost(momenta::Vector{SVector{5,Float64}}, p::SVector{5,Float64})
     return [LorentzBoost(i, p) for i in momenta]
 end
-function Rotation(k::SVector{5,Float64}, ct::Float64, st::Float64, cp::Float64, sp::Float64)
-    k1 = ct * cp * k[1] + ct * sp * k[2] - st * k[3]
-    k2 = -sp * k[1] + cp * k[2]
-    k3 = st * cp * k[1] + st * sp * k[2] + ct * k[3]
-    return @SVector [k1, k2, k3, k[4], k[5]]
-end
-function Rotation(momenta::Vector{SVector{5,Float64}}, ct::Float64, st::Float64, cp::Float64, sp::Float64)
-    return [Rotation(k, ct, st, cp, sp) for k in momenta]
-end
-function LorentzBoostRotation(k, tecm, p1, p2)
-    kij = k[p1] + k[p2]
-    sij = kij * kij
-    P = @SVector [0.0, 0.0, 0.0, tecm, tecm]
-    pLB = @SVector [-kij[1], -kij[2], -kij[3], kij[4], sqrt(sij)]
-    knew = LorentzBoost(k, pLB)
-    Pnew = LorentzBoost(P, pLB)
-    ct, st, cp, sp = FR.kph(knew[p2])
-    Pnew = Rotation(Pnew, ct, st, cp, sp)
-    knew = Rotation(knew, ct, st, cp, sp)
-    return knew, Pnew
-end
 #* set the frame and other things for calculating TGA    The output will flow to -> TGA
-function setTGA(para, k, tecm, i, j)
-    wij = sqrt((k[i] + k[j]) * (k[i] + k[j]))
+function setTGA(para, k::Vector{SVector{5,Float64}}, tecm, i, j)
+    kij = k[i] + k[j]
+    wij = sqrt(kij * kij)
     IHt, Dimt, TGt, Et, Range = para.IHt, para.Dimt, para.TGt, para.Et, para.Range
     IH, Dim = IHDim(wij, Et, Range, TGt, IHt, Dimt)
-    kn, Pn = LorentzBoostRotation(k, tecm, i, j) #reference frame thansformation
-    new = (E=wij, IH=IH, Dim=Dim, k=kn, P=Pn, resc=(i, j))
-    return merge(para, new)
+    P = @SVector [0.0, 0.0, 0.0, tecm, tecm]
+    pLB = @SVector [-kij[1], -kij[2], -kij[3], kij[4], wij]
+    kn = LorentzBoost(k, pLB)
+    Pn = LorentzBoost(P, pLB)
+    ct, st, cp, sp = FR.kph(kn[j])
+    theta = acos(ct)
+    phi = atan(sp, cp)
+    J, Jh = para.qn.J, para.qn.Jh
+    D = wignerD(J / Jh, theta, -phi, 0.)
+    return (; para..., E=wij, IH=IH, Dim=Dim, k=kn, P=Pn, D=D, resc=(i, j))
 end
+
 # auxiliary fuction for TGA to generate the full index for all final particles. ->TGA
 function build_full_idx(idx_keep::Vector{Int}, drop::Vector{Int}, drop_vals::Vector{Int}, N::Int)
     full = Vector{Int}(undef, N)
@@ -1114,12 +1102,12 @@ function build_full_idx(idx_keep::Vector{Int}, drop::Vector{Int}, drop_vals::Vec
 end
 #* calculate TGA
 function TGA(para, cfinal, cinter, ranges)
-
     ranges = collect(ranges)
     resc = collect(para.resc)
 
-    E, IH, Dim, k, P, Et, TGt, Range = para.E, para.IH, para.Dim, para.k, para.P, para.Et, para.TGt, para.Range
+    E, IH, Dim, k, P, Et, TGt, Range, D = para.E, para.IH, para.Dim, para.k, para.P, para.Et, para.TGt, para.Range, para.D
     qn, CH, SYS = para.qn, para.CH, para.SYS
+
 
     # Interpolation: placing interpolation here helps prevent memory leaks
     ii = Range.NER - Xs.Nsij(E, Range.ERmin, Range.ERmax, Range.NER - 1)
@@ -1154,13 +1142,13 @@ function TGA(para, cfinal, cinter, ranges)
     #loop for all Independent helicities of final state
     keep = filter(i -> !(i in resc), eachindex(ranges))
     left = ntuple(i -> ranges[keep[i]], length(keep))
-    @inbounds for iIHf in IHfb:IHfe
+
+    for iIHf in IHfb:IHfe
         IHf = IH[iIHf]
         l21 = IHf.hel[2] / IHf.helh[2] - IHf.hel[1] / IHf.helh[1]
         dl21 = Int64(lJJ + l21) + 1
-        eta = 0.0
         h1, h2 = IHf.hel[1], IHf.hel[2]
-        #loop for dimensions for intermediate state
+        #loop for dimensions for final state
         for l in Iterators.product(left...)
             l = collect(l)
             TGA = 0.0
@@ -1169,7 +1157,7 @@ function TGA(para, cfinal, cinter, ranges)
                 ch = cinter0.ch
                 CHc = CH[ch isa String ? SYS.channel[ch] : ch]
                 m1, m2 = CHc.m[1], CHc.m[2]
-                @inbounds for iIHc in CHc.IHb:CHc.IHe
+                for iIHc in CHc.IHb:CHc.IHe
                     IHc = IH[iIHc]
                     l21c = IHc.hel[2] / IHc.helh[2] - IHc.hel[1] / IHc.helh[1]
                     etap = CHc.P[1] * CHc.P[2] * qn.P * (-1)^(qn.J / qn.Jh - CHc.J[1] / CHc.Jh[1] - CHc.J[2] / CHc.Jh[2])
@@ -1178,7 +1166,7 @@ function TGA(para, cfinal, cinter, ranges)
                     la, lb = IHc.hel[1], IHc.hel[2]
                     lp = build_full_idx(l, resc, [la, lb], length(ranges))
                     lm = build_full_idx(l, resc, [-la, -lb], length(ranges))
-                    @inbounds for iDim in IHc.Dimb:IHc.Dime
+                    for iDim in IHc.Dimb:IHc.Dime
 
                         kc = Dim[3, iDim] == 1 ? real(IHc.k) : real(SYS.kv[Dim[2, iDim]])
                         Eon = sqrt(kc^2 + (m1 > m2 ? m1^2 : m2^2))  # 较重粒子能量
@@ -1188,24 +1176,26 @@ function TGA(para, cfinal, cinter, ranges)
                         A = 0.0
                         for j in 1:ndphi
                             #phi
-                            phi = SYS.pv[j]
                             cosphi, sinphi = SYS.cp[j], SYS.sp[j]
-                            exppl = exp(-im * phi * l21)
                             for i in 1:ndx
                                 #theta
                                 ct = SYS.xv[i]
                                 st = sqrt(1.0 - ct^2)
                                 #momentum for intermediate state. 
                                 px, py, pz = kc * st * cosphi, kc * st * sinphi, kc * ct
-                                p1 = SVector{5,Float64}(-px, -py, -pz, E1, m1)
-                                p2 = SVector{5,Float64}(px, py, pz, E2, m2)
-                                k[resc[1]] = p1
-                                k[resc[2]] = p2
+                                k[resc[1]] = @SVector[-px, -py, -pz, E1, m1]
+                                k[resc[2]] = @SVector[px, py, pz, E2, m2]
+
                                 Ap = cinter0.Vertex(k, P, lp, cinter0.cached)
                                 Am = cinter0.Vertex(k, P, lm, cinter0.cached)
-                                Dp = SYS.d[i][dl21, dl21pp]
-                                Dm = SYS.d[i][dl21, dl21pm] * etap
-                                A -= (Dp * Ap + Dm * Am) * exppl * SYS.wxv[i] * SYS.wpv[i]
+                                Dp, Dm = 0., 0.
+                                for M in -qn.J:qn.Jh:qn.J
+                                    dM = Int64(lJJ + M / qn.Jh) + 1
+                                    expphi = SYS.expphi[dM, j]
+                                    Dp += D[dl21, dM] * SYS.d[i][dM, dl21pp] * expphi
+                                    Dm += D[dl21, dM] * SYS.d[i][dM, dl21pm] * expphi
+                                end
+                                A += (Dp * Ap + Dm * Am * etap) * SYS.wxv[i] * SYS.wpv[j]
                             end
 
                         end
@@ -1215,7 +1205,9 @@ function TGA(para, cfinal, cinter, ranges)
                         else
                             TG0 = TG[IHf.Dime, iDim]
                         end
-
+                        if IHc.hel[1] == 0 && IHc.hel[2] == 0
+                            A /=  sqrt(2.0)
+                        end
                         TGA += (A * TG0) * cinter0.weight  #note that the weights and p20^2/(2pi)^3 is in G0
                     end
                 end
@@ -1223,8 +1215,7 @@ function TGA(para, cfinal, cinter, ranges)
             end
             lp = Tuple(build_full_idx(l, resc, [h1, h2], length(ranges)))
             lm = Tuple(build_full_idx(l, resc, [-h1, -h2], length(ranges)))
-
-            TGA *= (2.0 * lJJ + 1.0) / (8.0 * pi)
+            TGA *= (2.0 * lJJ + 1.0) / (4.0 * pi)
             TGAdic[lp] = TGA
             # extend from independent helicities to all helicities        
             eta = CHf.P[1] * CHf.P[2] * qn.P * (-1)^(qn.J / qn.Jh - CHf.J[1] / CHf.Jh[1] - CHf.J[2] / CHf.Jh[2])
@@ -1235,7 +1226,10 @@ function TGA(para, cfinal, cinter, ranges)
 
         end
     end
+
     return TGAdic
 end
+
+
 
 end

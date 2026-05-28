@@ -133,25 +133,31 @@ macro broadcast(expr)
         # 显示开始信息
         printstyled("⏳ Broadcasting... "; color=:blue)
         t_start = time_ns()
-        
+
         # 执行传入的广播表达式
         $(esc(expr))
-        
+
         # 计算并显示结束信息
         t_end = time_ns()
         elapsed_sec = (t_end - t_start) / 1e9
-        @printf("✅ Broadcast finished successfully!     ⏱️ Total elapsed time: %.4f seconds\n", elapsed_sec)
+        @printf("✅ Broadcast successfully! ⏱️ Total elapsed time: %.4f seconds\n", elapsed_sec)
     end
 end
 
 macro run(ex)
     quote
+        open("log_chi2.txt", "w") do io
+            println(io, "#iloop chi2")
+        end
+        open("log_results.txt", "w") do io
+        end
         # 开始信息
         println("╔════════════════════════════════════╗")
-        println("║     🚀 PROGRAM BEGINNING           ║")
+        println("║        PROGRAM BEGINNING           ║")
         println("╚════════════════════════════════════╝")
-        printstyled("Started at: ", now(); color=:cyan)
+        printstyled("🚀 Started at: ", now(); color=:cyan)
         println(" \n")
+        println(repeat('-', 90))
 
         # 记录开始时间
         t_start = time_ns()
@@ -164,9 +170,9 @@ macro run(ex)
         elapsed_sec = (t_end - t_start) / 1e9
 
         # 结束信息
-        @printf("⏱️  Total execution time: %.4f seconds\n", elapsed_sec)
-        printstyled("Ended at: ", now(); color=:cyan)
+        printstyled("🎉 Ended at: ", now(); color=:cyan)
         println()
+        @printf("⏱️ Total execution time: %.4f seconds\n", elapsed_sec)
         println(repeat('-', 90))
 
         # 返回表达式的执行结果
@@ -174,4 +180,97 @@ macro run(ex)
     end
 end
 
+function extract_parameters(parameter)
+    # 提取初始值
+    initial = [p[1] for p in parameter]
+    
+    # 提取 mask（第4个元素）
+    mask = [p[4] for p in parameter]
+    
+    # 提取 upper（第3个元素）
+    upper = [p[3] for p in parameter]
+    
+    # 提取 lower（第2个元素）
+    lower = [p[2] for p in parameter]
+    
+    return initial, upper, lower, mask
+end
+function bin_average(x, y, x_data; npts=100)
+    # 深拷贝输入
+    x_local = copy(x)
+    y_local = copy(y)
+    x_data_local = copy(x_data)
+    
+    # 排序
+    p = sortperm(x_local)
+    x_sorted = x_local[p]
+    y_sorted = y_local[p]
+    
+    nbins = length(x_data_local)
+    y_th = zeros(nbins)
+    
+    if nbins >= 2
+        bin_width = x_data_local[2] - x_data_local[1]
+    else
+        error("至少需要两个 bin 中心")
+    end
+    
+    # 预计算斜率（避免重复计算）
+    slopes = zeros(length(x_sorted)-1)
+    for i in eachindex(slopes)
+        slopes[i] = (y_sorted[i+1] - y_sorted[i]) / (x_sorted[i+1] - x_sorted[i])
+    end
+    
+    # 手动插值函数（纯函数，无状态）
+    function interp(xx)
+        if xx <= x_sorted[1]
+            # 左边界外推
+            return y_sorted[1] + slopes[1] * (xx - x_sorted[1])
+        elseif xx >= x_sorted[end]
+            # 右边界外推
+            return y_sorted[end] + slopes[end] * (xx - x_sorted[end])
+        else
+            # 二分查找区间
+            lo, hi = 1, length(x_sorted)
+            while hi - lo > 1
+                mid = (lo + hi) ÷ 2
+                if x_sorted[mid] <= xx
+                    lo = mid
+                else
+                    hi = mid
+                end
+            end
+            # 线性插值
+            return y_sorted[lo] + slopes[lo] * (xx - x_sorted[lo])
+        end
+    end
+    
+    for i in 1:nbins
+        center = x_data_local[i]
+        a = center - bin_width / 2
+        b = center + bin_width / 2
+        
+        # 使用 Simpson 法则（更高精度）
+        n = npts * 2
+        h = (b - a) / n
+        
+        sum_odd = 0.0
+        sum_even = 0.0
+        
+        for j in 1:n-1
+            x_val = a + j * h
+            f_val = interp(x_val)
+            if j % 2 == 1
+                sum_odd += f_val
+            else
+                sum_even += f_val
+            end
+        end
+        
+        integral = h/3 * (interp(a) + interp(b) + 4*sum_odd + 2*sum_even)
+        y_th[i] = integral / bin_width
+    end
+    
+    return y_th
+end
 end

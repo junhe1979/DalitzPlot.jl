@@ -132,7 +132,7 @@ $$
 \nonumber\\
 &=\sum_{JM }N_J^2D^{J*}_{M\lambda'}(\phi',\theta',0){\cal
 	V}^{JM}_{\lambda'\lambda}({\rm k}',{\rm k})D^{J}_{M\lambda}(\phi,\theta,0)
-=\sum_{J }N_J^2d^{J}_{\lambda\lambda'}(\theta_{k,k'}){\cal
+=\sum_{J }N_J^2D^{J}_{\lambda'\lambda}(\Omega^{-1}\Omega'){\cal
 	V}^{J}_{\lambda'\lambda}({\rm k}',{\rm k})
 	.
 \nonumber\\
@@ -142,9 +142,9 @@ D^{J}_{M,\lambda'}(\phi',\theta',0){\cal V}_{\lambda'\lambda}({\boldsymbol k}',{
 \end{align}
 $$
 
-where $N_J=\sqrt{\frac{2J+1}{4\pi}}$, $\int d\Omega D^{J*}_{\lambda_1,\lambda_2}(\phi,\theta,0)D^{J'*}_{\lambda'_1,\lambda'_2}(\phi,\theta,0)=N_J^{-2}$.
+where $N_J=\sqrt{\frac{2J+1}{4\pi}}$, $\int d\Omega D^{J*}_{\lambda_1,\lambda_2}(\phi,\theta,0)D^{J'*}_{\lambda'_1,\lambda'_2}(\phi,\theta,0)=N_J^{-2}$. $\sum_{M }D^{J*}_{M\lambda'}(\Omega)D^{J}_{M\lambda}(\Omega')=D^{J}_{\lambda'\lambda}(\Omega^{-1}\Omega')$
 
-To calculate ${\cal V}_{\lambda'\lambda}^{JM}({\rm k}',{\rm k})$, we adopt a special CMS frame. The momenta are chosen as $k_2=(E_2,0,0,{\rm k})$, $k_1=(W-E_2,0,0,-{\rm k})$  and $k'_2=(E'_2,{\rm k}'\sin\theta_{k,k'},0,{\rm k}'\cos\theta_{k,k'})$, $k=(W-E_2, -{\rm k}'\sin\theta_{k,k'},0,-{\rm k}'\cos\theta_{k,k'})$ with ${\rm k}=|{\boldsymbol k}|$ and ${\rm k}'=|{\boldsymbol k}'|$.
+To calculate ${\cal V}_{\lambda'\lambda}^{JM}({\rm k}',{\rm k})$, we adopt a special CMS frame. The momenta are chosen as $k_2=(E_2,0,0,{\rm k})$, $k_1=(W-E_2,0,0,-{\rm k})$  and $k'_2=(E'_2,{\rm k}'\sin\theta_{k,k'},0,{\rm k}'\cos\theta_{k,k'})$, $k'_1=(W-E_2, -{\rm k}'\sin\theta_{k,k'},0,-{\rm k}'\cos\theta_{k,k'})$ with ${\rm k}=|{\boldsymbol k}|$ and ${\rm k}'=|{\boldsymbol k}'|$.
 
 $$
 \begin{align}
@@ -220,7 +220,7 @@ $$
 \end{align}
 $$
 
-with $\eta=PP_1P_2(-1)^{J_1+J_2-J}=P(-1)^{1/2+J}$.
+with $\eta=PP_1P_2(-1)^{J_1+J_2-J}$.
 The potential ${\cal V}^{J^P}_{\lambda'\lambda}$ has analogous relations.
 
 $$
@@ -228,7 +228,7 @@ $$
 	 i{\cal M}^J_{\lambda\lambda'}&=i{\cal V}^J_{\lambda\lambda'}+\sum_{\lambda''}i{\cal V}^J_{\lambda\lambda''}G_0i{\cal M}^J_{\lambda''\lambda'},\quad	 \eta'i{\cal M}^J_{\lambda-\lambda'}=\eta'i{\cal V}^J_{\lambda-\lambda'}+\sum_{\lambda''}i{\cal V}^J_{\lambda\lambda''}G_0\eta'i{\cal M}^J_{\lambda''-\lambda'}\nonumber\\
 \Rightarrow i{\cal M}^{J^P}_{\lambda\lambda'}&=i{\cal V}^{J^P}_{\lambda\lambda'}+\sum_{\lambda''}i{\cal V}^J_{\lambda\lambda''}G_0i{\cal M}^{J^P}_{\lambda''\lambda'},\nonumber\\
 i{\cal M}^{J^P}_{\lambda\lambda'}&=i{\cal V}^{J^P}_{\lambda\lambda'}+\sum_{\lambda''}i{\cal V}^J_{\lambda-\lambda''}G_0i{\cal M}^{J^P}_{-\lambda''\lambda'}
-=iV^{J^P}_{\lambda\lambda'}+\sum_{\lambda''}i{\cal V}^J_{\lambda-\lambda''}G_0\eta''i{\cal M}^{J^P}_{-\lambda''\lambda'}\nonumber\\
+=i{\cal V}^{J^P}_{\lambda\lambda'}+\sum_{\lambda''}i{\cal V}^J_{\lambda-\lambda''}G_0\eta''i{\cal M}^{J^P}_{\lambda''\lambda'}\nonumber\\
 \Rightarrow  i{\cal M}^{J^P}_{\lambda\lambda'}&=i{\cal V}^{J^P}_{\lambda\lambda'}+\frac{1}{2}\sum_{\lambda''}i{\cal V}^{J^P}_{\lambda\lambda''}G_0i{\cal M}^{J^P}_{\lambda''\lambda'},
 \end{align}
 $$
@@ -308,11 +308,11 @@ Note here the $f_if_j$ is also incorporated. Additionally, the form factors for 
 The potential ${\cal V}_{\lambda'-\lambda}({\boldsymbol k}',{\boldsymbol k})$ is introduced by `fV` function in main file as
 
 ```julia
-fV(k, l, SYS, IA0, CHf, CHi) 
+fV(k, l, SYS, IA0, CHf, CHi, VVertex)
 ```
 
 where `k` and `l` are for the momenta and helicities of final and initial particles. `SYS` is
-for the system information. `IA0` is for the interaction information., `CHf` and `CHi` are for the information of final and initial channels.
+for the system information. `IA0` is for the interaction information., `CHf` and `CHi` are for the information of final and initial channels. `VVertex` is a function that returns the explicit form of the interaction or vertices, as defined in `main.jl`.
 
 Transition of ${\cal V}_{\lambda'-\lambda}({\boldsymbol k}',{\boldsymbol k})$ to ${\cal V}^{J^P}_{ij}({\rm k}',{\rm k}'')$ performed in `qBSE.fKernel` which is an internal function.
 
@@ -587,13 +587,11 @@ where $a^J=-\frac{|{\boldsymbol k}|}{8\pi\sqrt{s}}{\cal M}^J(|{\boldsymbol k}|)$
 
 ### Lorentz boost
 
-Here, we consider an process $Y\to m_1X\to m_1m_2m_3$.
-To study a $1\to3$ decay with the qBSE, we need consider the center of mass frame (CMS) of $Y$ (which is also the laboratory frame in this issue) and the $m_1m_2$ where the qBSE is applied. The momenta of initial and final particles in the CMS of $Y$, remarked as $lab$,  are
+Here, we consider an process $Y\to X m_3...m_n\to [m_1m_2]m_3...m_n$.
+To study a $1\to n$ decay with the qBSE, we need consider the center of mass frame (CMS) of $Y$ (which is also the laboratory frame in this issue) and the $m_1m_2$ where the qBSE is applied. The momenta of initial and final particles in the CMS of $Y$, remarked as $lab$,  are
 
 $$
-\begin{align}
-P^{lab}=(W,0,0,0);\  \ p^{lab}_1=(E^{lab}_1,{\boldsymbol p}^{lab}_1);\ \ p^{lab}_2=(E^{lab}_2,{\boldsymbol p}^{lab}_2);\ \ p^{lab}_3=(E^{lab}_3,{\boldsymbol p}^{lab}_3)
-\end{align}
+P^{lab}=(W,0,0,0),\  \ p^{lab}_i=(E^{lab}_i,{\boldsymbol p}^{lab}_i).
 $$
 
 The  Lorentz boost from $(m,{\boldsymbol 0})$ to $(E,{\boldsymbol k})$,
@@ -609,209 +607,79 @@ k_z&\frac{k_z k_x}{E+m}&\frac{k_z k_y}{E+m}&m+\frac{k_z k_z}{E+m}\nonumber\\
 \end{align}
 $$
 
-With  the Lorentz boost  the momenta for particle 23 in the laboratory frame $(E^{lab}_{23},-{\boldsymbol p}^{lab}_1)$ can be written with the momenta in the CMS of particles 23 $(M_{23},{\boldsymbol 0})$ as $p^{lab}=\Lambda(E^{lab}_{23},-{\boldsymbol p}^{lab}_1) p^{cm}$,
+With  the Lorentz boost  the momenta for particle 23 in the laboratory frame $(E^{lab}_{23},{\boldsymbol p}^{lab}_{23})$ can be written with the momenta in the CMS of particles 23 $(M_{23},{\boldsymbol 0})$ as $p^{lab}=\Lambda(E^{lab}_{23},{\boldsymbol p}^{lab}_{23}) p^{cm}$,
 
 $$
 \begin{align}
-{\boldsymbol p}^{lab}&={\boldsymbol p}^{cm}-\frac{{\boldsymbol p}^{lab}_1}{M_{23}}\left[\frac{-{\boldsymbol p}^{lab}_1\cdot {\boldsymbol p}^{cm}}{W-E^{lab}_1({\rm p}^{lab}_1)+M_{23}}+p^{0cm}\right],\nonumber\\
-p^{0lab}&=\frac{1}{M_{23}}\left[(W-E^{lab}_1({\rm p}^{lab}_1))p^{0cm}-{\boldsymbol p}^{lab}_1\cdot{\boldsymbol p}^{cm}\right],
+{\boldsymbol p}^{lab}&={\boldsymbol p}^{cm}+\frac{{\boldsymbol p}^{lab}_{23}}{M_{23}}\left[\frac{{\boldsymbol p}^{lab}_{23}\cdot {\boldsymbol p}^{cm}}{E^{lab}_{23}+M_{23}}+p^{0cm}\right],\nonumber\\
+p^{0lab}&=\frac{1}{M_{23}}\left[E^{lab}_{23}p^{0cm}+{\boldsymbol p}^{lab}_{23}\cdot{\boldsymbol p}^{cm}\right],
 \end{align}
 $$
 
-where the $p_{23}+p_1=P$ is applied, and $M_{23}=\sqrt{(p^{lab}_2+p^{lab}_3)^2}=\sqrt{(p^{cm}_2+p^{cm}_3)^2}=\sqrt{(P-p_1)^2}$.
+where $M_{23}=\sqrt{(p^{lab}_2+p^{lab}_3)^2}=\sqrt{(p^{cm}_2+p^{cm}_3)^2}$, $E^{lab}_{23}=E^{lab}_{2}+E^{lab}_{2}$ (onshell) and $E^{lab}_{23}=W-E^{lab}_{3}-...-E^{lab}_{n}$ (offshell).
 
-The momenta in CMS of $23$ can also be written with the momentum in laboratory frame as $p=\Lambda(E^{lab}_{23},{\boldsymbol p}^{lab}_1) p^{lab}$
+The momenta in CMS of $23$ can also be written with the momentum in laboratory frame as $p=\Lambda(E^{lab}_{23},-{\boldsymbol p}^{lab}_{23}) p^{lab}$
 
 $$
 \begin{align}
-{\boldsymbol p}^{cm}&={\boldsymbol p}^{lab}+\frac{{\boldsymbol p}^{lab}_1}{M_{23}}\left[\frac{{\boldsymbol p}^{lab}_1\cdot {\boldsymbol p}^{lab}}{M-E^{lab}_1({\rm p}^{lab}_1)+M_{23}}+p^{0lab}\right], \nonumber\\
-p^{0cm}&=\frac{1}{M_{23}}\left[(M-E^{lab}_1({\rm p}^{lab}_1))p^{0lab}+{\boldsymbol p}^{lab}_1\cdot{\boldsymbol p}^{lab}\right].
+{\boldsymbol p}^{cm}&={\boldsymbol p}^{lab}-\frac{{\boldsymbol p}^{lab}_{23}}{M_{23}}\left[-\frac{{\boldsymbol p}^{lab}_{23}\cdot {\boldsymbol p}^{lab}}{E^{lab}_{23}+M_{23}}+p^{0lab}\right], \nonumber\\
+p^{0cm}&=\frac{1}{M_{23}}\left[E^{lab}_{23}p^{0lab}-{\boldsymbol p}^{lab}_{23}\cdot{\boldsymbol p}^{lab}\right].
 \end{align}
 $$
 
-For the outgoing particles 2 and 3, the ${\boldsymbol p}^{cm}$ should be set along the $z$ axis, hence, an additional rotation is adopted as $p=R(-\theta^{cm},-\phi^{cm})p^{cm}$
-
-$$
-\begin{align}
-R(-\theta,-\phi)=\frac{1}{m}\left(\begin{array}{cccc}
-1&0&0&0\\
-0&\cos \theta \cos \phi&\cos\theta\sin\phi&-\sin\theta\nonumber\\
-0&-\sin\phi&\cos\phi&0\nonumber\\
-0&\sin\theta\cos\phi&\sin\theta\sin\phi&\cos\theta\nonumber\\
-\end{array}\right).
-\end{align}
-$$
-
-As described above, we perform both a Lorentz boost and a rotation. Through the Lorentz boost, the momentum $p^{lab}$ in the lab frame transforms into $p^{cm}$ in the center-of-mass system (CMS) of particles 2 and 3. The value of $p_1^{cm}$ depends on $p_1^{lab}$ and $M_{23}$, and the lab-frame energy $E_1^{lab}$ can also be derived from $M_{23}$. Thus, $p_1^{cm}$ is ultimately dependent only on $\Omega_1^{lab}$ and $M_{23}$. The momenta $p_{2,3}^{cm}$ depend on $p^{lab}_{2,3}$ and $\Omega_1^{lab}$ and can be expressed in terms of $M_{23}$ and the spherical angle $\Omega_3^{cm}$.
-
-After rotation, $p^{cm}$ becomes $p$ in the new CMS frame of particles 2 and 3. The momenta $p_{2,3}$ of the final particles are aligned along the z-axis and depend solely on $M_{23}$. However, for intermediate particles, they are functions of ${\rm p}'_3$ and $\Omega'_3$. Finally, $p_1$ depends on $\Omega_1^{lab}$, $M_{23}$, and $\Omega_3^{cm}$.
-
-The Lorentz boost is performed by `Xs.LorentzBoost`, and rotation by `Xs.Rotation`.
-A function `qBSE.LorentzBoostRotation` is also provided to make both a Lorentz boost and a rotation.
+The Lorentz boost is performed by `Xs.LorentzBoost`.
 
 ## Amplitude
 
-Because the $|{\cal M}|^2$ is invariant in different reference frame, the amplitude for the direct decay can be written with the momenta in cm frame of partilces 1 and 2 obtained with Lorentz boost and rotation, as
+Because the $|{\cal M}|^2$ is invariant in different reference frame, the amplitude for the direct decay can be written with the momenta in cm frame of partilces 1 and 2 obtained with Lorentz boost, as (here, we ignore the notation $cm$)
 
 $$
 \begin{align}
-i{\cal M}^{d}_{\lambda_1;\lambda_2,\lambda_3;\lambda}(p_1,p_2,p_3)&=i{\cal A}_{\lambda_1;\lambda_2,\lambda_3;\lambda}(\Lambda p_1,p_2,p_3)=i{\cal A}_{\lambda_1;\lambda_2,\lambda_3;\lambda}(\Omega^{lab}_1,M_{23},\Omega_3^{cm}), \ \ \ {\rm for\ onshell}\nonumber\\
-i{\cal M}^{d}_{\lambda_1;\lambda_2,\lambda_3;\lambda}(p_1,p'_2,p'_3)&=i{\cal A}_{\lambda_1;\lambda_2,\lambda_3;\lambda}(\Omega^{lab}_1,\Omega'_3,{\rm p}'_3,M_{23},\Omega_3^{cm}) \nonumber\\
+i{\cal M}^{d}_{\lambda_1,\lambda_2,\lambda_{3};\lambda}(p_1,p_2,p_{3})&=i{\cal A}_{\lambda_1,\lambda_2;\lambda_3;\lambda}(p_1,p_2,p_3)=i{\cal A}_{\lambda_1,\lambda_2;\lambda_3;\lambda}(\Omega_2,\Omega_3,M_{12}), \nonumber\\
 %
-&=\sum_{JM}N_JD^{J*}_{ M\lambda_{32}}( \Omega'_3)i{\cal A}^{JM}_{\lambda_1;\lambda_2,\lambda_3;\lambda}(\Omega^{lab}_1,{\rm p}'_3,M_{23},\Omega_3^{cm}),\ \ \ {\rm for\ offshell}\nonumber\\
+​&=\sum_{JM}N_JD^{J*}_{ M\lambda_{21}}( \Omega_2)i{\cal A}^{JM}_{\lambda_1,\lambda_2;\lambda_3;\lambda}(\Omega_3,M_{12}),\ \ \ {\rm for\ onshell}\nonumber\\
 %
-i{\cal A}^{JM}_{\lambda_1;\lambda'_2,\lambda'_3;\lambda}(\Omega^{lab}_1,{\rm p}'_2,M_{23},\Omega_3^{cm})&=
-N_J\int d\Omega'_3D^{J}_{M,\lambda'_{32}}( \Omega'_3) i{\cal A}_{\lambda_1;\lambda'_2,\lambda'_3;\lambda}(\Omega^{lab}_1,\Omega'_3,{\rm p}'_3,M_{23},\Omega_3^{cm})\nonumber\\
+i{\cal M}^{d}_{\lambda_1\lambda_2;\lambda_3;\lambda}(p_1,p_2,p_3)&=i{\cal A}_{\lambda_1\lambda_2;\lambda_3;\lambda}(\Omega'_2,{\rm p}'_2,\Omega_3,M_{12}) \nonumber\\
 %
-i{\cal M}^{Z}_{\lambda_1;\lambda_2,\lambda_3;\lambda}(p_1,p_2,p_3)&=i\int \frac{d^4p'_3}{(2\pi)^4} {\cal T}_{\lambda_2,\lambda_3}(p_2,p_3;p'_2,p'_3)  G(p'_3){\cal A}_{\lambda_1;\lambda}(p_1,p'_2,p'_3)\nonumber\\
+&=\sum_{JM}N_JD^{J*}_{M\lambda_{21}}( \Omega'_2)i{\cal A}^{JM}_{\lambda_1\lambda_2;\lambda_3;\lambda}({\rm p}'_2,\Omega_3,M_{12}),\ \ \ {\rm for\ offshell}\nonumber\\
 %
-&=\sum_{\lambda'_2\lambda'_3}\int \frac{d^3p'_3}{(2\pi)^3} i{\cal T}_{\lambda_2,\lambda_3;\lambda'_2,\lambda'_3}(p_2,p_3;p'_2,p'_3)  G_0(p'_3)i{\cal A}_{\lambda_1;\lambda'_2,\lambda'_3;\lambda}(p_1,p'_2,p'_3)\nonumber\\
+i{\cal A}^{JM}_{\lambda'_1\lambda'_2;\lambda_3;\lambda}(\Omega_3,M_{12},{\rm p}'_2)&=
+N_J\int d\Omega'_2D^{J}_{M,\lambda'_{21}}( \Omega'_2) i{\cal A}_{\lambda'_1,\lambda'_2;\lambda_3;\lambda}(\Omega'_2,{\rm p}'_2,\Omega_3,M_{12})\nonumber\\
 %
-&=\sum_{\lambda'_2\lambda'_3}\int \frac{d^3p'_3}{(2\pi)^3} i{\cal T}_{\lambda_2,\lambda_3;\lambda'_2,\lambda'_3}(\Omega'_3,{\rm p}'_3,M_{23})  G_0({\rm p}'_3)i{\cal A}_{\lambda_1;\lambda'_2,\lambda'_3;\lambda}(\Omega^{lab}_1,\Omega'_3,{\rm p}'_3,M_{23},\Omega_3^{cm})\nonumber\\
+i{\cal M}^{Z}_{\lambda_1,\lambda_2;\lambda_3;\lambda}(p_1,p_2,p_3)&=i\int \frac{d^4p'_2}{(2\pi)^4} {\cal T}_{\lambda_1,\lambda_2}(p_1,p_2;p'_1,p'_2)  G(p'_2){\cal A}_{\lambda_3;\lambda}(p'_1,p'_2,p_3)\nonumber\\
 %
-&=\sum_{\lambda'_2\lambda'_3}\int \frac{{\rm p}'^{2}_3d{\rm p}'^{}_3d\Omega'_3}{(2\pi)^3} \sum_{JM}N_J^2\delta_{M\lambda_{32}}i{\cal T}^{JM}_{\lambda_2,\lambda_3;\lambda'_2,\lambda'_3}({\rm p}'_3,M_{23})D^{J}_{M\lambda'_{32}}(\Omega'_3)  \nonumber\\
-&\ \cdot\ G_0({\rm p}'_3)\sum_{J'M'}N_{J'}D^{J'*}_{M'\lambda'_{32}}( \Omega'_3)i{\cal A}^{J'M'}_{\lambda_1;\lambda'_2,\lambda'_3;\lambda}(\Omega^{lab}_1,{\rm p}'_3,M_{23},\Omega_3^{cm})\nonumber\\
+&=\sum_{\lambda'_1\lambda'_2}\int \frac{d^3p'_2}{(2\pi)^3} i{\cal T}_{\lambda_1,\lambda_2;\lambda'_1,\lambda'_2}(p_1,p_2;p'_1,p'_2)  G_0(p'_2)i{\cal A}_{\lambda'_1,\lambda'_2;\lambda_3;\lambda}(p'_1,p'_2,p_3)\nonumber\\
 %
-&=\sum_{\lambda'_2\lambda'_3}\int \frac{{\rm p}'^{2}_3d{\rm p}'^{}_3d\Omega'_3}{(2\pi)^3} \sum_{J}N_Ji{\cal T}^J_{\lambda_2,\lambda_3;\lambda'_2,\lambda'_3}({\rm p}'_3,M_{23})   G_0({\rm p}'_3)i{\cal A}^{J\lambda_{32}}_{\lambda_1;\lambda'_2,\lambda'_3;\lambda}(\Omega^{lab}_1,{\rm p}'_3,M_{23},\Omega_3^{cm})\nonumber\\
+&=\sum_{\lambda'_1\lambda'_2}\int \frac{d^3p'_2}{(2\pi)^3} i{\cal T}_{\lambda_1,\lambda_2;\lambda'_1,\lambda'_2}(\Omega_2,\Omega'_2,{\rm p}'_2,M_{12})  G_0({\rm p}'_2)i{\cal A}_{\lambda'_1,\lambda'_2;\lambda_3;\lambda}(\Omega'_2,{\rm p}'_2,\Omega_3,M_{12})\nonumber\\
 %
-&=\sum_{J}N_J\sum_{\lambda'_2\lambda'_3}\int \frac{{\rm p}'^{2}_3d{\rm p}'^{}_3}{(2\pi)^3} i{\cal T}^J_{\lambda_2,\lambda_3;\lambda'_2,\lambda'_3}({\rm p}'_3,M_{23}) G_0({\rm p}'_3) i{\cal A}^{J\lambda_{32}}_{\lambda_1;\lambda'_2,\lambda'_3;\lambda}(\Omega^{lab}_1,{\rm p}'_3,M_{23},\Omega_3^{cm})\nonumber\\
-&\equiv i{\cal M}^{Z}_{\lambda_2,\lambda_3;\lambda}(\Omega^{lab}_1,M_{23},\Omega_3^{cm}),\nonumber\\
+&=\sum_{\lambda'_1\lambda'_2}\int \frac{{\rm p}'^{2}_2d{\rm p}'_2d\Omega'_2}{(2\pi)^3} \sum_{JM}N_J^2D^{J*}_{M\lambda_{21}}(\Omega_2)i{\cal T}^{JM}_{\lambda_1,\lambda_2;\lambda'_1,\lambda'_2}({\rm p}'_2,M_{12})D^{J}_{M\lambda'_{21}}(\Omega'_2)  \nonumber\\
+&\ \cdot\ G_0({\rm p}'_2)\sum_{J'M'}N_{J'}D^{J'*}_{M'\lambda'_{21}}( \Omega'_2)i{\cal A}^{J'M'}_{\lambda'_1,\lambda'_2;\lambda_3;\lambda}({\rm p}'_2,\Omega_3,M_{12})\nonumber\\
 %
+&=\sum_{\lambda'_1\lambda'_2}\int \frac{{\rm p}'^{2}_2d{\rm p}'d\Omega'_2}{(2\pi)^3} \sum_{JM}N_JD^{J*}_{M\lambda_{21}}(\Omega_2)i{\cal T}^J_{\lambda_1,\lambda_2;\lambda'_1,\lambda'_2}({\rm p}'_2,M_{12})   G_0({\rm p}'_2)i{\cal A}^{JM}_{\lambda'_1,\lambda'_2;\lambda_3;\lambda}({\rm p}'_2,\Omega_3,M_{12})\nonumber\\
 %
-i{\cal M}^{Z}_{\lambda_2;\lambda_1,\lambda_3;\lambda}(p_1,p_2,p_3)%
-&=\sum_{J}N_J\sum_{\lambda'_1\lambda'_3}\int \frac{\tilde{\rm p}'^{2}_3d\tilde{\rm p}'_3}{(2\pi)^3} i{\cal T}^J_{\lambda_1,\lambda_3;\lambda'_1,\lambda'_3}(\tilde{\rm p}'_3,M_{13}) G_0(\tilde{\rm p}'_3) i{\cal A}^{J\lambda_{31}}_{\lambda_2;\lambda'_1,\lambda'_3;\lambda}(\tilde{\Omega}_3^{lab}, \tilde{\rm p}'_3,M_{13},\tilde{\Omega}_3^{cm})\nonumber\\
-&\equiv i{\cal M}^{Z}_{\lambda_2;\lambda_1,\lambda_3;\lambda}(\tilde{\Omega}_3^{lab},M_{13},\tilde{\Omega}_3^{cm}).
+&=\sum_{JM}N_JD^{J*}_{M\lambda_{21}}(\Omega_2)\sum_{\lambda'_1\lambda'_2}\int \frac{{\rm p}'^{2}_2d{\rm p}'^{}_2}{(2\pi)^3} i{\cal T}^J_{\lambda_1,\lambda_2;\lambda'_1,\lambda'_2}({\rm p}'_2,M_{12}) G_0({\rm p}'_2) i{\cal A}^{JM}_{\lambda'_1,\lambda'_2;\lambda_3;\lambda}({\rm p}'_2,\Omega_3,M_{12})\nonumber\\
+&\equiv i{\cal M}^{Z}_{\lambda_1,\lambda_2;\lambda}(\Omega_2,\Omega_3,M_{12}).
 \end{align}
 $$
+
+Here, the partilce 3 can be extended to $3...n$.
 
 Note: when consider the rescattering of different particles, the different cm frames should be adopted.
 
 ## Decay width
 
-### The case with one rescattering
 
-#### Phase space
 
 The phase space is given by
 
 $$
 \begin{align}
-d\Phi=(2\pi)^4\delta^4(P-p_1-p_2-p_3) \frac{d^3p_1}{2E_1(2\pi)^3}\frac{d^3p_2}{2E_2(2\pi)^3}\frac{d^3p_3}{2E_3(2\pi)^3}
+d\Phi=(2\pi)^4\delta^4(P-\sum_{i=1}^n p_i)\prod_{i=1}^n \frac{d^3p_i}{2E_i(2\pi)^3}
 \end{align}
 $$
 
-To study the invariant mass spectrum of the particles 2 and 3, it is convenient to rewrite the Lorentz-invariant phase space $d\Phi$ by taking as integration variables the direction of the momentum of particle 2 ${\boldsymbol p}_2^{cm}$ in the center-of-mass (cm) frame of particles 2 and 3. Thus, we first rewrite the phase factor as
 
-$$
-\begin{align}
-d\Phi
-&=(2\pi)^4\delta(E^{cm}_2+E^{cm}_3-W_{23})\delta^3({\boldsymbol p}^{cm}_2+{\boldsymbol p}^{cm}_3) \frac{d^3p^{lab}_1}{2E^{lab}_1(2\pi)^3}\frac{d^3p^{cm}_2}{2E_2^{cm}(2\pi)^3}\frac{d^3p^{cm}_3}{2E_3^{cm}(2\pi)^3}
-\end{align}
-$$
-
-where $W_{23}^2=(M-E^{lab}_1)^2-|{\rm p}^{lab}_1|^2$. Here the Lorentz invariance of the  $\frac{d^3p}{2E(2\pi)^3}$ and $\delta^4(P-p_1-p_2-p_3)$ is used.
-
-Here, we use the momentum of the particle 3 in the center of mass system of two rescattering particles.
-The momentum of the particle 3 has a relation ${\rm p}^{cm}_3=\frac{1}{2M_{23}}\sqrt{\lambda(M_{23}^2,m_3^2,m_2^2)}$.
-
-Owing to the three-momentum $\delta$ function, the integral over ${\boldsymbol p}^{cm}_2$ can be eliminated. Next, the quantity $d^3p^{cm}_3$ is converted to $dM_{23}$ by the relation,
-
-$$
-\begin{align}
-d^3p^{cm}_3=\frac{E^{cm}_2E^{cm}_3{\rm p}^{cm}_3}{M_{23}}dM_{23}d\Omega^{cm}_3,
-\end{align}
-$$
-
-where $M_{23}$($=E^{cm}_2+E^{cm}_3$) is the invariant mass of the $23$ system. We would like to integrate over the magnitude of the neutron momentum $p_1$, which is related to $W_{23}$. Hence, the energy-conserving $\delta$ function is substituted as,
-
-$$
-\begin{align}
-\delta(M_{23}-W_{23})=\frac{W_{23}}{|M{\rm p}^{lab}_1/E^{lab}_1|}\delta(\breve{\rm p}_1-{\rm p}^{lab}_1)
-\end{align}
-$$
-
-where the $\breve{\rm p}_1$ satisfies $M_{23}^2=(M-\breve{E}_1)^2-\breve{\rm p}_1^2$.
-
-Performing the integral over ${\rm p}^{lab}_1$, we obtain the final expression of the decay width,
-
-$$
-\begin{align}
-d\Phi
-&=\frac{1}{(2\pi)^5}\frac{\breve{\rm p}_1{\rm p}^{cm}_3}{8M}d\Omega^{lab}_1d\Omega^{cm}_3dM_{23}
-=\frac{1}{(2\pi)^3}\frac{\breve{\rm p}_1{\rm p}^{cm}_3}{8M}d\cos\theta^{lab}_1d\cos\theta^{cm}_3dM_{23},
-\end{align}
-$$
-
-Here, independence of the $\phi^{lab}_1$ and $\phi^{cm}_2$ on the integrand is applied.
-
-#### Differential decay width
-
-Here, we consider the rescattering of particles 2 and 3. The distribution can be obtained as
-
-$$
-\begin{align}
-{d\Gamma\over dM_{23}}&=\int \frac{1}{2M}\sum_{\lambda_2,\lambda_3;\lambda}|i{\cal M}_{\lambda_2,\lambda_3;\lambda}|^2 \frac{1}{(2\pi)^5}\frac{\breve{\rm p}_1{\rm p}_3}{8M}d\Omega^{lab}_1d\Omega^{cm}_3
-\end{align}
-$$
-
-If the $Y$ is not scalar, there shoold be an additional factor $1/\tilde{j}_Y$. Here we
-use the distribution above in the frame with Lorentz boost but without rotation. However,
-we calculate the $|i{\cal M}_{\lambda_2,\lambda_3;\lambda}|^2$ in the frame with both Lorentz boost and rotation due to it is independent on the frames.
-
-If the reflection effect is absent, for example, the $\pi DD^*$ final state. The results can be simplified further.
-The amplitude can be written as
-
-$$
-\begin{align}
-i{\cal M}_{\lambda_1\lambda_2,\lambda_3;\lambda}(p_1,p_2,p_3)
-&=\sum_{JM}N^3_JD^J_{\lambda_R\lambda_1}D^J_{\lambda_R\lambda_{32}}(\Omega^{cm}_3)\left[i{\cal A}^{d,J}_{\lambda_1,\lambda_2,\lambda_3;\lambda}(M_{23})\right.\nonumber\\
-%
-&\left.+\sum_{\lambda'_2\lambda'_3}\int \frac{{\rm p}'^{2}_3}{(2\pi)^3} i{\cal T}^{J}_{\lambda_2,\lambda_3;\lambda'_2,\lambda'_3}({\rm p}'^{}_3,M_{23}) G^{}_0({\rm p}'^{}_3) i{\cal A}^{J}_{\lambda'_2,\lambda'_3;\lambda}({\rm p}'_3,M_{23})\right]\nonumber\\
-&\equiv \sum_{JM}N^3_JD^J_{\lambda_R\lambda_1}(\Omega^{lab}_1)D^J_{\lambda_R\lambda_{32}}(\Omega^{cm}_3)i{\cal M}^J_{\lambda_2,\lambda_3;\lambda}(M_{23})
-\end{align}
-$$
-
-Inserting the above amplitude to the definition of the invariant mass spectrum, we have
-
-$$
-\begin{align}
-{d\Gamma\over dM_{23}}
-&=\frac{1}{2M}\frac{1}{(2\pi)^5}\frac{\breve{\rm p}_1{\rm p}_3}{8M}\sum_{\lambda_2,\lambda_3;\lambda}\int|\sum_{JM}N^3_JD^J_{\lambda_R\lambda_1}(\Omega^{lab}_1)D^J_{\lambda_R\lambda_{32}}(\Omega^{cm}_3)i{\cal M}^J_{\lambda_2,\lambda_3;\lambda}(M_{23})|^2 d\Omega^{lab}_1d\Omega_3\nonumber\\
-&=\frac{1}{2M}\frac{1}{(2\pi)^5}\frac{\breve{\rm p}_1{\rm p}^{cm}_3}{8M}\sum_{\lambda_2,\lambda_3;\lambda;J}|N_Ji{\cal M}^J_{\lambda_2,\lambda_3;\lambda}(M_{23})|^2 \nonumber\\
-\end{align}
-$$
-
-Now we consider the amplitude with fixed parity,
-
-$$
-\begin{align}
-i{\cal M}^{J}_{\lambda_{23};\lambda}&=i{\cal A}^{d,J}_{\lambda_{23};\lambda}+i{\cal T}^{J}_{\lambda_{23},\lambda'_{23}}G_0i{\cal A}^J_{\lambda'_{23};\lambda},\quad
-\eta i{\cal M}^{J}_{-\lambda_{23};\lambda}=\eta i{\cal A}^{d,J}_{-\lambda_{23};\lambda}+\eta i{\cal T}^{J}_{-\lambda_{23},\lambda'_{23}}G_0i{\cal A}^J_{\lambda'_{23};\lambda}\nonumber\\
-\Rightarrow i{\cal M}^{J^P}_{\lambda_{23};\lambda}&=i{\cal A}^{d,J^P}_{\lambda_{23};\lambda}+i{\cal T}^{J^P}_{\lambda_{23},\lambda'_{23}}G_0i{\cal A}^{J}_{\lambda'_{23}
-;\lambda}=i{\cal A}^{d,J^P}_{\lambda_{23};\lambda}+\eta'i{\cal T}^{J^P}_{\lambda_{23},\lambda'_{23}}G_0i{\cal A}^{J}_{-\lambda'_{23}
-;\lambda}=i{\cal A}^{d,J^P}_{\lambda_{23};\lambda}+{1\over 2}i{\cal T}^{J^P}_{\lambda_{23},\lambda'_{23}}G_0i{\cal A}^{J^P}_{\lambda'_{23}
-;\lambda}
-\end{align}
-$$
-
-Here ${\cal M}^{J^P}_{\lambda_{23};\lambda}={\cal M}^{J}_{\lambda_{23};\lambda}+\eta{\cal M}^{J}_{\lambda_{23};\lambda}$, ${\cal A}^{d,J^P}_{\lambda_{23};\lambda}={\cal A}^{d,J}_{\lambda_{23};\lambda}+\eta{\cal A}^{d,J}_{\lambda_{23};\lambda}$, ${\cal T}^{J^P}_{\lambda_{23},\lambda'_{23}}={\cal T}^{J}_{\lambda_{23},\lambda'_{23}}+\eta{\cal T}^{J}_{-\lambda_{23},\lambda'_{23}}={\cal T}^{J}_{\lambda_{23},\lambda'_{23}}+\eta'{\cal T}^{J}_{\lambda_{23},-\lambda'_{23}}$.
-NOTE: For parity conserving interaction, we have ${\cal T}^J_{\lambda'\lambda}=\eta(\eta')^{-1}{\cal T}_{-\lambda'\lambda}$, which can be checked in the code by different definitions of ${\cal T}^{J^P}$.
-
-We summarize the results as following,
-
-$$
-\begin{align}
-{d\Gamma\over dM_{23}}&=\frac{1}{2M}\frac{1}{(2\pi)^5}\frac{\breve{\rm p}_1{\rm p}_3}{8M}\sum_{ij;J^P}|N_J{\cal M}^{J^P}_{ij}(M_{23})|^2, \nonumber\\
-\hat{\cal M}^{J^P}_{i;i}(M_{23})
-&={\cal A}^{d,J^P}_{j;i}(M_{23})+\sum_{k}\int \frac{d{\rm p}'_3{\rm p}'^{2}_3}{(2\pi)^3}{\cal T}^{J^P}_{j;k}({\rm p}'_3,M_{23}) G_0({\rm p}'_3) {\cal A}^{J^P}_{k;i}({\rm p}'_3,M_{23}),
-\end{align}
-$$
-
-where $i$ and $j$ denote the independent $\lambda_{2,3}$ and $\lambda$, and the factors $f_{i=0}=1/\sqrt{2}$ and $f_{i\neq 0}=1$ are inserted. The above equation can be abbreviated as $M={A}^{d}+{T}G { A}$, where  $T$ is solved by the Bethe-Salpeter equation $T=V+VGT$. NOTE: The $\hat{T}$ should be multiplied by $4\pi$ to be used as ${\cal T}$, and $\hat{G}_0$ should be divided by $4\pi$ to be used as ${G}_0$, which is cancelled by each other.
-
-### The case with more than one rescattering
-
-In the case with more than one resacttering, we should conisder Monte-Carlo method to generate the
+We conisder Monte-Carlo method to generate the
 event.
 
 $$
@@ -822,15 +690,15 @@ $$
 
 The distribution can be calculated with `qBSE.Xsection`.
 
-Here we consider a process with direct, 23 rescattering, 13 rescattering.
+Here we consider a process with $ij$ rescattering ($k$ denote other particles).
 
 $$
 \begin{align}
-i{\cal M}^{d}_{\lambda_1;\lambda_2,\lambda_3;\lambda}(p_1,p_2,p_3)&=i{\cal A}_{\lambda_1;\lambda_2,\lambda_3;\lambda}(p_1,p_2,p_3),\nonumber\\
+i{\cal M}^{d}_{\lambda_i,\lambda_j;\lambda_k;\lambda}(p_i,p_j,p_k)&=i{\cal A}_{\lambda_i,\lambda_j;\lambda_k;\lambda}(p_i,p_j,p_k),\nonumber\\
 %
 %
-i{\cal M}^{Z}_{\lambda_k;\lambda_i,\lambda_j;\lambda}(p_k,p_i,p_j)
-&=\sum_{J}N_{J}\sum_{\lambda'_i\lambda'_j}\int \frac{{\rm p}'^{2}_jd{\rm p}'_j}{(2\pi)^3} i{\cal T}^J_{\lambda_i,\lambda_j;\lambda'_i,\lambda'_j}({\rm p}'_j,M_{ij})  \ G_0({\rm p}'_j) i{\cal A}^{J\lambda_{ji}}_{\lambda_k;\lambda'_i,\lambda'_j;\lambda}(\Omega^{lab}_k,{\rm p}'_j,M_{ij},\Omega^{cm}_j).
+i{\cal M}^{Z}_{\lambda_i,\lambda_j;\lambda_k;\lambda}(p_i,p_j,p_k)
+&=\sum_{JM}N_{J}D^{J*}_{M\lambda_{ji}}(\Omega_j)\sum_{\lambda'_i\lambda'_j}\int \frac{{\rm p}'^{2}_jd{\rm p}'_j}{(2\pi)^3} i{\cal T}^J_{\lambda_i,\lambda_j;\lambda'_i,\lambda'_j}({\rm p}'_j,M_{ij})  \ G_0({\rm p}'_j) i{\cal A}^{JM}_{\lambda_k;\lambda'_i,\lambda'_j;\lambda}({\rm p}'_j,\Omega_k,M_{ij}).
 \end{align}
 $$
 
@@ -839,27 +707,27 @@ $$
 	\sum_{\lambda'}
 	T^{J}_{\lambda\lambda'}A^{J}_{\lambda'}&=T^{J}_{\lambda0}A^{J}_{0}+\sum_{j>0}
 	\left[T^{J}_{\lambda j}A^{J}_{j}+T^{J}_{\lambda -j}A^{J}_{-j}\right]\nonumber\\
-&=\frac{1}{4}T^{J^P}_{\lambda0}A^{J^P}_{0}+\sum_{j>0}
-	 \left[\frac{1}{4}(T^{J+}_{\lambda j}+T^{J-}_{\lambda j})(A^{J+}_{j}+A^{J-}_{j})
-	 +\frac{1}{4}(T^{J+}_{\lambda j}-T^{J-}_{\lambda j})(A^{J+}_{j}-A^{J-}_{j})\right]\nonumber\\
-&=\frac{1}{4}T^{J^P}_{\lambda0}A^{J^P}_{0}+\sum_{j>0}
-	 \left[\frac{1}{2}T^{J+}_{\lambda j}A^{J+}_{j}
-	  +\frac{1}{2}T^{J-}_{\lambda j}A^{J-}_{j}\right]\nonumber\\
-&=\frac{1}{2}\sum_P T^{J^P}_{\lambda}A^{J^P}.\nonumber\\
+&=\frac{1}{2}T^{J^P}_{\lambda0}A^{J^P}_{0}+\sum_{j>0}
+	 \left[\frac{1}{2}(T^{J+}_{\lambda j}+T^{J-}_{\lambda j})(A^{J+}_{j}+A^{J-}_{j})
+	 +\frac{1}{2}(T^{J+}_{\lambda j}-T^{J-}_{\lambda j})(A^{J+}_{j}-A^{J-}_{j})\right]\nonumber\\
+&=\frac{1}{2}T^{J^P}_{\lambda0}A^{J^P}_{0}+\sum_{j>0}
+	 \left[T^{J+}_{\lambda j}A^{J+}_{j}
+	  +T^{J-}_{\lambda j}A^{J-}_{j}\right]\nonumber\\
+&=\sum_P T^{J^P}_{\lambda}A^{J^P}.\nonumber\\
 \end{align}
 $$
 
 $$
 \begin{align}
-&{\cal A}^{J^P\lambda_{ji}}_{\lambda_k;\lambda'_i,\lambda'_j;\lambda}(...)=
-\int d\Omega'_j \left[D^{J}_{\lambda_{ji},\lambda'_{ji}}(\phi'_j, \theta'_j,0) {\cal A}_{\lambda_k;\lambda'_i,\lambda'_j;\lambda}(...,\Omega'_j,...)+\eta'D^{J}_{\lambda_{ji},-\lambda'_{ji}}(\phi'_j, \theta'_j,0) {\cal A}_{\lambda_k;-\lambda'_i,-\lambda'_j;\lambda}(...,\Omega'_j,...)\right].
+&{\cal A}^{J^PM}_{\lambda'_i,\lambda'_j;\lambda_k;\lambda}(...)=
+\int d\Omega'_j \left[D^{J}_{M,\lambda'_{ji}}(\phi'_j, \theta'_j,0) {\cal A}_{\lambda'_i,\lambda'_j;\lambda_k;\lambda}(...,\Omega'_j,...)+\eta'D^{J}_{M,-\lambda'_{ji}}(\phi'_j, \theta'_j,0) {\cal A}_{-\lambda'_i,-\lambda'_j;\lambda_k;\lambda}(...,\Omega'_j,...)\right].
 \end{align}
 $$
 
 $$
 \begin{align}
 i{\cal M}^{Z}_{\lambda_k;\lambda_i,\lambda_j;\lambda}(p_k,p_i,p_j)
-&=\sum_{J^P}\frac{N_J^2}{2}\int \frac{{\rm p}'^{2}_jd{\rm p}'_j}{(2\pi)^3} \sum_{i'j'}i{\cal T}^{J^P}_{\lambda_i,\lambda_j;i'j'}({\rm p}'_j,M_{ij})  \ G_0({\rm p}'_j) i{\cal A}^{J^P\lambda_{ji}}_{\lambda_k;i'j';\lambda}(\Omega^{lab}_k,{\rm p}'_j,M_{ij},\Omega^{cm}_j).
+&=\sum_{J^PM}N_J^2D^{J*}_{M\lambda_{ji}}(\Omega_j)\int \frac{{\rm p}'^{2}_jd{\rm p}'_j}{(2\pi)^3} \sum_{i'j'}i{\cal T}^{J^P}_{\lambda_i,\lambda_j;i'j'}({\rm p}'_j,M_{ij})  \ G_0({\rm p}'_j) i{\cal A}^{J^PM}_{i'j';\lambda_k;\lambda}({\rm p}'_j,\Omega_k,M_{ij}).
 \end{align}
 $$
 
@@ -868,14 +736,14 @@ are calculated in `qBSE.TGA`.
 
 $$
 \begin{align}
-	\sum_{\lambda}|\frac{1}{2}T^{J^P}_{\lambda}A^{J^P}|^2&=|\frac{1}{2}T^{J^P}_{0}A^{J^P}|^2+2\sum_{j>0}|\frac{1}{2}T^{J^P}_{j}A^{J^P}|^2=\frac{1}{2}\sum_j|T^{J^P}A^{J^P}|^2.
+	\sum_{\lambda}|T^{J^P}_{\lambda}A^{J^P}|^2&=|T^{J^P}_{0}A^{J^P}|^2+2\sum_{j>0}|T^{J^P}_{j}A^{J^P}|^2=\sum_j|T^{J^P}A^{J^P}|^2.
 \end{align}
 $$
 
 $$
 \begin{align}
 \sum_{\lambda_k;\lambda_i,\lambda_j;\lambda}|i{\cal M}^{Z}_{\lambda_k;\lambda_i,\lambda_j;\lambda}(p_k,p_i,p_j)|^2
-&=\frac{1}{2}\sum_{J^P,\lambda_k,\lambda}N^2_{J}\sum_{j}|T^{J^P}A^{J^P}|^2.
+&=\sum_{J^P,\lambda_k,\lambda}N^2_{J}\sum_{j}|T^{J^P}A^{J^P}|^2.
 \end{align}
 $$
 
@@ -1236,26 +1104,7 @@ ch = qBSE.ch(["pi_m", "pi_p", "pi_p", "Lambda"], [], amps)
 
 The resulting `ch` can be passed directly to `Xs.Xsection`. See the `Xs.Xsection` documentation for further usage details.
 
-### `function LorentzBoostRotation(k, tecm, p1, p2)`
-
-This function performs a Lorentz boost and rotation to transform a particle's momentum from the lab (static) frame of the total system to the center-of-mass system (CMS) of two particles.
-
-**Arguments:**
-
-- `k`: The momentum of the particle in the CMS frame (after transformation).
-- `tecm`: The total energy in the CMS frame.
-- `p1`: The momentum of the first particle in the lab frame.
-- `p2`: The momentum of the second particle in the lab frame.
-
-**Returns:**
-
-- `knew`: Array of momentum vectors after Lorentz boost and rotation.
-- `Pnew`: Total four-momentum vector after the same transformations.
-
-This function is useful for kinematic calculations where momenta need to be expressed in different reference frames, ensuring proper treatment of boosts and rotations.
-
-
-`function LorentzBoost(k::SVector{5,Float64}, p::SVector{5,Float64})`
+### `function LorentzBoost(k::SVector{5,Float64}, p::SVector{5,Float64})`
 
 The function `LorentzBoost` takes two arguments: `k`, which is a 5-component momentum vector, and `p`, which is a 4-component momentum vector. The function performs a Lorentz boost on the momentum vector `k` using the momentum vector `p`.
 
@@ -1264,13 +1113,7 @@ The function `LorentzBoost` takes two arguments: `k`, which is a 5-component mom
 Here the momenta is a vector of 5-component momentum vectors. The function applies the Lorentz boost to each momentum vector in the array `momenta` using the momentum vector `p`.
 
 
-`function Rotation(k::SVector{5,Float64}, ct::Float64, st::Float64, cp::Float64, sp::Float64)`
 
-The function `Rotation` takes a 5-component momentum vector `k` and performs a rotation on it using the provided cosine and sine values for the polar and azimuthal angles. The rotation is applied to the momentum vector `k`, resulting in a new momentum vector that has been rotated according to the specified angles.
-
-`function Rotation(momenta::Vector{SVector{5,Float64}}, ct::Float64, st::Float64, cp::Float64, sp::Float64)`
-
-This function takes an array of 5-component momentum vectors `momenta` and applies the same rotation to each momentum vector in the array using the provided cosine and sine values for the polar and azimuthal angles. The result is a new array of rotated momentum vectors.
 
 ### `function setTGA(par, sij, k, tecm, i, j)`
 

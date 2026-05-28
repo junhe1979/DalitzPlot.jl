@@ -25,9 +25,35 @@ using Test, ProgressBars
         return total
     end
 
+    function amps4(tecm, kf, ch, para, p0)
+        # Get kf as momenta in the laboratory frame
+        k1, k2, k3, k4 = Xs.getkf(para.p, kf, ch)
+
+        # Incoming particle momentum in laboratory frame
+        p1, p2 = Xs.plab(para.p, ch.mi)
+
+        # Flux factor for cross section calculation
+        fac = 1e9 / (4 * para.p * ch.mi[2] * (2 * pi)^5)
+
+        k123 = k1 + k2 + k3
+        s123 = k123 * k123
+        m = 7.0
+        A123 = 1 / (s123 - m^2 + im * m * 0.1)
+
+        k124 = k4 + k2 + k3
+        s124 = k124 * k124
+        m = 7.0
+        A124 = 1 / (s124 - m^2 + im * m * 0.1)
+
+
+        total = abs2(A123 + A124) * fac * 0.389379e-3
+
+        return total
+    end
+
     function main()
         Ecm = 20.0
-        nevtot = Int64(1e7)
+        nevtot = Int64(1e6)
 
         # Progress bar update callback
         function progress_callback(pb)
@@ -60,10 +86,10 @@ using Test, ProgressBars
         res = Xs.Xsection(Ecm, proc, callback, axes=["p3:p2", "p1:p2"], nevtot=nevtot, Nbin=1000,
             para=(p=Ecm, l=1.0), stype=2)
 
-         @show Ecm, res.cs0 / (pi^2*Ecm^2/ 8.)
+        @show Ecm, res.cs0 / (pi^2 * Ecm^2 / 8.)
 
         # Three-particle channel definition (final state masses 2.0)
-        proc = (pf=[:"p1", "p2", "p3"],
+        proc = (pf=["p1", "p2", "p3"],
             mi=[1.0, 1.0], mf=[2.0 for i in 1:3],
             namei=["p^i_{1}", "p^i_{2}"], namef=["p_{1}", "p_{2}", "p_{3}"],
             amps=amps)
@@ -71,7 +97,21 @@ using Test, ProgressBars
         callback = i -> progress_callback(pb)  # Create callback function, passing progress bar object
         res = Xs.Xsection(10.0, proc, callback, axes=["p2:p3", "p1:p2", "p1:p3"], nevtot=nevtot, Nbin=1000,
             para=(p=8000.0, l=1.0), stype=2)
-        PLOT.plotD(res,filename="DP.png")
+        PLOT.plotD(res, filename="DP.png")
+
+
+        # Four-particle channel definition (final state masses 2.0)
+        proc = (pf=["p1", "p2", "p3", "p4"],
+            mi=[1.0, 1.0], mf=[2.0 for i in 1:4],
+            namei=["p^i_{1}", "p^i_{2}"], namef=["p_{1}", "p_{2}", "p_{3}", "p_{4}"],
+            amps=amps4)
+        pb = ProgressBar(1:nevtot)  # Create progress bar, range from 1 to nevtot
+        callback = i -> progress_callback(pb)  # Create callback function, passing progress bar object
+        res = Xs.Xsection(10.0, proc, callback, axes=["p2:p3:p4", "p1:p2:p3", "p1:p3"], nevtot=nevtot, Nbin=1000,
+            para=(p=8000.0, l=1.0), stype=2)
+        PLOT.plotD(res, filename="DP4.png")
+
+
     end
 
     main()

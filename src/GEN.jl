@@ -1,6 +1,23 @@
 module GEN
 export GENEV
 using StaticArrays
+using Random
+using Distributed
+const PROCESS_RNGS = Dict{Int,MersenneTwister}()
+
+function __init__() # 初始化时创建RNG
+    reset_genev_rngs!()
+end
+function reset_genev_rngs!(base_seed::Int=12345)# 重置所有RNG到初始状态
+    for pid in workers()
+        @spawnat pid begin
+            PROCESS_RNGS[myid()] = MersenneTwister(base_seed + myid())
+        end
+    end
+    # 也包括主进程
+    PROCESS_RNGS[myid()] = MersenneTwister(base_seed + myid())
+end
+get_process_rng() = PROCESS_RNGS[myid()] # 获取当前进程的RNG
 #######################################
 function ROTES2!(cos_theta::Float64, sin_theta::Float64, cos_theta2::Float64,
     sin_theta2::Float64, pr::MMatrix{5,18,Float64,90}, i::Int64)
@@ -28,7 +45,7 @@ function PDK(A::Float64, B::Float64, C::Float64)::Float64
     pdk = 0.5 * sqrt(abs(A_squared + (B_squared - C_squared)^2 / A_squared - 2.0 * (B_squared + C_squared)))
     return pdk
 end
-function GENEV(tecm::Float64, EM::Vector{Float64})
+function GENEV(tecm::Float64, EM::Vector{Float64}; fixed=true)
     NT = length(EM)
     EMM = @MVector zeros(Float64, 18)
     PCM = @MArray zeros(Float64, 5, 18)
@@ -80,8 +97,14 @@ function GENEV(tecm::Float64, EM::Vector{Float64})
     end
 
 
-    #RNO = NRAN(NTNM4)  # 模拟随机数生成 
-    RNO = rand(NTNM4)  # 模拟随机数生成 (替代 NRAN)
+    if fixed
+        # 使用当前进程的RNG
+        rng = get_process_rng()
+        RNO = rand(rng, NTNM4)
+    else
+        # 使用全局随机数（不固定）
+        RNO = rand(NTNM4)
+    end
 
     # 排序前 NTM2 个随机数
     if NTM2 > 1

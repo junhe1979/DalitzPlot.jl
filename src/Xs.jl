@@ -1,5 +1,5 @@
 module Xs
-using StaticArrays, Distributed, ProgressBars
+using StaticArrays, Distributed, ProgressBars, Printf
 #include("GEN.jl")
 using ..GEN
 
@@ -7,22 +7,23 @@ using ..GEN
 function binx(i::Int64, bin, iaxis::Int64)::Float64
     return bin.min[iaxis][1] + (i - 0.5) / bin.Nbin * (bin.max[iaxis][1] - bin.min[iaxis][1])
 end
+
 function binrange(axis::String, tecm, proc, stype)
-    laxes = [findfirst(==(element), proc.pf) for element in split(axis,":")]
-    min = (proc.mf[laxes[1]] + proc.mf[laxes[2]])^stype
-    max = (tecm - sum(proc.mf) + proc.mf[laxes[1]] + proc.mf[laxes[2]])^stype
-    return min, max
-function binrange(laxes::Vector{Int64}, tecm, proc, stype)
-    min = (proc.mf[laxes[1]] + proc.mf[laxes[2]])^stype
-    max = (tecm - sum(proc.mf) + proc.mf[laxes[1]] + proc.mf[laxes[2]])^stype
+    laxes = [findfirst(==(element), proc.pf) for element in split(axis, ":")]
+    msum = sum(proc.mf[laxes])
+    min = msum^stype
+    max = (tecm - sum(proc.mf) + msum)^stype
     return min, max
 end
-end
+
 function binrange(laxes::Vector{Vector{Int64}}, tecm, proc, stype)
-    min = Float64[(proc.mf[axes0[1]] + proc.mf[axes0[2]])^stype for axes0 in laxes]
-    max = Float64[(tecm - sum(proc.mf) + proc.mf[axes0[1]] + proc.mf[axes0[2]])^stype for axes0 in laxes]
+    total_mass = sum(proc.mf)
+    msum = Float64[sum(proc.mf[axes0]) for axes0 in laxes]
+    min = msum .^ stype
+    max = (tecm .- total_mass .+ msum) .^ stype
     return min, max
 end
+
 function binrange(laxes::Vector{Vector{Vector{Int64}}}, tecm, proc, stype; Range=[])
     minn = Vector{Float64}[]
     maxn = Vector{Float64}[]
@@ -46,26 +47,27 @@ function binrange(laxes::Vector{Vector{Vector{Int64}}}, tecm, proc, stype; Range
         push!(minn, min0)
         push!(maxn, max0)
     end
-
-
     return minn, maxn
 end
 function Nsij(kijs, min, max, Nbin)
     return convert(Int64, cld((kijs - min) * Nbin, (max - min)))
 end
 function Nsum3(laxes::Vector{Vector{Int64}}, i, bin::NamedTuple, kf, stype)
+
     Ns = Int64[]
     sij = Float64[]
 
     for iaxes in eachindex(laxes)
         axes0 = laxes[iaxes]
 
-        kij = kf[axes0[1]] + kf[axes0[2]]
+        kij = sum(kf[axes0])
         kijs = stype == 2 ? kij * kij : sqrt(kij * kij)
-        sij = push!(sij, kijs)
+
+        push!(sij, kijs)
 
         push!(Ns, Nsij(kijs, bin.min[i][iaxes], bin.max[i][iaxes], bin.Nbin))
     end
+
     return Ns, sij
 end
 function Nsum3(laxes::Vector{Vector{Vector{Int64}}}, bin::NamedTuple, kf, stype)
@@ -121,30 +123,29 @@ function pcm(tecm::Float64, mi::Vector{Float64})
 end
 #############################################################################
 function Xsection(tecm, proc, callback; axes=[], Range=[], nevtot=Int64(1e6),
-    Nbin=1000, para=(l = 1.0), p0=[], stype=1)
+    Nbin=1000, para=(l = 1.0), p0=[], stype=1, fixed=true)
     Nf = length(proc.pf)
     laxes = Vector{Vector{Int64}}[]
     for axis in axes
-        positions = [findall(==(element), proc.pf) for element in split(axis,":")]
+        # 找到每个粒子的索引
+        positions = [findall(==(element), proc.pf) for element in split(axis, ":")]
         laxes0 = Vector{Int64}[]
-        for p1 in positions[1], p2 in positions[2]
-            push!(laxes0, [p1, p2])
+        # 任意维笛卡尔积
+        for inds in Iterators.product(positions...)
+            push!(laxes0, collect(inds))
         end
         push!(laxes, laxes0)
     end
-
 
     Naxes = length(axes)
     axesV = []
     if Nf > 2
         min, max = binrange(laxes, tecm, proc, stype, Range=Range)
         bin = (Nbin=Nbin, min=min, max=max)
-
         axesV = [[binx(ix, bin, iaxes) for ix in 1:Nbin] for iaxes in eachindex(laxes)]
     end
     kf, wt = GENEV(tecm, proc.mf)
     leng = length(proc.amps(tecm, kf, proc, para, p0))
-
 
     zsum = zeros(Float64, leng)
     zsumt = [zeros(Float64, leng) for _ in 1:Naxes, _ in 1:Nbin]
@@ -152,7 +153,7 @@ function Xsection(tecm, proc, callback; axes=[], Range=[], nevtot=Int64(1e6),
 
     for ine in 1:nevtot
 
-        kf, wt = GENEV(tecm, proc.mf)
+        kf, wt = GENEV(tecm, proc.mf, fixed=fixed)
         if Nf > 2
             Nsij, sij = Nsum3(laxes, bin, kf, stype)
 
@@ -182,7 +183,6 @@ function Xsection(tecm, proc, callback; axes=[], Range=[], nevtot=Int64(1e6),
             zsum .+= wtamp
         end
 
-
         callback(ine)
     end
 
@@ -192,7 +192,7 @@ function Xsection(tecm, proc, callback; axes=[], Range=[], nevtot=Int64(1e6),
     res = (cs0=cs0, cs1=cs1, cs2=cs2, axesV=axesV, laxes=laxes, proc=proc)
     return res
 end
-function worker_Xsection(tecm, proc, axes, Range, nevt, Nbin, para, p0, stype, progressbar)
+function worker_Xsection(tecm, proc, axes, Range, nevt, Nbin, para, p0, stype, progressbar, fixed)
     # Define progress bar update function
     function progress_callback(pb)
         ProgressBars.update(pb)
@@ -204,20 +204,19 @@ function worker_Xsection(tecm, proc, axes, Range, nevt, Nbin, para, p0, stype, p
     else
         callback = _ -> nothing
     end
-    return Xsection(tecm, proc, callback, axes=axes, Range=Range, nevtot=nevt, Nbin=Nbin, para=para, p0=p0, stype=stype)
+    return Xsection(tecm, proc, callback, axes=axes, Range=Range, nevtot=nevt, Nbin=Nbin, para=para, p0=p0, stype=stype, fixed=fixed)
 end
-function Xsection(tecm, proc; axes=[], Range=[], nevtot=Int64(1e6), Nbin=100, para=(l = 1.0), p0=[], stype=1, progressbar=true)
-    println(repeat('-', 90))
-    printstyled("⚙️ Current parameters:"; color=:blue)
-    println()
-    @show p0
-    printstyled("⏳ Calculating cross section:"; color=:blue)
-    println()
+function Xsection(tecm, proc; axes=[], Range=[], nevtot=Int64(1e6), Nbin=100, para=(l = 1.0), p0=[], stype=1, progressbar=true, fixed=true)
+    if fixed
+        GEN.reset_genev_rngs!()
+        #println("RNG已重置，使用固定种子")
+    end
+
     num_workers = nworkers()
     nevt_per_worker = div(nevtot, num_workers)
     ranges = [(i * nevt_per_worker + 1, Base.min((i + 1) * nevt_per_worker, nevtot)) for i in 0:(num_workers-1)]
     GC.gc(false)
-    results = pmap(r -> worker_Xsection(tecm, proc, axes, Range, r[2] - r[1] + 1, Nbin, para, p0, stype, progressbar), ranges)
+    results = pmap(r -> worker_Xsection(tecm, proc, axes, Range, r[2] - r[1] + 1, Nbin, para, p0, stype, progressbar, fixed), ranges)
 
     zsum = nothing
     zsumt = nothing

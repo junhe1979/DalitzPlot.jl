@@ -30,7 +30,7 @@ function readdata(filename)
     end
     return data_groups
 end
-function plotD(res; cg=cgrad([:white, :green, :blue, :red], [0, 0.01, 0.1, 0.5, 1.0]), topx=[], topy=[], topye=[], rightx=[], righty=[], rightye=[], toprightx=[], toprighty=[], toprightye=[], filename="DP.pdf")
+function plotD(res; cg=cgrad([:white, :green, :blue, :red], [0, 0.01, 0.1, 0.5, 1.0]), topx=[], topy=[], topye=[], topyh=[], rightx=[], righty=[], rightye=[], rightyh=[], toprightx=[], toprighty=[], toprightye=[], toprightyh=[], filename="DP.pdf")
     println(repeat('-', 90))
     t_start = time_ns()
     printstyled("⏳ Plotting... "; color=:blue)
@@ -42,7 +42,8 @@ function plotD(res; cg=cgrad([:white, :green, :blue, :red], [0, 0.01, 0.1, 0.5, 
     proc = res.proc
 
     laxes1 = [laxes0[1] for laxes0 in laxes]
-    Laxes = [proc.namef[laxes1[1][1]] * proc.namef[laxes1[1][2]], proc.namef[laxes1[2][1]] * proc.namef[laxes1[2][2]]]
+    Laxes = [join(proc.namef[laxes1i]) for laxes1i in laxes1
+    ]
 
 
     Nbin = length(axesV[1])
@@ -50,7 +51,7 @@ function plotD(res; cg=cgrad([:white, :green, :blue, :red], [0, 0.01, 0.1, 0.5, 
     xlims = (minimum(x1), maximum(x1))
     dx = (maximum(x1) - minimum(x1)) / Nbin
 
-    p0 = Plots.plot(xticks=:auto, ylabel=latexstring("d\\sigma/m^2_{" * Laxes[1] * "} (\\textrm{ barn/GeV^2})"), framestyle=:box, xmirror=true, legend=:none, linetype=:steppre)
+    p0 = Plots.plot(xticks=:auto, ylabel=latexstring("d\\sigma/m_{" * Laxes[1] * "} (\\textrm{ barn/GeV^2})"), framestyle=:box, xmirror=true, legend=:none, linetype=:steppre)
     y1min, y1max = 1e20, 0.
     for i in eachindex(cs1)
         y1 = cs1[i][1, :]
@@ -69,6 +70,7 @@ function plotD(res; cg=cgrad([:white, :green, :blue, :red], [0, 0.01, 0.1, 0.5, 
         else
             Plots.scatter!(topx, topy, yerr=topye, markersize=1)
         end
+        !isempty(topyh) && Plots.plot!(p1, topx, topyh, seriestype=:stepmid)
     else
         p1 = p0
     end
@@ -78,7 +80,7 @@ function plotD(res; cg=cgrad([:white, :green, :blue, :red], [0, 0.01, 0.1, 0.5, 
     y2 = axesV[2]
     ylims = (minimum(y2), maximum(y2))
     dy = (maximum(y2) - minimum(y2)) / Nbin
-    p0 = Plots.plot(xlabel=latexstring("d\\sigma/m^2_{" * Laxes[2] * "} (\\textrm{ barn/GeV^2})"), framestyle=:box, ymirror=true, legend=:none, linetype=:steppre)
+    p0 = Plots.plot(xlabel=latexstring("d\\sigma/m_{" * Laxes[2] * "} (\\textrm{ barn/GeV^2})"), framestyle=:box, ymirror=true, legend=:none, linetype=:steppre)
     x2min, x2max = 1e20, 0.
     for i in eachindex(cs1)
         x2 = cs1[i][2, :]
@@ -93,12 +95,14 @@ function plotD(res; cg=cgrad([:white, :green, :blue, :red], [0, 0.01, 0.1, 0.5, 
     end
 
 
-    if !isempty(topx)
+    if !isempty(rightx)
         p2 = if isempty(rightye)
             Plots.scatter!(righty, rightx, markersize=1)
         else
             Plots.scatter!(righty, rightx, xerr=rightye, markersize=1)
         end
+        rightx0 = rightx .- ((rightx[2] - rightx[1]) / 2.)
+        !isempty(rightyh) && Plots.plot!(p2, rightyh, rightx0, seriestype=:steppre)
     else
         p2 = p0
     end
@@ -120,7 +124,7 @@ function plotD(res; cg=cgrad([:white, :green, :blue, :red], [0, 0.01, 0.1, 0.5, 
         xlims = (minimum(x3), maximum(x3))
         dx = (maximum(x3) - minimum(x3)) / Nbin
 
-        p0 = Plots.plot(xticks=:auto, ylabel=latexstring("d\\sigma/m^2_{" * Laxes[1] * "} (\\textrm{ barn/GeV^2})"), framestyle=:box, xmirror=true, ymirror=true, legend=:none, linetype=:steppre)
+        p0 = Plots.plot(xticks=:auto, ylabel=latexstring("d\\sigma/m_{" * Laxes[3] * "} (\\textrm{ barn/GeV^2})"), framestyle=:box, xmirror=true, ymirror=true, legend=:none, linetype=:steppre)
         y3min, y3max = 1e20, 0.
         for i in eachindex(cs1)
             y3 = cs1[i][3, :]
@@ -134,7 +138,13 @@ function plotD(res; cg=cgrad([:white, :green, :blue, :red], [0, 0.01, 0.1, 0.5, 
         end
 
         if !isempty(toprightx)
-            p3 = Plots.scatter!(toprightx, toprighty, yerr=toprightye, markersize=1)
+            p3 = if isempty(toprightye)
+                Plots.scatter!(toprightx, toprighty, markersize=1)
+            else
+                Plots.scatter!(toprightx, toprighty, yerr=toprightye, markersize=1)
+            end
+            !isempty(toprightyh) && Plots.plot!(p3, toprightx, toprightyh, seriestype=:stepmid)
+
         else
             p3 = p0
         end
@@ -153,7 +163,7 @@ function plotD(res; cg=cgrad([:white, :green, :blue, :red], [0, 0.01, 0.1, 0.5, 
     Plots.savefig(filename)
     t_end = time_ns()
     elapsed_sec = (t_end - t_start) / 1e9
-    @printf("✅ Plotting completed successfully!  ⏱️ Total elapsed time: %.4f seconds\n", elapsed_sec)
+    @printf("✅ Plotting completed successfully!  ⏱️ Elapsed time: %.4f seconds\n", elapsed_sec)
     println(repeat('-', 90))
     return DP
 end
