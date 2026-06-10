@@ -5,7 +5,7 @@ using Test, ProgressBars
 @testset "DalitzPlot Tests" begin
 
     # Amplitude function for the process
-    function amps(tecm, kf, ch, para, p0)
+    function amps3(tecm, kf, ch, para, p0)
         # Get kf as momenta in the laboratory frame
         k1, k2, k3 = Xs.getkf(para.p, kf, ch)
 
@@ -60,39 +60,39 @@ using Test, ProgressBars
             ProgressBars.update(pb)  # Update progress bar
         end
 
-        # Dummy amplitude function
-        amps1(tecm, kf, proc, para, p0) = 1.
+        # Dummy amplitude function to illustrate the shape of Dalitz plot and verify the cross-section formula
+        amps(tecm, kf, proc, para, p0) = 1.
 
-        # Two-particle channel definition
+        # Two-particle channel definition (final state masses 0)
         proc = (pf=["p1", "p2"],
             mi=[1.0, 1.0], mf=[0.0 for i in 1:2],
             namei=["p^i_{1}", "p^i_{2}"], namef=["p_{1}", "p_{2}"],
-            amps=amps1)
+            amps=amps)
 
         pb = ProgressBar(1:nevtot)  # Create progress bar, range from 1 to nevtot
         callback = i -> progress_callback(pb)  # Create callback function, passing progress bar object
         res = Xs.Xsection(Ecm, proc, callback, axes=["p1:p2"], nevtot=nevtot, Nbin=1000,
-            para=(p=Ecm, l=1.0), stype=2)
+            para=(p=Ecm, l=1.0))
         @show Ecm, res.cs0 / (pi / 2.)
 
         # Three-particle channel definition (final state masses 0)
         proc = (pf=["p1", "p2", "p3"],
             mi=[1.0, 1.0], mf=[0.0 for i in 1:3],
             namei=["p^i_{1}", "p^i_{2}"], namef=["p_{1}", "p_{2}", "p_{3}"],
-            amps=amps1)
+            amps=amps)
 
         pb = ProgressBar(1:nevtot)  # Create progress bar, range from 1 to nevtot
         callback = i -> progress_callback(pb)  # Create callback function, passing progress bar object
         res = Xs.Xsection(Ecm, proc, callback, axes=["p3:p2", "p1:p2"], nevtot=nevtot, Nbin=1000,
-            para=(p=Ecm, l=1.0), stype=2)
+            para=(p=Ecm, l=1.0))
 
         @show Ecm, res.cs0 / (pi^2 * Ecm^2 / 8.)
 
-        # Three-particle channel definition (final state masses 2.0)
+        # Three-particle channel definition (final-state masses = 2.0). stype = 2 uses invariant mass squared.
         proc = (pf=["p1", "p2", "p3"],
             mi=[1.0, 1.0], mf=[2.0 for i in 1:3],
             namei=["p^i_{1}", "p^i_{2}"], namef=["p_{1}", "p_{2}", "p_{3}"],
-            amps=amps)
+            amps=amps3)
         pb = ProgressBar(1:nevtot)  # Create progress bar, range from 1 to nevtot
         callback = i -> progress_callback(pb)  # Create callback function, passing progress bar object
         res = Xs.Xsection(10.0, proc, callback, axes=["p2:p3", "p1:p2", "p1:p3"], nevtot=nevtot, Nbin=1000,
@@ -100,7 +100,7 @@ using Test, ProgressBars
         PLOT.plotD(res, filename="DP.png")
 
 
-        # Four-particle channel definition (final state masses 2.0)
+        # Four-particle channel definition (final state masses 2.0). stype = 1 uses invariant mass.
         proc = (pf=["p1", "p2", "p3", "p4"],
             mi=[1.0, 1.0], mf=[2.0 for i in 1:4],
             namei=["p^i_{1}", "p^i_{2}"], namef=["p_{1}", "p_{2}", "p_{3}", "p_{4}"],
@@ -108,8 +108,32 @@ using Test, ProgressBars
         pb = ProgressBar(1:nevtot)  # Create progress bar, range from 1 to nevtot
         callback = i -> progress_callback(pb)  # Create callback function, passing progress bar object
         res = Xs.Xsection(10.0, proc, callback, axes=["p2:p3:p4", "p1:p2:p3", "p1:p3"], nevtot=nevtot, Nbin=1000,
-            para=(p=8000.0, l=1.0), stype=2)
+            para=(p=8000.0, l=1.0), stype=1)
         PLOT.plotD(res, filename="DP4.png")
+
+        # Four-particle channel: three identical particles p1 + one p2, all masses equal
+        proc = (pf=["p1", "p1", "p1", "p2"],
+            mi=[1.0, 1.0], mf=[2.0 for i in 1:4],
+            namei=["p^i_{1}", "p^i_{2}", "p^i_{2}"],
+            namef=["p_{1}", "p_{1}", "p_{1}", "p_{2}"],
+            amps=amps4)
+
+        # Fixed-label Dalitz plot
+        pb_fixed = ProgressBar(1:nevtot)
+        callback_fixed = i -> update(pb_fixed)
+        res_fixed = Xs.Xsection(10., proc, callback_fixed,
+            axes=["p1:p1:p1", "p1:p2", "p1:p1"], nevtot=nevtot, Nbin=500,
+            para=(p=8000.0, l=1.0), stype=2, symmetrize=false)
+
+        # Symmetrized Dalitz plot
+        pb_sym = ProgressBar(1:nevtot)
+        callback_sym = i -> update(pb_sym)
+        res_sym = Xs.Xsection(10., proc, callback_sym,
+            axes=["p1:p1:p1", "p1:p2", "p1:p1"], nevtot=nevtot, Nbin=500,
+            para=(p=8000.0, l=1.0), stype=2, symmetrize=true)
+
+        PLOT.plotD(res_fixed, filename="DP_fixed.png")
+        PLOT.plotD(res_sym, filename="DP_symmetrized.png")
 
 
     end

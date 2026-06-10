@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.4.4] - 2026-06-10
+
+### Changed
+
+- The `cs1` and `cs2` arrays returned by `Xs.Xsection` now represent the **differential cross sections**  
+  \(d\sigma/dm\) (1‑D invariant mass) and \(d^2\sigma/dm_1 dm_2\) (2‑D Dalitz plot), respectively.  
+  Previously these outputs contained the total cross section accumulated in each bin without the bin‑width division; they are now properly normalised by the bin widths, matching the standard definition of differential distributions.
+
+### Added
+
+- New keyword argument `symmetrize` in `Xs.Xsection` (default: `true`).  
+  - When `true`, a **symmetrised Dalitz plot** is produced: all physically allowed pairings of the particles defined by the axes are filled for each event, with the event weight divided by the number of pairings. This mimics standard experimental procedures for final states with identical particles and yields label‑independent distributions with improved statistical precision.  
+  - When `false`, a **fixed‑label Dalitz plot** is produced, using only a single, predefined pairing per event.  
+  - The allowed pairings are determined with the following priorities: completely non‑overlapping sets, sets sharing exactly one particle, non‑subset sets, and (as a last resort) all possible pairs with a warning.  
+  - The symmetrisation rules apply to both the 2‑D Dalitz plot (first two axes) and the 1‑D invariant mass spectra (all axes).
+
 
 ## [0.4.3] - 2026-03-28
 

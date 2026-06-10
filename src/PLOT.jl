@@ -49,19 +49,18 @@ function plotD(res; cg=cgrad([:white, :green, :blue, :red], [0, 0.01, 0.1, 0.5, 
     Nbin = length(axesV[1])
     x1 = axesV[1]
     xlims = (minimum(x1), maximum(x1))
-    dx = (maximum(x1) - minimum(x1)) / Nbin
-
-    p0 = Plots.plot(xticks=:auto, ylabel=latexstring("d\\sigma/m_{" * Laxes[1] * "} (\\textrm{ barn/GeV^2})"), framestyle=:box, xmirror=true, legend=:none, linetype=:steppre)
+    s_string= res.stype==1 ? "" : "^2"
+    p0 = Plots.plot(xticks=:auto, ylabel=latexstring("d\\sigma/m"*s_string*"_{" * Laxes[1] * "} (\\textrm{ barn/GeV^2})"), framestyle=:box, xmirror=true, legend=:none, linetype=:steppre)
     y1min, y1max = 1e20, 0.
     for i in eachindex(cs1)
         y1 = cs1[i][1, :]
-        if minimum(y1) / dx < y1min
-            y1min = minimum(y1) / dx
+        if minimum(y1)  < y1min
+            y1min = minimum(y1) 
         end
-        if maximum(y1) / dx > y1max
-            y1max = maximum(y1) / dx
+        if maximum(y1)  > y1max
+            y1max = maximum(y1) 
         end
-        Plots.plot!(p0, x1, y1 / dx, xlims=xlims, ylims=(y1min, y1max * 1.1))
+        Plots.plot!(p0, x1, y1, xlims=xlims, ylims=(y1min, y1max * 1.1))
     end
 
     if !isempty(topx)
@@ -79,19 +78,18 @@ function plotD(res; cg=cgrad([:white, :green, :blue, :red], [0, 0.01, 0.1, 0.5, 
 
     y2 = axesV[2]
     ylims = (minimum(y2), maximum(y2))
-    dy = (maximum(y2) - minimum(y2)) / Nbin
-    p0 = Plots.plot(xlabel=latexstring("d\\sigma/m_{" * Laxes[2] * "} (\\textrm{ barn/GeV^2})"), framestyle=:box, ymirror=true, legend=:none, linetype=:steppre)
+    p0 = Plots.plot(xlabel=latexstring("d\\sigma/m"*s_string*"_{" * Laxes[2] * "} (\\textrm{ barn/GeV^2})"), framestyle=:box, ymirror=true, legend=:none, linetype=:steppre)
     x2min, x2max = 1e20, 0.
     for i in eachindex(cs1)
         x2 = cs1[i][2, :]
 
-        if minimum(x2) / dx < x2min
-            x2min = minimum(x2) / dy
+        if minimum(x2) < x2min
+            x2min = minimum(x2) 
         end
-        if maximum(x2) / dx > x2max
-            x2max = maximum(x2) / dy
+        if maximum(x2) > x2max
+            x2max = maximum(x2) 
         end
-        p0 = Plots.plot!(x2 / dy, y2, xlims=(x2min, x2max * 1.1), ylims=ylims)
+        p0 = Plots.plot!(x2 , y2, xlims=(x2min, x2max * 1.1), ylims=ylims)
     end
 
 
@@ -113,28 +111,25 @@ function plotD(res; cg=cgrad([:white, :green, :blue, :red], [0, 0.01, 0.1, 0.5, 
     y = axesV[2]
     xlims = (minimum(x), maximum(x))
     ylims = (minimum(y), maximum(y))
-    dx = (maximum(x) - minimum(x)) / Nbin
-    dy = (maximum(y) - minimum(y)) / Nbin
-    z = [cs2[1][ix, iy] / (dx * dy) for iy in 1:Nbin, ix in 1:Nbin]
+    z = [cs2[1][ix, iy]  for iy in 1:Nbin, ix in 1:Nbin]
     p = Plots.heatmap(x, y, z, xlims=xlims, ylims=ylims, c=cg, xlabel=latexstring(Laxes[1]), ylabel=latexstring(Laxes[2]), framestyle=:box, cb=:none)
 
     if length(axesV) >= 3
         Nbin = length(axesV[3])
         x3 = axesV[3]
         xlims = (minimum(x3), maximum(x3))
-        dx = (maximum(x3) - minimum(x3)) / Nbin
 
-        p0 = Plots.plot(xticks=:auto, ylabel=latexstring("d\\sigma/m_{" * Laxes[3] * "} (\\textrm{ barn/GeV^2})"), framestyle=:box, xmirror=true, ymirror=true, legend=:none, linetype=:steppre)
+        p0 = Plots.plot(xticks=:auto, ylabel=latexstring("d\\sigma/m"*s_string*"_{" * Laxes[3] * "} (\\textrm{ barn/GeV^2})"), framestyle=:box, xmirror=true, ymirror=true, legend=:none, linetype=:steppre)
         y3min, y3max = 1e20, 0.
         for i in eachindex(cs1)
             y3 = cs1[i][3, :]
-            if minimum(y3) / dx < y3min
-                y3min = minimum(y3) / dx
+            if minimum(y3)  < y3min
+                y3min = minimum(y3) 
             end
-            if maximum(y3) / dx > y3max
-                y3max = maximum(y3) / dx
+            if maximum(y3)  > y3max
+                y3max = maximum(y3) 
             end
-            Plots.plot!(p0, x3, y3 / dx, xlims=xlims, ylims=(y3min, y3max * 1.1))
+            Plots.plot!(p0, x3, y3, xlims=xlims, ylims=(y3min, y3max * 1.1))
         end
 
         if !isempty(toprightx)
@@ -172,9 +167,9 @@ function plotWeb(res)
     Nbin = length(res.axesV[1])
     x, y = res.axesV
     xlims, ylims = (minimum(x), maximum(x)), (minimum(y), maximum(y))
-    dx, dy = (maximum(x) - minimum(x)) / Nbin, (maximum(y) - minimum(y)) / Nbin
-    y1, y2 = cs1[1, :] / dx, cs1[2, :] / dy
-    z = [[cs2[ix, iy] / (dx * dy) for iy in 1:Nbin] for ix in 1:Nbin]
+
+    y1, y2 = cs1[1, :] , cs1[2, :] 
+    z = [[cs2[ix, iy]  for iy in 1:Nbin] for ix in 1:Nbin]
     return x, y, z, y1, y2
 end
 end

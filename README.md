@@ -1,6 +1,4 @@
 # Outline
-
-- [Outline](#outline)
 - [DalitzPlot.jl](#dalitzplotjl)
   - [Installation](#installation)
   - [Usage](#usage)
@@ -9,6 +7,7 @@
   - [Define the masses of initial and final particles](#define-the-masses-of-initial-and-final-particles)
   - [Define the momentum or total energy](#define-the-momentum-or-total-energy)
   - [Calculate](#calculate)
+  - [Dalitz plot generation and identical particle treatment](#dalitz-plot-generation-and-identical-particle-treatment)
   - [Plot Dalitz Plot](#plot-dalitz-plot)
   - [other functions](#other-functions)
     - [Bin](#bin)
@@ -31,7 +30,6 @@
   - [Fitting](#fitting)
   - [Variable Broadcasting](#variable-broadcasting)
   - [Significance Calculation](#significance-calculation)
-
 
 <!-- tocstop -->
 
@@ -296,6 +294,92 @@ proc = (pf=["p1", "p2", "p3"],
 res = Xs.Xsection(10.0, proc, axes=["p2:p3", "p1:p2"], nevtot=nevtot, Nbin=1000,
     para=(p=8000.0, l=1.0), stype=2)
 ```
+
+## Dalitz plot generation and identical particle treatment
+
+The function `Xs.Xsection` computes differential cross sections and Dalitz plot  for multi‑body final states.  
+A central feature is the correct handling of **identical particles**, both at the level of amplitude symmetrisation (which must be provided by the user) and at the level of histogram filling.
+
+### The `symmetrize` keyword
+
+The function `cross_section` (or `Xs.xsection`) accepts a keyword argument `symmetrize::Bool` (default `true`) that controls how the Dalitz plot and the one‑dimensional invariant mass spectra are filled.
+
+- **`symmetrize = true`** (default)  
+  - Produces a **symmetrised Dalitz plot**.  
+  - For every event, **all physically allowed pairings** of the particles specified by the axes are identified and filled into the histograms.  
+  - The allowed pairings are determined with the following priority:  
+    - completely non‑overlapping particle sets,  
+    - sets sharing exactly one particle,  
+    - sets that are not subsets of each other (if none of the above are found),  
+    - all possible pairs (only as a last resort, with a warning).  
+  - The event weight is divided by the number of pairings, so that the total contribution of one event remains equal to its original Monte‑Carlo weight.  
+  - This approach mimics the standard experimental procedure for final states with identical particles (e.g. three $\pi^0$ or two $\pi^+$): the resulting distributions are independent of arbitrary particle labels and have improved statistical precision.
+
+- **`symmetrize = false`**  
+  - Produces a **fixed‑label Dalitz plot**.  
+  - Only a single, predefined pairing is used per event. This pairing is chosen by the algorithm as the first valid one found, with the following priority:  
+    -  completely non‑overlapping particle sets,  
+    -  sets sharing exactly one particle.  
+  - If neither can be found, the first combination of each axis is taken (a warning is issued).  
+  The resulting distribution corresponds to a differential cross section with a specific (though arbitrary) labelling convention.  
+  
+*Provided the amplitude is properly (anti‑)symmetrised with respect to identical particles, the shape of the fixed‑label Dalitz plot is identical to that of the symmetrised one; only the statistical precision differs.*
+
+**Important:** The `symmetrize` flag only affects histogram filling. The quantum‑mechanical amplitude supplied by the user **must already satisfy Bose or Fermi symmetry** for identical particles. The code does not symmetrise the amplitude itself.
+
+### How identical particles are handled internally
+
+The procedure consists of three steps:
+
+#### 1. Generation of unique index combinations for each axie
+For each axis string (e.g. `"p1:p1"` or `"p1:p2"`), the code finds all possible assignments of the named particles to the final‑state momenta.  
+If an axis contains only particles with the same name (i.e. truly identical particles), the combinations are **sorted and deduplicated**. For instance, $[1,2]$ and $[2,1]$ are considered the same physical pair because the particles are indistinguishable.  
+After this step, every axis holds a list of unique ordered index tuples.
+
+#### 2. Building valid Dalitz pairs (`fill_pairs`)
+For a two‑dimensional Dalitz plot, the code needs to form pairs of combinations $(c1, c2)$ from the first and second axis. The following priorities are used to select physically meaningful pairs:
+
+- **Completely non‑overlapping** (ideal for four‑body final states, e.g. $(12,34)$).
+- **Sharing exactly one particle** (typical for three‑body final states, e.g. $(12,13)$, $(12,23)$, $(13,23)$).
+- **All other cases**  (including pairs that are not subsets of each other, e.g. (234,123), as well as all possible combinations)  – only as a last resort, with a warning that the variable definition may be non‑standard.
+
+Within each category, duplicate pairs (equivalent under particle exchange) are removed.
+
+#### 3. Filling the histograms
+- **2‑D histogram (`zsumd`)**  
+  Only the first two axes contribute to the Dalitz plot.  
+  In `symmetrize = true` mode, all pairs in `fill_pairs` are filled, and the event weight is divided by the number of pairs.  
+  In `symmetrize = false` mode, only the first pair in `fill_pairs` is used, and the full event weight is deposited.  
+- **1‑D histograms (`zsumt`)**  
+  Every axis defined by the user produces a one‑dimensional invariant‑mass spectrum.  
+  In symmetrised mode, all combinations of an axis are filled with weight divided by the number of combinations.  
+  In fixed‑label mode, each axis uses only its first combination.  
+  The 1‑D spectra are always self‑consistent with the Dalitz plot: no separate projection is needed because the event loop directly fills both `zsumt` and `zsumd`.
+
+#### 4. Event weight and normalisation
+The raw Monte‑Carlo weight `wt` from the phase‑space generator is multiplied by the (already symmetrised) amplitude squared.  
+The final cross sections `cs0`, `cs1` and `cs2` are obtained by dividing the accumulated sums by the total number of generated events (`nevtot`) and the appropriate bin widths.  
+
+**Note on statistical factors for identical particles:**  
+The phase‑space generator `GENEV` does **not** automatically include the factor $1/N!$ for $N$ identical particles. To obtain the correct absolute normalisation, the user must either:
+- incorporate the factor into the amplitude (e.g. multiply by $1/\sqrt{N!}$ before squaring), or
+- divide the resulting cross section by $N!$ after the integration.  
+
+This is not done automatically because the required factors depend on the specific amplitude model.
+
+### Behaviour for more than two axes
+
+The user may supply more than two axis strings (e.g. `axes = ["p1:p2", "p3:p4", "p1:p3"]`).  
+The first two axes are used to define the Dalitz plot; all axes produce their own one‑dimensional invariant‑mass spectra.  
+The same symmetrisation rules apply to every axis independently.
+
+### Summary of symmetrisation options
+
+| Situation | `symmetrize = true` | `symmetrize = false` |
+|-----------|---------------------|----------------------|
+| 3 identical particles (e.g. $3\pi^0$) | Fills three points per event (shared‑particle pairs). Dalitz plot is fully symmetric. | Fills one point (the first valid pair). Shape identical if amplitude is symmetric. |
+| 4 identical particles (e.g. $4\pi^0$) | Fills three non‑overlapping pairs per event. Three‑sector Dalitz plot. | Fills one point. Shape identical if amplitude is symmetric. |
+| Mixed final states (e.g. $2\pi^++\pi^-+\pi^0$) | Symmetrises only the axes that contain identical particles. | Uses one representative pairing per axis. |
 
 ## Plot Dalitz Plot
 
