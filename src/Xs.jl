@@ -140,7 +140,6 @@ function Xsection(tecm, proc, callback; axes=[], Range=[], nevtot=Int64(1e6),
                 push!(combos, collect(inds))
             end
         end
-        # If all particle names in the axis are identical, remove duplicates due to ordering
         if length(unique(particles)) == 1
             seen = Set{Vector{Int64}}()
             unique_combos = Vector{Int64}[]
@@ -158,23 +157,20 @@ function Xsection(tecm, proc, callback; axes=[], Range=[], nevtot=Int64(1e6),
 
     Naxes = length(axes)
 
-    # ---------- 2. Build all valid Dalitz pairs (only for the first two axes) ----------
+    # ---------- 2. Build all valid Dalitz pairs ----------
     fill_pairs = Tuple{Vector{Int64},Vector{Int64}}[]
     if Naxes >= 2
-        # Avoid duplicates
         function is_dup(p)
             s = sort([p[1], p[2]])
             return any(x -> sort([x[1], x[2]]) == s, fill_pairs)
         end
 
-        # Prefer completely non-overlapping pairs
         for c1 in laxes_full[1], c2 in laxes_full[2]
             if isempty(intersect(c1, c2)) && !is_dup((c1, c2))
                 push!(fill_pairs, (c1, c2))
             end
         end
 
-        # If none, choose pairs sharing exactly one particle
         if isempty(fill_pairs)
             for c1 in laxes_full[1], c2 in laxes_full[2]
                 if length(intersect(c1, c2)) == 1 && !is_dup((c1, c2))
@@ -183,9 +179,8 @@ function Xsection(tecm, proc, callback; axes=[], Range=[], nevtot=Int64(1e6),
             end
         end
 
-        # If still empty, raise an error
         if isempty(fill_pairs)
-            @warn "No standard Dalitz pairs found; using ALL combinations from the two axes. This may produce highly correlated variables and non-physical structures. Proceed with caution."
+            @warn "No standard Dalitz pairs found; using ALL combinations."
             for c1 in laxes_full[1], c2 in laxes_full[2]
                 if !is_dup((c1, c2))
                     push!(fill_pairs, (c1, c2))
@@ -198,7 +193,6 @@ function Xsection(tecm, proc, callback; axes=[], Range=[], nevtot=Int64(1e6),
     if symmetrize
         laxes = laxes_full
     else
-        # Fixed-label mode: first two axes use the first valid pair, others use their first combination
         laxes = Vector{Vector{Int64}}[]
         if Naxes >= 2
             push!(laxes, [fill_pairs[1][1]])
@@ -211,9 +205,12 @@ function Xsection(tecm, proc, callback; axes=[], Range=[], nevtot=Int64(1e6),
         end
     end
 
-    # ---------- 4. Common bin ranges (based on all combinations) ----------
+    # ---------- 4. Common bin ranges ----------
     Nf = length(proc.pf)
     axesV = []
+    min_vals, max_vals = Float64[], Float64[]
+    bin = (Nbin=Nbin, min=min_vals, max=max_vals)
+
     if Nf > 2
         min_vals, max_vals = binrange(laxes_full, tecm, proc, stype, Range=Range)
         bin = (Nbin=Nbin, min=min_vals, max=max_vals)
@@ -222,11 +219,32 @@ function Xsection(tecm, proc, callback; axes=[], Range=[], nevtot=Int64(1e6),
 
     # ---------- 5. Initialize accumulators ----------
     kf, wt = GENEV(tecm, proc.mf)
-    leng = length(proc.amps(tecm, kf, proc, para, p0))
+    amp_init = proc.amps(tecm, kf, proc, para, p0)
+    leng = length(amp_init)
 
     zsum = zeros(Float64, leng)
-    zsumt = [zeros(Float64, leng) for _ in 1:Naxes, _ in 1:Nbin]
-    zsumd = [zeros(Float64, leng) for _ in 1:Nbin, _ in 1:Nbin]
+
+
+    dim_axes = Nf > 2 ? Naxes : 1
+    dim_bin = Nf > 2 ? Nbin : 1
+
+    zsumt_3d = zeros(Float64, leng, dim_axes, dim_bin)
+    zsumd_3d = zeros(Float64, leng, dim_bin, dim_bin)
+
+
+    wtamp_buffer = zeros(Float64, leng)
+
+
+    pair_indices = Vector{Tuple{Int,Int}}()
+    if Nf > 2 && Naxes >= 2
+        for (c1, c2) in fill_pairs
+            idx1 = findfirst(==(c1), laxes[1])
+            idx2 = findfirst(==(c2), laxes[2])
+            if idx1 !== nothing && idx2 !== nothing
+                push!(pair_indices, (idx1, idx2))
+            end
+        end
+    end
 
     # ---------- 6. Event loop ----------
     for ine in 1:nevtot
@@ -235,77 +253,118 @@ function Xsection(tecm, proc, callback; axes=[], Range=[], nevtot=Int64(1e6),
         if Nf > 2
             Nsij, sij = Nsum3(laxes, bin, kf, stype)
 
-            range_ok = [any(min_vals[i] .<= sij[i] .&& sij[i] .<= max_vals[i]) for i in 1:Naxes]
-            if all(range_ok)
-                amp0 = proc.amps(tecm, kf, proc, para, p0)
-                wtamp = wt .* amp0
-                zsum .+= wtamp
 
-                # ---- 1D filling for all axes ----
+            is_in_range = true
+            @inbounds for i in 1:Naxes
+                axis_ok = false
+                for val in sij[i]
+                    if min_vals[i] <= val <= max_vals[i]
+                        axis_ok = true
+                        break
+                    end
+                end
+                if !axis_ok
+                    is_in_range = false
+                    break
+                end
+            end
+
+            if is_in_range
+                amp0 = proc.amps(tecm, kf, proc, para, p0)
+
+
+                @inbounds for k in 1:leng
+                    wtamp_buffer[k] = wt * amp0[k]
+                    zsum[k] += wtamp_buffer[k]
+                end
+
+                # ---- 1D filling  ----
                 for iaxis in 1:Naxes
                     if symmetrize
                         n_comb = length(Nsij[iaxis])
-                        wt1 = wtamp ./ n_comb
+                        inv_n_comb = 1.0 / n_comb
                         for isij in Nsij[iaxis]
                             if 1 < isij <= Nbin
-                                zsumt[iaxis, isij] .+= wt1
-                            end
-                        end
-                    else
-                        # fixed-label: each axis has only one combination
-                        isij = Nsij[iaxis][1]
-                        if 1 < isij <= Nbin
-                            zsumt[iaxis, isij] .+= wtamp
-                        end
-                    end
-                end
 
-                # ---- 2D filling (only if at least two axes) ----
-                if Naxes >= 2
-                    if symmetrize
-                        n_fill = length(fill_pairs)
-                        wt2 = wtamp ./ n_fill
-                        for (c1, c2) in fill_pairs
-                            idx1 = findfirst(==(c1), laxes[1])
-                            idx2 = findfirst(==(c2), laxes[2])
-                            if idx1 !== nothing && idx2 !== nothing
-                                isij = Nsij[1][idx1]
-                                jsij = Nsij[2][idx2]
-                                if 1 < isij <= Nbin && 1 < jsij <= Nbin
-                                    zsumd[isij, jsij] .+= wt2
+                                @inbounds for k in 1:leng
+                                    zsumt_3d[k, iaxis, isij] += wtamp_buffer[k] * inv_n_comb
                                 end
                             end
                         end
                     else
-                        c1, c2 = fill_pairs[1]
-                        idx1 = findfirst(==(c1), laxes[1])
-                        idx2 = findfirst(==(c2), laxes[2])
-                        isij = Nsij[1][idx1]
-                        jsij = Nsij[2][idx2]
-                        if 1 < isij <= Nbin && 1 < jsij <= Nbin
-                            zsumd[isij, jsij] .+= wtamp
+                        isij = Nsij[iaxis][1]
+                        if 1 < isij <= Nbin
+                            @inbounds for k in 1:leng
+                                zsumt_3d[k, iaxis, isij] += wtamp_buffer[k]
+                            end
+                        end
+                    end
+                end
+
+                # ---- 2D filling  ----
+                if Naxes >= 2
+                    if symmetrize
+                        n_fill = length(pair_indices)
+                        inv_n_fill = 1.0 / n_fill
+                        for idx in 1:n_fill
+                            @inbounds idx1, idx2 = pair_indices[idx]
+                            @inbounds isij = Nsij[1][idx1]
+                            @inbounds jsij = Nsij[2][idx2]
+                            if 1 < isij <= Nbin && 1 < jsij <= Nbin
+
+                                @inbounds for k in 1:leng
+                                    zsumd_3d[k, isij, jsij] += wtamp_buffer[k] * inv_n_fill
+                                end
+                            end
+                        end
+                    else
+                        if !isempty(pair_indices)
+                            @inbounds idx1, idx2 = pair_indices[1]
+                            @inbounds isij = Nsij[1][idx1]
+                            @inbounds jsij = Nsij[2][idx2]
+                            if 1 < isij <= Nbin && 1 < jsij <= Nbin
+                                @inbounds for k in 1:leng
+                                    zsumd_3d[k, isij, jsij] += wtamp_buffer[k]
+                                end
+                            end
                         end
                     end
                 end
             end
         elseif Nf == 2
             amp0 = proc.amps(tecm, kf, proc, para, p0)
-            zsum .+= wt .* amp0
+            @inbounds for k in 1:leng
+                zsum[k] += wt * amp0[k]
+            end
         end
 
         callback(ine)
+
     end
 
     # ---------- 7. Normalization ----------
     cs0 = zsum / nevtot
     cs1 = []
     cs2 = []
-    if Naxes > 1
-        binwidths = [(maximum(axesV[i]) - minimum(axesV[i])) / Nbin for i in 1:Naxes]
-        cs2 = [[zsumd[i, j][k] / (nevtot * binwidths[1] * binwidths[2]) for i in 1:Nbin, j in 1:Nbin] for k in 1:leng]
 
-        # 1D spectra directly from zsumt (no projection needed)
-        cs1 = [[zsumt[i, j][k] / (nevtot * binwidths[i]) for i in 1:Naxes, j in 1:Nbin] for k in 1:leng]
+    if Nf > 2 && Naxes > 1
+        binwidths = [(maximum(axesV[i]) - minimum(axesV[i])) / Nbin for i in 1:Naxes]
+
+
+        cs2 = [Matrix{Float64}(undef, Nbin, Nbin) for _ in 1:leng]
+        for k in 1:leng
+            for j in 1:Nbin, i in 1:Nbin
+                cs2[k][i, j] = zsumd_3d[k, i, j] / (nevtot * binwidths[1] * binwidths[2])
+            end
+        end
+
+
+        cs1 = [Matrix{Float64}(undef, Naxes, Nbin) for _ in 1:leng]
+        for k in 1:leng
+            for j in 1:Nbin, i in 1:Naxes
+                cs1[k][i, j] = zsumt_3d[k, i, j] / (nevtot * binwidths[i])
+            end
+        end
     end
 
     return (cs0=cs0, cs1=cs1, cs2=cs2, axesV=axesV, laxes=laxes, proc=proc, stype=stype)
@@ -325,7 +384,7 @@ end
 
 # Parallel entry 
 function Xsection(tecm, proc; axes=[], Range=[], nevtot=Int64(1e6), Nbin=100,
-    para=(l=1.0), p0=[], stype=1, progressbar=true, fixed=true, symmetrize=false)
+    para=(l=1.0), p0=[], stype=1, progressbar=true, fixed=true, symmetrize=true)
     if fixed
         GEN.reset_genev_rngs!()
     end
@@ -363,5 +422,5 @@ function Xsection(tecm, proc; axes=[], Range=[], nevtot=Int64(1e6), Nbin=100,
 
     return (cs0=cs0, cs1=cs1, cs2=cs2, axesV=results[1].axesV, laxes=results[1].laxes, proc=proc, stype=stype)
 end
- 
+
 end  # module Xs

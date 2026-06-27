@@ -323,17 +323,43 @@ Now We have a integral equation with singularity in $G_0=\frac{1}{2 E_2[(W-E_2)^
 $$
 \begin{align}
 i{\cal M}^{J^P}({\rm k}',{\rm k})
-&=i{\cal V}^{J^P}({\rm k},{\rm k}')+\int\frac{{\rm k}''^2d {\rm k}''}{(2\pi)^3}i{\cal V}^{J^P}({\rm k},{\rm k}'') G_0({\rm k}'')i{\cal M}^{J^P}({\rm k}'', {\rm k}')\nonumber\\
-&=i{\cal V}^{J^P}+\mathcal{P}\int\frac{{\rm k}''^2d {\rm k}''}{(2\pi)^3}i{\cal V}^{J^P}
-G_0{\cal M}^{J^P}-\pi i\int\frac{{\rm k}''^2d {\rm k}''}{(2\pi)^3}{\cal V}^{J^P}_o\delta G_0{\cal M}^{J^P}_o\nonumber\\
-&=i{\cal V}^{J^P}+\int\frac{d {\rm k}''}{(2\pi)^3}\left[{\rm k}''^2 G_0 i{\cal V}^{J^P} {\cal M}^{J^P}-\frac{M{\cal V}^{J^P}_o{\cal M}^{J^P}_o}{{\rm k}''^2-\bar{{\rm k}''}^2}\right]
--i\frac{\bar{{\rm k}''}^2\delta\bar{G}_0}{8\pi^2}{\cal V}^{J^P}_o{\cal M}^{J^P}_o\nonumber\\
-&=i{\cal V}^{J^P}+\int\frac{d {\rm k}''}{(2\pi)^3}{\rm k}''^2 G_0 i{\cal V}^{J^P} {\cal M}^{J^P}
--[\int\frac{d {\rm k}''}{(2\pi)^3}\frac{M}{{\rm k}''^2-\bar{{\rm k}''}^2}+i\frac{\bar{{\rm k}''}^2\delta\bar{G}_0}{8\pi^2}]{\cal V}^{J^P}_o{\cal M}^{J^P}_o\nonumber\\
+&=i{\cal V}^{J^P}({\rm k},{\rm k}')+\int\frac{{\rm k}''^2d {\rm k}''}{(2\pi)^3}i{\cal V}^{J^P}({\rm k},{\rm k}'') G_0({\rm k}'')i{\cal M}^{J^P}({\rm k}'', {\rm k}')
 \end{align}
 $$
 
-with $\delta G_0=\frac{\delta(W-E_2-E_1)}{2E(W-E_2+E_1)}\theta(s-m_1-m_2)=\delta \bar{G}_0\delta({\rm k}''-\bar{{\rm k}''})=\frac{1}{4W\bar{{\rm k}''}}\delta({\rm k}''-\bar{{\rm k}''})\theta(s-m_1-m_2)$, $M=[{\rm k}''^2({\rm k}''^2-\bar{{\rm k}''}^2)G_0]_{{\rm k}''\to\bar{{\rm k}''}}\theta(s-m_1-m_2)=-\frac{\bar{{\rm k}''}^2}{2W}\theta(s-m_1-m_2)$.
+Using $\frac{1}{x\pm i\epsilon}={\cal P}\frac{1}{x}\mp i\pi \delta(x)$, if $W>m_1+m_2$ and $\bar{q}<q_{max}$ ( $\bar{q}=\frac{1}{2W}\sqrt{[W^2-(m_1+m_2)^2][W^2-(m_1-m_2)^2]}$ is onshell momentum),
+
+$\int^{q_{max}}_0 dq F(q)\frac{1}{W-E_1-E_2+i\epsilon}={\cal P}\int^{q_{max}}_0 dq F(q)\frac{1}{W-E_1-E_2}- i\pi \rho(\bar{q})$
+
+$\rho(\bar{q})=F(\bar{q})\delta(W-E_1-E_2)=F(\bar{q})\frac{\delta(q-\bar{q})}{|(-\frac{1}{2})(\frac{2\bar{q}}{\bar{E}_1}+\frac{2\bar{q}}{\bar{E}_2})|}=F(\bar{q})\frac{\bar{E}_1\bar{E}_2}{\bar{q}W}\delta(q-\bar{q})$
+
+
+Using $\frac{\bar{q}^2-q^2}{W-E_1-E_2}|_{q\to \bar{q}}=\frac{-2q}{-\frac{q}{E_1}-\frac{q}{E_2}}|_{q\to \bar{q}}=\frac{2\bar{E}_1\bar{E}_2}{W}$,
+
+${\cal P}\int^{q_{max}}_0 dq F(q)\frac{1}{W-E_1-E_2}=\int^{q_{max}}_0 dq \left[F(q)\frac{\bar{q}^2-q^2}{W-E_1-E_2}-F(\bar{q})\frac{\bar{q}^2-q^2}{W-E_1-E_2}|_{q\to \bar{q}}\right]\frac{1}{\bar{q}^2-q^2}+{\cal P}\int^{q_{max}}_0 dq F(\bar{q})\frac{\bar{q}^2-q^2}{W-E_1-E_2}|_{q\to \bar{q}}\frac{1}{\bar{q}^2-q^2}=\int^{q_{max}}_0 dq \left[F(q)\frac{1}{W-E_1-E_2}-F(\bar{q})\frac{2\bar{E}_1\bar{E}_2}{W}\frac{1}{\bar{q}^2-q^2}\right]+F(\bar{q})\frac{2\bar{E}_1\bar{E}_2}{W}\frac{1}{2\bar{q}}\ln|\frac{q_{max}+\bar{q}}{q_{max}-\bar{q}}|$
+
+Hence, we have 
+
+$\int^{q_{max}}_0 dq F(q)\frac{1}{W-E_1-E_2+i\epsilon}=\int^{q_{max}}_0 dq \left[F(q)\frac{1}{W-E_1-E_2}-F(\bar{q})\frac{2\bar{E}_1\bar{E}_2}{W}\frac{1}{\bar{q}^2-q^2}\right]+F(\bar{q})\frac{\bar{E}_1\bar{E}_2}{\bar{q}W}\ln|\frac{q_{max}+\bar{q}}{q_{max}-\bar{q}}|- i\pi F(\bar{q})\frac{\bar{E}_1\bar{E}_2}{\bar{q}W}$
+
+$=\int^{q_{max}}_0 dq F(q)\frac{1}{W-E_1-E_2}+F(\bar{q})\frac{\bar{E}_1\bar{E}_2}{\bar{q}W}\left[-2\bar{q}\int^{q_{max}}_0dq\frac{1}{\bar{q}^2-q^2}+\ln|\frac{q_{max}+\bar{q}}{q_{max}-\bar{q}}|- i\pi \right]$
+
+If $q_{max}\to\infty$, $\ln|\frac{q_{max}+q_0}{q_{max}-q_0}|\to 0$.
+
+Now 
+
+$F({\rm k}'')=\frac{{\rm k}''^2}{(2\pi)^3}i{\cal V}^{J^P}({\rm k},{\rm k}'') \frac{1}{2 E_2[W-E_2+E_1]}i{\cal M}^{J^P}({\rm k}'', {\rm k}')\to F(\bar{\rm k}'')=\frac{\bar{\rm k}''^2}{(2\pi)^3}i{\cal V}^{J^P}_o({\rm k},\bar{\rm k}'') \frac{1}{4\bar{E}_2\bar{E}_1}i{\cal M}^{J^P}_o(\bar{\rm k}'', {\rm k}')$
+
+
+$$
+\begin{align}
+&\int\frac{{\rm k}''^2d {\rm k}''}{(2\pi)^3}i{\cal V}^{J^P}({\rm k},{\rm k}'') G_0({\rm k}'')i{\cal M}^{J^P}({\rm k}'', {\rm k}')\nonumber\\
+&=\int^{{\rm k}''_{max}}_0\frac{{\rm k}''^2d {\rm k}''}{(2\pi)^3}i{\cal V}^{J^P}  G_0 i{\cal M}^{J^P}
+%
++\frac{\bar{\rm k}''}{32\pi^3W}i{\cal V}_o^{J^P}({\rm k},\bar{\rm k}'') i{\cal M}_o^{J^P}(\bar{\rm k}'', {\rm k}')\left[2\bar{\rm k}''\int^{{\rm k}''_{max}}_0d{\rm k}''\frac{1}{{\rm k}''^2-\bar{\rm k}''^2}+\ln(\frac{{\rm k}''_{max}+\bar{\rm k}''}{{\rm k}''_{max}-\bar{\rm k}''})- i\pi \right]
+\end{align}
+$$
+
 
 We have
 
@@ -364,6 +390,18 @@ i{\cal M}^{J^P}_{ik}
 \end{align}
 $$
 
+$$
+\begin{align}
+	G_j=\left\{\begin{array}{cl}\frac{\bar{q}}{32\pi^3 W}\left[2\bar{q}\sum_j
+\frac{w(q_j)}
+{q_j^2-\bar{q}^2}+\ln|\frac{{\rm k}''_{max}+\bar{\rm k}''}{{\rm k}''_{max}-\bar{\rm k}''}|-i\pi\right] & {\rm for}\ j=0,\ {\rm if}\ Re(W)>m_1+m_2,\nonumber\\
+\frac{w(q_j)}{(2\pi)^3}\frac{q_j^2}
+	{2E(q_j)[(W-E(q_j))^2-\omega^2(q_j)]}& {\rm for}\ j\neq0
+	\end{array}\right.
+\end{align}
+$$
+
+If $q_{max}\to\infty$ 
 $$
 \begin{align}
 	G_j=\left\{\begin{array}{cl}-\frac{i\bar{q}}{32\pi^2 W}+\sum_j
@@ -760,15 +798,20 @@ In the qBSE package, interaction and system information are encapsulated in dedi
 The `struct structSys` (often referenced as `SYS` in the code) stores information about the system and the generally used discretization and angular integration data. Its fields include:
 
 - `Sys::String`: A label identifying the system.
-- `kv::Vector{Float64}`,`wv::Vector{Float64}`: Discretized momentum points and weights  for the momentum discretization (used in numerical integration).
-- `xv::Vector{Float64}`, `wxv::Vector{Float64}`: Discretized values and weight of $\cos\theta$.
+- `kv::Vector{Float64}`, `wv::Vector{Float64}`: Discretized momentum points and weights for the momentum discretization (used in numerical integration).
+- `xv::Vector{Float64}`, `wxv::Vector{Float64}`: Discretized values and weights of $\cos\theta$.
 - `d::Vector{Matrix{Float64}}`: Precomputed Wigner $d$-matrices of $\theta$.
-- `pv::Vector{Float64}`, `wpv::Vector{Float64}`: Discretized azimuthal angles and weight of $\phi$ discretization.
-- `sp::Vector{Float64}`, `cp::Vector{Float64}`: Sine values and Cosine values of the discretized $\phi$ angles.
-- `cutoff_re_type::String`: The type of cutoff used for the exponential regularization of the constituent particles. Use `:Lambda` for a fixed $\Lambda$, `:alpha` for $\Lambda = m + 0.22 \alpha$, where $m$ is the mass of the exchanged meson, and `:alpha_light` for using the mass of the light meson.
-- `cutoff_ex::Float64`, `cutoff_ex_type::String`, `FF_ex_type::Int64`: The value and type of cutoff for the exchanged meson, and the type of the form factor applied to the exchanged meson.
+- `pv::Vector{Float64}`, `wpv::Vector{Float64}`: Discretized azimuthal angles and weights of $\phi$ discretization.
+- `sp::Vector{Float64}`, `cp::Vector{Float64}`: Sine and cosine values of the discretized $\phi$ angles.
+- `expphi::Matrix{Complex{Float64}}`: Precomputed $e^{i\phi}$ factors for partial-wave projections.
+- `ChUA::Symbol`: Selects the chiral unitary approach variant; `:off` disables it, `:qBSE` uses the qBSE propagator, and `:oset1405` uses the standard oset1405 prescription.
+- `potential::Symbol`: Specifies whether the potential is `:PW`  or `:unPW` .
+- `cutoff_type::Symbol`: Defines the cutoff scheme: `:infty` for an infinite cutoff with exponential form factor, or `:cut` for a finite momentum cutoff.
+- `cutoff_re_type::Symbol`: Type of cutoff applied to the constituent (rearranged) particles. Options include `:Lambda` (fixed $\Lambda$), `:alpha` ($\Lambda = m + 0.22\alpha$, with $m$ the exchanged meson mass), and `:alpha_light` (uses the mass of the light meson).
+- `cutoff_ex_type::Symbol`: Type of cutoff for the exchanged meson (e.g., `:Lambda` for a fixed value).
+- `cutoff_ex::Float64`: Numerical value of the cutoff for the exchanged meson.
+- `FF_ex_type::Int64`: Integer flag indicating the form-factor type for the exchanged meson (e.g., `3` for a dipole form).
 - `channel::Dict{String,Int64}`: A dictionary storing the mapping between particle pairs and their corresponding channel number.
-
 
 ### `structInterAction`
 
@@ -827,7 +870,7 @@ These auxiliary data structures ensure proper association between each discretiz
 
 ### `structMomentum`
 
-The `mutable struct structMomentum` structure stores the four-momenta and related kinematic quantities for a $2 \to 2$ scattering process. Its fields are:
+The `struct structMomentum` structure stores the four-momenta and related kinematic quantities for a $2 \to 2$ scattering process. Its fields are:
 
 - `i1::SVector{5,ComplexF64}`, `f1::SVector{5,ComplexF64}`: Initial and final momentum of particle 1.
 - `i2::SVector{5,ComplexF64}`, `f2::SVector{5,ComplexF64}`: Initial and final momentum of particle 2.
@@ -887,7 +930,7 @@ store of information of particles in this global vector
 
 ## Functions for the qBSE
 
-### `function preprocessing(Sys, qn, channels, Ff, cutoff, Np, Nx, Nphi)`
+### `function preprocessing(Sys, qn, channels, Ff, config, Np, Nx, Nphi)`
 
 This function is designed to be called within `res` to prepare the system and channel data structures for qBSE calculations, including the necessary discretization and quantum number information.
 
@@ -897,8 +940,36 @@ This function is designed to be called within `res` to prepare the system and ch
 - `qn`: Quantum numbers for the process, and labels for Riemann sheets.
 - `channels`: List of channels to be included in the calculation, stored in `IA[]`.
 - `Ff`: Flavor factors, stored in `IA[]`.
-- `cutoff`: A `NamedTuple` for the last four keys of `structSys`. The user may provide only the required fields; the omitted ones will be set to default as `cutoff = (cutoff_re_type = :Lambda, cutoff_ex = 0.0, cutoff_ex_type = :Lambda, FF_ex_type = 3)`.
 - `Np`, `Nx`, `Nphi`: Number of momentum discretization points, $\cos\theta$ discretization points , azimuthal angle discretization points.
+- `config`: A `NamedTuple` (or `Dict`) providing runtime configuration flags. The user may supply only the required fields; omitted fields are set to their defaults as listed below:
+
+  - `ChUA = :off` – Selects the chiral unitary approach (cutoff regularization only; dimensional regularization planned):
+    - `:off` – standard qBSE (no ChUA).
+    - `:qBSE` – ChUA using the qBSE propagator.
+    - `:oset1405` – standard ChUA used in the calculation of $\Lambda(1405)$.
+    - `:oset980` – standard ChUA used in the calculation of $f_0(980)$.
+  
+    
+  - `cutoff_type = :infty` – Defines the ultraviolet regularization scheme:
+    - `:infty` – infinite momentum cutoff with an exponential form factor (form factor provides natural damping). **Note:** `potential` must be `:unPW` in this case.
+    - `:cut` – finite hard momentum cutoff (integration upper limit =$q_{max}$). **Note:** `cutoff_re_type` should be set to `:Lambda` when using this scheme.
+
+  - `potential = :unPW` – Specifies how the potential is treated:
+    - `:PW` – potential after partial-wave decompostion.
+    - `:unPW` – bare potential without partial-wave decompostion.
+
+  
+  - `cutoff_re_type = :Lambda` – Type of cutoff applied to constituent (rearranged) particles:
+    - `:Lambda` – fixed constant Λ.
+    - `:alpha` – Λ = m_ex + 0.22·α, where m_ex is the mass of the exchanged meson and α is a tunable parameter.
+    - `:alpha_light` – uses the mass of the lightest meson (e.g., pion) as a reference.
+  
+  - `cutoff_ex_type = :Lambda`  `cutoff_ex = 0.0`  `FF_ex_type = 3` see `function propFFex()`.
+
+**Important constraints:**
+- When `cutoff_type = :infty`, `potential` **must** be `:unPW`.
+- When `cutoff_type = :cut`, `cutoff_re_type` **should** be `:Lambda` (fixed cutoff).
+- The `ChUA = :qBSE`,`:oset1405` or `:qBSE` options are currently **implemented only for `cutoff_type = :cut`**; support for `:infty` is **not yet implemented** and will be added in a future release. Using these options with `:infty` may lead to incorrect results or runtime errors.
 
 Example for arguments:
 
@@ -1003,7 +1074,7 @@ This function is used to display the system information, including the range of 
 
 This function is used to display the pole information, including the energy, width, and other relevant parameters. The results are saved in a file named "output.txt" in the "data" directory.
 
-### `function resc0(Range, iER, qn, SYS, IA, CH, IH, VVertex; eps)`
+### `function resc0(Range, iER, qn, SYS, IA, CH, IH, VVertex)`
 
 This function is designed to be called within `res` to  calculates the rescatering process by qBSE for a given range of energies.
 
@@ -1026,7 +1097,7 @@ This function is designed to be called within `res` to  calculates the rescateri
 - `Dim::Vector{structDimension}`: The dimension objects, recalculated from the input `Dim`.
 - `TG::Matrix{ComplexF64}`: The $TG$ matrix used for decays.
 
-### `function resc(Sys, qn, Range, channels, Ff, cutoff, VVertex; Np=10, Nx=10, Nphi=5,eps=+1e-4im)`
+### `function resc(Sys, qn, Range, channels, Ff, cutoff, VVertex; Np=10, Nx=10, Nphi=5)`
 
 This function, which employs parallel computation to model the rescattering process via the qBSE (quantum Bethe-Salpeter equation), is designed to be called from the main program. The core calculation is implemented in the function `res0`.
 

@@ -13,7 +13,7 @@ const I = SMatrix{4,4,ComplexF64}([
     0.0+0.0im 1.0+0.0im 0.0+0.0im 0.0+0.0im;
     0.0+0.0im 0.0+0.0im 1.0+0.0im 0.0+0.0im;
     0.0+0.0im 0.0+0.0im 0.0+0.0im 1.0+0.0im])
-const GA = [SMatrix{4,4,ComplexF64}([
+const GA = (SMatrix{4,4,ComplexF64}([
         0.0+0.0im 0.0+0.0im 0.0+0.0im 1.0+0.0im;
         0.0+0.0im 0.0+0.0im 1.0+0.0im 0.0+0.0im;
         0.0+0.0im -1.0+0.0im 0.0+0.0im 0.0+0.0im;
@@ -37,7 +37,7 @@ const GA = [SMatrix{4,4,ComplexF64}([
         0.0+0.0im 0.0+0.0im 1.0+0.0im 0.0+0.0im
         0.0+0.0im 0.0+0.0im 0.0+0.0im 1.0+0.0im
         1.0+0.0im 0.0+0.0im 0.0+0.0im 0.0+0.0im
-        0.0+0.0im 1.0+0.0im 0.0+0.0im 0.0+0.0im])]
+        0.0+0.0im 1.0+0.0im 0.0+0.0im 0.0+0.0im]))
 #############################################################################
 @inline function GS(k::SVector{5,T})::SMatrix{4,4,ComplexF64} where T<:Number
     k1_im_k2 = k[1] + im * k[2]
@@ -441,11 +441,19 @@ end
     return Q[4] * W[4] - Q[1] * W[1] - Q[2] * W[2] - Q[3] * W[3]
 end
 
+# 1. 向量乘矩阵 (行向量 * 矩阵) 纯粹在栈上展开，不引入任何 Transpose 包装
 @inline function *(A::SVector{4,ComplexF64}, M::SMatrix{4,4,ComplexF64,16})
-    return SVector{4,ComplexF64}(transpose(A) * M)
+    return SVector{4,ComplexF64}(
+        A[1]*M[1,1] + A[2]*M[2,1] + A[3]*M[3,1] + A[4]*M[4,1],
+        A[1]*M[1,2] + A[2]*M[2,2] + A[3]*M[3,2] + A[4]*M[4,2],
+        A[1]*M[1,3] + A[2]*M[2,3] + A[3]*M[3,3] + A[4]*M[4,3],
+        A[1]*M[1,4] + A[2]*M[2,4] + A[3]*M[3,4] + A[4]*M[4,4]
+    )
 end
+
+# 2. 两个复数矢量的内积 (Ub * V) 同样直接用点积公式秒杀
 @inline function *(A::SVector{4,ComplexF64}, B::SVector{4,ComplexF64})
-    return transpose(A) * B
+    return A[1]*B[1] + A[2]*B[2] + A[3]*B[3] + A[4]*B[4]
 end
 
 import Base: -

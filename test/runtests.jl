@@ -53,7 +53,17 @@ using Test, ProgressBars
 
     function main()
         Ecm = 20.0
-        nevtot = Int64(1e6)
+        nevtot = Int64(1e7)
+        t_start = time_ns()
+
+        for ine in 1:nevtot
+            mf=[0.0 for i in 1:4]
+            kf, wt = DalitzPlot.GEN.GENEV(1.0, mf, fixed=true)
+        end
+        t_end = time_ns()
+        elapsed_sec = (t_end - t_start) / 1e9
+        @show elapsed_sec
+
 
         # Progress bar update callback
         function progress_callback(pb)
@@ -74,7 +84,6 @@ using Test, ProgressBars
         res = Xs.Xsection(Ecm, proc, callback, axes=["p1:p2"], nevtot=nevtot, Nbin=1000,
             para=(p=Ecm, l=1.0))
         @show Ecm, res.cs0 / (pi / 2.)
-
         # Three-particle channel definition (final state masses 0)
         proc = (pf=["p1", "p2", "p3"],
             mi=[1.0, 1.0], mf=[0.0 for i in 1:3],

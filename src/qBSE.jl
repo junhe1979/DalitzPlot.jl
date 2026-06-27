@@ -12,17 +12,20 @@ struct structSys #SYS
     wv::Vector{Float64} #weights of discreting
     xv::Vector{Float64} #cos theta of discreting
     wxv::Vector{Float64} #weights of discreting
-    d::Vector{Matrix{Float64}}   #Wignerd
+    d::Vector{Matrix{Float64}} #Wignerd
     pv::Vector{Float64} #phi of discreting
     wpv::Vector{Float64} #weights of discreting
     sp::Vector{Float64} #sin phi
     cp::Vector{Float64} #cos phi
-    expphi::Matrix{Complex{Float64}}
-    cutoff_re_type::Symbol
-    cutoff_ex::Float64
-    cutoff_ex_type::Symbol
-    FF_ex_type::Int64
-    channel::Dict{String,Int64}
+    expphi::Matrix{Complex{Float64}} # exp(iphi)
+    ChUA::Symbol  # key for chiral unitary appraoch
+    potential::Symbol # key for PW or noPW potential
+    cutoff_type::Symbol # key for cutoff with cut or infity
+    cutoff_re_type::Symbol # cutoff type for  constituent particles 
+    cutoff_ex_type::Symbol # cutoff type for  exchangess
+    cutoff_ex::Float64  # value of cutoff for  exchangess
+    FF_ex_type::Int64 #type of form factor  the exchangess
+    channel::Dict{String,Int64} # lable of channels
 end
 # store the information of a interaction
 struct structInterAction #IA[]
@@ -48,6 +51,8 @@ struct structChannel #CH[]
     IHb::Int64 # rank of first independent helicity
     IHe::Int64 # rank of last independent helicity
     IHn::Int64 #total number of helicity amplitudes of a channel
+    kv::Vector{Float64} #momenta of discreting
+    wv::Vector{Float64} #weights of discreting
 end
 # store the information of an independent helicity for matrix
 mutable struct structIndependentHelicity #IH[]
@@ -56,12 +61,11 @@ mutable struct structIndependentHelicity #IH[]
     helh::Tuple{Int64,Int64} # fermion or boson
     Dimb::Int64 #the rank of begin dimension in this independent helicities
     Dime::Int64 #the rank of end dimension in this independent helicities
-    k::ComplexF64 #momenta of discreting
-    w::Float64 #weights of discreting
+    kon::ComplexF64 # onshell momentum 
 end
 #------------------------------------------------------------------------------------------
 # momenta of partilces of a 2-2 interaction.
-mutable struct structMomentum
+struct structMomentum
     i1::SVector{5,ComplexF64} #initial 1
     f1::SVector{5,ComplexF64} #final 1
     i2::SVector{5,ComplexF64}
@@ -113,12 +117,65 @@ const p = Dict{String,structParticle}() #store of information of particles in th
 #*******************************************************************************************
 #  Prepare
 # prepare workspace. -> res  (used in res).  The output will flow to -> res0 -> VGI ->workspace ...
-function preprocessing(Sys, qn, channels, Ff, cutoff, Np, Nx, Nphi)
+function print_config(config)
+    params = [
+        (:ChUA, :off),
+        (:potential, :noPW),
+        (:cutoff_type, :infty),
+        (:cutoff_re_type, :Lambda),
+        (:cutoff_ex_type, :Lambda),
+        (:cutoff_ex, 0.0),
+        (:FF_ex_type, 3)
+    ]
+
+    # 辅助函数：获取值并判断是否为默认
+    function get_and_flag(dict, key, default)
+        if haskey(dict, key)
+            return dict[key], false   # false 表示非默认
+        else
+            return default, true      # true 表示使用了默认值
+        end
+    end
+
+    fmt_val(v, is_default) = v isa AbstractFloat ?
+                             string(round(v, digits=6)) * (is_default ? "*" : "") :
+                             string(v) * (is_default ? "*" : "")
+
+    println(repeat('-', 90))
+    println(rpad("Configuration", 20) * rpad("Value", 18) * " | " *
+            rpad("Configuration", 20) * rpad("Value", 18))
+    println(repeat('-', 90))
+
+    for i in 1:2:length(params)
+        key1, default1 = params[i]
+        val1, isdef1 = get_and_flag(config, key1, default1)
+        str1 = fmt_val(val1, isdef1)
+
+        if i+1 <= length(params)
+            key2, default2 = params[i+1]
+            val2, isdef2 = get_and_flag(config, key2, default2)
+            str2 = fmt_val(val2, isdef2)
+        else
+            key2 = "";
+            str2 = ""
+        end
+
+        println(rpad(string(key1), 20) * rpad(str1, 18) * " | " *
+                rpad(string(key2), 20) * rpad(str2, 18))
+    end
+
+    println(repeat('-', 90))
+    println("* indicates value was not provided in config, using default.")
+end
+function preprocessing(Sys, qn, channels, Ff, config, Np, Nx, Nphi)
+
     #store the channel information, interaction information in CH,IH,IA
     CH = structChannel[]
     IH = structIndependentHelicity[]
     Nih, Nc = 1, 1
     channel_dict = Dict{String,Int64}()
+    # generate Gauss–Legendre nodes and weights in[-1, 1]  
+    nodes, weights = gausslegendre(Np)
     for channel in channels
         p1, p2 = split(channel[1], ":")
         channel_dict[channel[1]] = Nc
@@ -130,8 +187,7 @@ function preprocessing(Sys, qn, channels, Ff, cutoff, Np, Nx, Nphi)
         IHn = 0
         #independent helicities
         Nih0 = Nih
-        IH0 = structIndependentHelicity[]
-        IH00 = structIndependentHelicity(0, (0, 0), (0, 0), 0, 0, 0., 0.)
+        IH0 = Vector{structIndependentHelicity}()
         for i1 in -p[p1].J:p[p1].Jh:p[p1].J
             for i2 in -p[p2].J:p[p2].Jh:p[p2].J
 
@@ -142,18 +198,14 @@ function preprocessing(Sys, qn, channels, Ff, cutoff, Np, Nx, Nphi)
                 if abs(float(i1) / float(p[p1].Jh) - float(i2) / float(p[p2].Jh)) <= float(qn.J) / float(qn.Jh) + 0.01
 
                     lind = 1
-                    for i3 in 1:Nih-Nih0 #Nih0:(Nih-1)
+                    for i3 in 1:(Nih-Nih0) #Nih0:(Nih-1)
                         if IH0[i3].hel[1] == -i1 && IH0[i3].hel[2] == -i2
                             lind = 0
                             break
                         end
                     end
                     if lind == 1
-                        IH00.hel = (i1, i2)
-
-                        IH00.helh = (p[p1].Jh, p[p2].Jh)
-                        IH00.iCH = Nc
-                        push!(IH0, deepcopy(IH00))
+                        push!(IH0, structIndependentHelicity(Nc, (i1, i2), (p[p1].Jh, p[p2].Jh), 0, 0, 0.0im))
 
                         Nih += 1
                         IHn += 1
@@ -163,6 +215,9 @@ function preprocessing(Sys, qn, channels, Ff, cutoff, Np, Nx, Nphi)
         end
         Nc += 1
         #channel information
+        # [0, cutoff] to [-1, 1]
+        kv = (1.0 .+ nodes) .* (channel[2] / 2.)
+        wv = weights .* (channel[2] / 2.)
         CH0 = structChannel(
             (p1, p2),
             (p[p1].name0, p[p2].name0),
@@ -174,7 +229,7 @@ function preprocessing(Sys, qn, channels, Ff, cutoff, Np, Nx, Nphi)
             channel[2],
             Nih0,
             Nih0 + IHn - 1,
-            IHn
+            IHn, kv, wv
         )
 
         push!(CH, deepcopy(CH0))
@@ -190,8 +245,6 @@ function preprocessing(Sys, qn, channels, Ff, cutoff, Np, Nx, Nphi)
     for i1 in 1:Nc
         for i2 in 1:Nc
             chname = "$(CH[i1].p[1]):$(CH[i1].p[2])-->$(CH[i2].p[1]):$(CH[i2].p[2])"
-
-            #chname = ((CH[i1].p[1], CH[i1].p[2]), (CH[i2].p[1], CH[i2].p[2]))
             if haskey(Ff, chname) == true
                 Nex = length(Ff[chname])
                 IA0 = structInterAction(
@@ -212,39 +265,33 @@ function preprocessing(Sys, qn, channels, Ff, cutoff, Np, Nx, Nphi)
         end
     end
 
-
-    # generate Gauss–Legendre nodes and weights in[-1, 1]  
-    nodes, weights = gausslegendre(Np)
-    # to [0, π/2]
-    k0 = 0.5 * (nodes .+ 1.0) * (π / 2)
-    w0 = 0.5 * (π / 2) * weights
+    # [0, infty] to [0, π/2]
+    k0 = (nodes .+ 1.0) .* (π / 4.)
+    w0 = (π / 4.) * weights
     kv = tan.(k0)
     wv = w0 ./ (cos.(k0) .^ 2)
 
-    #kv, wv = gausslaguerre(Np)
-    #wv = wv .* exp.(kv)
-
     xv, wxv = gausslegendre(Nx)
-
-    #xv = -1 .+ 2 / Nx .* ((1:Nx) .- 0.5)
-    #wxv = fill(2 / Nx, Nx)
-
     wd = [wignerd(qn.J / qn.Jh, acos(xv[i])) for i in 1:Nx]
 
     pv, wpv = gausslegendre(Nphi)
     pv = pi .* (pv .+ 1.0)   # to [0, 2π]
     wpv = wpv .* pi
-
     sp = sin.(pv)
     cp = cos.(pv)
-    expphi = [exp(-im * pv[i] * (iM - 1 - qn.J / qn.Jh)) for iM in 1:2*qn.J/qn.Jh+1, i in 1:Nphi]
+    expphi = [exp(-im * pv[i] * (iM - 1 - qn.J / qn.Jh)) for iM in 1:(2*qn.J/qn.Jh+1), i in 1:Nphi]
 
     SYS = structSys(Sys, kv, wv, xv, wxv, wd, pv, wpv, sp, cp, expphi,
-        get(cutoff, :cutoff_re_type, :Lambda),
-        get(cutoff, :cutoff_ex, 0.0),
-        get(cutoff, :cutoff_ex_type, :Lambda),
-        get(cutoff, :FF_ex_type, 3),
+        get(config, :ChUA, :off),
+        get(config, :potential, :noPW),
+        get(config, :cutoff_type, :infty),
+        get(config, :cutoff_re_type, :Lambda),
+        get(config, :cutoff_ex_type, :Lambda),
+        get(config, :cutoff_ex, 0.0),
+        get(config, :FF_ex_type, 3),
         channel_dict)
+
+    print_config(config)
 
     return SYS, IA, CH, IH
 end
@@ -254,18 +301,22 @@ function workSpace(Ec, lRm, Np, SYS, CH, IH)
     Ec += Complex{Float64}(0.0, 1e-15)
 
     Nih = length(IH)
-
+    ChUA=SYS.ChUA
     # 先计算总维度 Nt
     Nt = 0
     for i1 in 1:Nih
-        mass1 = p[CH[IH[i1].iCH].p[1]].m
-        mass2 = p[CH[IH[i1].iCH].p[2]].m
+        if ChUA!=:off
+            Nt+=1
+        else
+            mass1 = p[CH[IH[i1].iCH].p[1]].m
+            mass2 = p[CH[IH[i1].iCH].p[2]].m
 
-        lRm0 = isa(lRm, Int) ? lRm : lRm[IH[i1].iCH]
-        temp = real(Ec) < (mass1 + mass2)
-        Rm = !((lRm0 == 0 || lRm0 == 1) && temp)
+            lRm0 = isa(lRm, Int) ? lRm : lRm[IH[i1].iCH]
+            temp = real(Ec) < (mass1 + mass2) && real(Ec)>abs(mass1-mass2)
+            Rm = !((lRm0 == 0 || lRm0 == 1) && temp)
 
-        Nt += Rm ? (Np + 1) : Np
+            Nt += Rm ? (Np + 1) : Np
+        end
     end
 
     # 预分配 3×Nt 矩阵
@@ -275,47 +326,54 @@ function workSpace(Ec, lRm, Np, SYS, CH, IH)
     Nt_count = 0
 
     for i1 in 1:Nih
+        if ChUA!==:off
+            IH[i1].Dimb = i1 # In ChUA, no descreted momenta 
+            IH[i1].Dime = i1
+            Dim[1, i1] = i1
+            Dim[2, i1] = 1
+            Dim[3, i1] = 1 # onshell
+            mass1 = p[CH[IH[i1].iCH].p[1]].m
+            mass2 = p[CH[IH[i1].iCH].p[2]].m
+            IH[i1].kon = sqrt((Ec^2 - (mass1 + mass2)^2) *
+                              (Ec^2 - (mass1 - mass2)^2)) / (2.0 * Ec)
+        else
+            IH[i1].Dimb = Nt_count + 1
 
-        IH[i1].Dimb = Nt_count + 1
+            mass1 = p[CH[IH[i1].iCH].p[1]].m
+            mass2 = p[CH[IH[i1].iCH].p[2]].m
 
-        mass1 = p[CH[IH[i1].iCH].p[1]].m
-        mass2 = p[CH[IH[i1].iCH].p[2]].m
+            lRm0 = isa(lRm, Int) ? lRm : lRm[IH[i1].iCH]
+            temp = real(Ec) < (mass1 + mass2)&&real(Ec)>abs(mass1-mass2)
+            Rm = !((lRm0 == 0 || lRm0 == 1) && temp)
 
-        lRm0 = isa(lRm, Int) ? lRm : lRm[IH[i1].iCH]
-        temp = real(Ec) < (mass1 + mass2)
-        Rm = !((lRm0 == 0 || lRm0 == 1) && temp)
+            if Rm
+                # Np 个 offshell
+                for idim in 1:Np
+                    Nt_count += 1
+                    Dim[1, Nt_count] = i1
+                    Dim[2, Nt_count] = idim
+                    Dim[3, Nt_count] = 0
+                end
 
-        if Rm
+                # onshell
+                Nt_count += 1
+                Dim[1, Nt_count] = i1
+                Dim[2, Nt_count] = Np + 1
+                Dim[3, Nt_count] = 1
+
+            else
+                for idim in 1:Np
+                    Nt_count += 1
+                    Dim[1, Nt_count] = i1
+                    Dim[2, Nt_count] = idim
+                    Dim[3, Nt_count] = 0
+                end
+            end
             kon = sqrt((Ec^2 - (mass1 + mass2)^2) *
                        (Ec^2 - (mass1 - mass2)^2)) / (2.0 * Ec)
-
-            # Np 个 offshell
-            for idim in 1:Np
-                Nt_count += 1
-                Dim[1, Nt_count] = i1
-                Dim[2, Nt_count] = idim
-                Dim[3, Nt_count] = 0
-            end
-
-            IH[i1].k = kon
-            IH[i1].w = 0.0
-
-            # onshell
-            Nt_count += 1
-            Dim[1, Nt_count] = i1
-            Dim[2, Nt_count] = Np + 1
-            Dim[3, Nt_count] = 1
-
-        else
-            for idim in 1:Np
-                Nt_count += 1
-                Dim[1, Nt_count] = i1
-                Dim[2, Nt_count] = idim
-                Dim[3, Nt_count] = 0
-            end
+            IH[i1].kon = kon
+            IH[i1].Dime = Nt_count
         end
-
-        IH[i1].Dime = Nt_count
     end
 
     return SYS, IH, Dim
@@ -341,7 +399,6 @@ function FFre(k, cutoffi, cutofff; cutoff_re_type=:Lambda, CHi=nothing, CHf=noth
     mf2 = real(k.f2[5])
     if mi1 <= mi2
         FFre += -(mi1^2 - k.i1 * k.i1)^2 / cutoffi^4
-
     end
     if mi1 > mi2
         FFre += -(mi2^2 - k.i2 * k.i2)^2 / cutoffi^4
@@ -387,7 +444,24 @@ function propFFex(k, key_ex, cutoff; cutoff_ex_type=:Lambda, FF_ex_type=3)
 
 end
 # Define interaction potentials. ->kernel
-function fV(k, l, SYS, IA0, CHf, CHi, VVertex)
+# 内联定义处理函数
+@inline function get_pol(J, Jh, k, l; star=false, bar=false)
+    eps0 = @SVector zeros(ComplexF64, 5)
+    U0 = @SVector zeros(ComplexF64, 4)
+    U30 = SVector{5}(U0 for _ in 1:5)
+    if J == 0
+        (eps=eps0, U=U0, U3=U30)
+    elseif J == 1 && Jh == 1
+        (eps=FR.eps(k, l, star=star), U=U0, U3=U30)
+    elseif J == 1 && Jh == 2
+        (eps=eps0, U=FR.U(k, l, bar=bar), U3=U30)
+    elseif J == 3 && Jh == 2
+        (eps=eps0, U=U0, U3=FR.U3(k, l; bar=bar))
+    else
+        error("Spin $(J)/$(Jh) handling is pending implementation")
+    end
+end
+function fV(Ec, k, l, SYS, IA0, CHf, CHi, VVertex)
     """
     Arguments:
        k: momenta (4-vectors for initial/final states)
@@ -396,26 +470,7 @@ function fV(k, l, SYS, IA0, CHf, CHi, VVertex)
        IA0: interaction amplitude object containing coupling info
        CHf, CHi: final and initial channel objects (contain cutoff parameters)
     """
-
     fV = 0.
-    eps0 = @SVector zeros(ComplexF64, 5)
-    U0 = @SVector zeros(ComplexF64, 4)
-    U30 = SVector{5}(U0 for _ in 1:5)
-
-    # 内联定义处理函数
-    @inline function get_pol(J, Jh, k, l; star=false, bar=false)
-        if J == 0
-            (eps=eps0, U=U0, U3=U30)
-        elseif J == 1 && Jh == 1
-            (eps=FR.eps(k, l, star=star), U=U0, U3=U30)
-        elseif J == 1 && Jh == 2
-            (eps=eps0, U=FR.U(k, l, bar=bar), U3=U30)
-        elseif J == 3 && Jh == 2
-            (eps=eps0, U=U0, U3=FR.U3(k, l; bar=bar))
-        else
-            error("Spin $(J)/$(Jh) handling is pending implementation")
-        end
-    end
     # 一次性计算所有极化向量
     pol_f1, pol_f2, pol_i1, pol_i2 =
         get_pol(CHf.J[1], CHf.Jh[1], k.f1, l.f1; star=true, bar=true),  # pol_f1
@@ -423,17 +478,15 @@ function fV(k, l, SYS, IA0, CHf, CHi, VVertex)
         get_pol(CHi.J[1], CHi.Jh[1], k.i1, l.i1),            # pol_i1
         get_pol(CHi.J[2], CHi.Jh[2], k.i2, l.i2)            # pol_i2
 
-
-
-    cutoffi, cutofff = CHi.cutoff, CHf.cutoff
-
     KerV = 0.0  # Initialize kernel potential
     for le in 1:IA0.Nex  # Loop over all exchanged particles
         key_ex = IA0.key_ex[le]  # Name of exchanged particle
         if key_ex == "V"
 
             # Calculate potential contribution:
-            KerV = VVertex(k, pol_f1, pol_f2, pol_i1, pol_i2, SYS, IA0, CHi, CHf)
+            # Compute propagator with form factor
+
+            KerV = VVertex(Ec, k, pol_f1, pol_f2, pol_i1, pol_i2, SYS, CHi, CHf,) * IA0.Ff[1]
 
         else
             J_ex, Jh_ex, m_ex = p[key_ex].J, p[key_ex].Jh, p[key_ex].m  # Quantum numbers and mass
@@ -453,9 +506,6 @@ function fV(k, l, SYS, IA0, CHf, CHi, VVertex)
                 pol_1i, pol_2f, pol_2i, pol_1f = pol_i1, pol_f1, pol_i2, pol_f2  # Crossed polarizations
             end
 
-            k.q = k2f - k2i  # Momentum transfer
-            k.q2 = -abs(k.q * k.q)  # Squared momentum transfer
-
             # Calculate vertices (both vector and scalar parts)
             # Here the q is from upper vertex 1 to lower vertex 2 hence a minus sign appears in Vertex 1 for q
             Ver1V, Ver1S = VVertex(k1i, m1i, pol_1i, k1f, m1f, pol_1f, -k.q, vertex_if1, key_ex, m_ex, anti=CHi.anti[1] | CHf.anti[1])
@@ -463,20 +513,22 @@ function fV(k, l, SYS, IA0, CHf, CHi, VVertex)
 
             # Compute propagator with form factor
 
-            FF = FFre(k, cutoffi, cutofff, cutoff_re_type=SYS.cutoff_re_type, key_ex=key_ex) *
-                 propFFex(k, key_ex, SYS.cutoff_ex, cutoff_ex_type=SYS.cutoff_ex_type, FF_ex_type=SYS.FF_ex_type)
+            FFe = propFFex(k, key_ex, SYS.cutoff_ex, cutoff_ex_type=SYS.cutoff_ex_type, FF_ex_type=SYS.FF_ex_type)
 
             if J_ex == 0  # Scalar/pseudoscalar exchange
-                KerV -= Ver1S * Ver2S * IA0.Ff[le] * FF  # Scalar-scalar potential
+                KerV -= Ver1S * Ver2S * IA0.Ff[le] * FFe  # Scalar-scalar potential
             end
 
             if J_ex == 1 && Jh_ex == 1  # Vector exchange
                 # Full vector propagator with current conservation term
-                KerV += ((Ver1V * Ver2V) - (Ver1V * k.q) * (Ver2V * k.q) / m_ex^2) * IA0.Ff[le] * FF
+                KerV += ((Ver1V * Ver2V) - (Ver1V * k.q) * (Ver2V * k.q) / m_ex^2) * IA0.Ff[le] * FFe
             end
         end
-
-        fV = KerV  # Set final potential value
+        FF=1.0
+        if SYS.ChUA==:off && SYS.cutoff_type==:infty && SYS.potential==:noPW
+            FF = qBSE.FFre(k, CHi.cutoff, CHf.cutoff, cutoff_re_type=SYS.cutoff_re_type, CHi=CHi, CHf=CHf)
+        end
+        fV = KerV * FF # Set final potential value
     end
 
     return fV  # Return computed potential
@@ -498,8 +550,8 @@ function kernel(kf, ki, Ec, qn, SYS, IA, CH, IHf, IHi, VVertex)::ComplexF64 # Ca
     Ei1, Ei2 = sqrt(ki^2 + mi1^2), sqrt(ki^2 + mi2^2)
     Ef1, Ef2 = sqrt(kf^2 + mf1^2), sqrt(kf^2 + mf2^2)
 
-    ki10, ki20, qti = (mi1 + 1e-7 <= mi2) ? (Ec - Ei2, Ei2, mi2) : (Ei1, Ec - Ei1, Ec - mi1)
-    kf10, kf20, qtf = (mf1 + 1e-7 <= mf2) ? (Ec - Ef2, Ef2, mf2) : (Ef1, Ec - Ef1, Ec - mf1)
+    ki10, ki20, qti = (mi1 <= mi2) ? (Ec - Ei2, Ei2, mi2) : (Ei1, Ec - Ei1, Ec - mi1)
+    kf10, kf20, qtf = (mf1 <= mf2) ? (Ec - Ef2, Ef2, mf2) : (Ef1, Ec - Ef1, Ec - mf1)
 
     qt = (qti - qtf)^2 + 0im
 
@@ -519,147 +571,331 @@ function kernel(kf, ki, Ec, qn, SYS, IA, CH, IHf, IHi, VVertex)::ComplexF64 # Ca
     lf = Int64(lJJ + l21f) + 1
     ndx = length(SYS.xv)
     Ker0 = 0 + 0im
-    for i in 1:ndx
-        x = SYS.xv[i]
-        sqrt1_x2 = sqrt(1 - x^2)
+    if SYS.potential==:noPW
+        for i in 1:ndx
+            x = SYS.xv[i]
+            sqrt1_x2 = sqrt(1 - x^2)
 
+            ki1 = @SVector [0.0 + 0im, 0.0 + 0im, -ki + 0im, ki10 + 0im, mi1 + 0im]
+            kf1 = @SVector [-kf * sqrt1_x2 + 0im, 0.0 + 0im, -kf * x + 0im, kf10 + 0im, mf1 + 0im]
+            ki2 = @SVector [0.0 + 0im, 0.0 + 0im, ki + 0im, ki20 + 0im, mi2 + 0im]
+            kf2 = @SVector [kf * sqrt1_x2 + 0im, 0.0 + 0im, kf * x + 0im, kf20 + 0im, mf2 + 0im]
+
+
+            q = kf2 - ki2
+            q2 = -abs(q * q)
+            k = structMomentum(ki1, kf1, ki2, kf2, q, q2, qt)
+
+            l.f1, l.i2 = -l.f1, -l.i2  #helicity to spin and the minus for fixed parity
+            Kerm1 = fV(Ec, k, l, SYS, IA0, CHf, CHi, VVertex) * SYS.d[i][Int64(lJJ+l21i)+1, lf] * eta
+            l.f1, l.i2 = -l.f1, -l.i2
+            l.i1, l.f1 = -l.i1, -l.f1
+            Kerp1 = fV(Ec, k, l, SYS, IA0, CHf, CHi, VVertex) * SYS.d[i][Int64(lJJ-l21i)+1, lf]
+            l.i1, l.f1 = -l.i1, -l.f1
+            Ker0 += (Kerp1 + Kerm1) * SYS.wxv[i]
+            #@show i,Ker0
+        end
+
+        kernel = Ker0 * 2pi
+        if l.f1 == 0 && l.f2 == 0  ## factors from fixed parity 
+            kernel /= sqrt(2.0)
+        end
+        if l.i1 == 0 && l.i2 == 0
+            kernel /= sqrt(2.0)
+        end
+    elseif SYS.potential==:PW
         ki1 = @SVector [0.0 + 0im, 0.0 + 0im, -ki + 0im, ki10 + 0im, mi1 + 0im]
-        kf1 = @SVector [-kf * sqrt1_x2 + 0im, 0.0 + 0im, -kf * x + 0im, kf10 + 0im, mf1 + 0im]
+        kf1 = @SVector [0.0 + 0im, 0.0 + 0im, -kf + 0im, kf10 + 0im, mf1 + 0im]
         ki2 = @SVector [0.0 + 0im, 0.0 + 0im, ki + 0im, ki20 + 0im, mi2 + 0im]
-        kf2 = @SVector [kf * sqrt1_x2 + 0im, 0.0 + 0im, kf * x + 0im, kf20 + 0im, mf2 + 0im]
-
+        kf2 = @SVector [0.0 + 0im, 0.0 + 0im, kf + 0im, kf20 + 0im, mf2 + 0im]
         q = kf2 - ki2
         q2 = q * q
         k = structMomentum(ki1, kf1, ki2, kf2, q, q2, qt)
-
-
-        l.f1, l.i2 = -l.f1, -l.i2  #helicity to spin and the minus for fixed parity
-        Kerm1 = fV(k, l, SYS, IA0, CHf, CHi, VVertex) * SYS.d[i][Int64(lJJ + l21i)+1, lf] * eta
-        l.f1, l.i2 = -l.f1, -l.i2
-        l.i1, l.f1 = -l.i1, -l.f1
-        Kerp1 = fV(k, l, SYS, IA0, CHf, CHi, VVertex) * SYS.d[i][Int64(lJJ - l21i)+1, lf]
-        l.i1, l.f1 = -l.i1, -l.f1
-        Ker0 += (Kerp1 + Kerm1) * SYS.wxv[i]
-        #@show i,Ker0
+        kernel=fV(Ec, k, l, SYS, IA0, CHf, CHi, VVertex)*4*pi
     end
-
-    kernel = Ker0 * 2pi
-    if l.f1 == 0 && l.f2 == 0  ## factors from fixed parity 
-        kernel /= sqrt(2.0)
-    end
-    if l.i1 == 0 && l.i2 == 0
-        kernel /= sqrt(2.0)
-    end
-
     return kernel
 end
 #------------------------------------------------------------------------------------------
 #propagator. -> VGI
-function propagator(k, kv, w, wv, Ec, Np, CH, IH0, Dimo, lRm, eps)
+function propagator(k, kv, w, wv, Ec, Np, CH, IH0, Dimo, lRm, cutoff_type)
     propagator = Complex{Float64}(0, 0)
     ich = IH0.iCH
-    mi1, mi2 = CH[ich].m[1], CH[ich].m[2]
+    CH0 = CH[ich]
+    mi1, mi2 = CH0.m[1], CH0.m[2]
     lRm0 = isa(lRm, Int) ? lRm :
            isa(lRm, Tuple{Vararg{Int}}) ? lRm[ich] :
            error("lRm should be Int or Tuple{Vararg{Int}}")
-    Rm = lRm0 == 1 ? -1 : 1
+    if lRm0 == 0
+        if real(Ec) > (mi1 + mi2)
+            lRm0=2
+        else
+            lRm0=1
+        end
+    end
 
-    # Compute mi2p2 based on helicity conditions
-    mi2p2 = 1.0
-    mi2p2 *= (IH0.helh[1] == 2) ? 2.0 * mi1 : 1.0
-    mi2p2 *= (IH0.helh[2] == 2) ? 2.0 * mi2 : 1.0
-
-    Ec += eps
-
-    # Precompute constants
-    pi_factor = (2 * pi)^3
-    complex_factor = Complex{Float64}(0, 1) / (32 * pi^2 * Ec)
-
+    pi3=(2.0*pi)^3
     # For off-momenta
     if Dimo == 0
         cE1, cE2 = sqrt(k^2 + mi1^2), sqrt(k^2 + mi2^2)
         denominator = (mi1 <= mi2) ? 2 * cE2 * ((Ec - cE2)^2 - cE1^2) : 2 * cE1 * ((Ec - cE1)^2 - cE2^2)
-
-        if denominator != 0  # To avoid division by zero
-            propagator = mi2p2 * k^2 * w / pi_factor / denominator
-        end
+        propagator = k^2 * w / pi3 / denominator
+        #@show Ec, k^2, konc, denominator
     end
     # For on-shell
     if Dimo == 1
         delta1 = Ec^2 - (mi1 + mi2)^2
         delta2 = Ec^2 - (mi2 - mi1)^2
         konc = sqrt(delta1 * delta2) / (2 * Ec)
-        konc2 = delta1 * delta2 / (4 * Ec^2)
-
-        # Add imaginary component  and ensure correct sign
-        # + for II Riemann sheet, the sign for I sheet is added by Rm. 
-        if imag(konc) >= 0
-            propagator += mi2p2 * konc * complex_factor * Rm
-        else
-            propagator -= mi2p2 * konc * complex_factor * Rm #conjugate 
+        if imag(konc) < 0
+            konc=-konc
         end
-
-        # Loop over Np elements
-        for i3 in 1:Np
-            kv_i3 = kv[i3]
-            denominator = 2 * Ec * (kv_i3^2 - konc2)
-            propagator += mi2p2 * wv[i3] * konc2 / pi_factor / denominator
+        factor = konc / (4.0 * pi3 * Ec)
+        if real(Ec)>mi1+mi2 || real(Ec)<abs(mi1-mi2)
+            intp=0.0im
+            for i3 in 1:Np
+                intp += wv[i3] / (kv[i3]^2 - konc^2)
+            end
+            intp*=2.0*konc
+            if cutoff_type==:cut
+                intp+=log((CH0.cutoff+konc)/(CH0.cutoff-konc))
+            end
+            propagator += intp*factor
+            propagator -= factor * pi * 1.0im #* Rm
+        end
+        if lRm0==2
+            propagator += factor * pi * 2.0im
         end
     end
-
+    # Compute mi2p2 based on helicity conditions
+    mi2p2 = (IH0.helh[1] == 2) ? 2.0 * mi1 : 1.0
+    mi2p2 *= (IH0.helh[2] == 2) ? 2.0 * mi2 : 1.0
+    propagator*=mi2p2
     return propagator
+end
+function G0(Ec, E1, E2, ChUA)
+    if ChUA==:qBSE
+        return 0.5 / (E2*((Ec-E2)^2-E1^2))
+    elseif ChUA==:oset1405
+        return 0.25 / (E2 * E1 * (Ec-E1-E2))
+    elseif ChUA==:oset980
+        return 0.5*(E1+E2) / (E2 * E1 * (Ec^2-(E1+E2)^2))
+    end
+end
+function propagator_ChUA(kv, wv, Ec, Np, CH, IH0, lRm, cutoff_type, ChUA)
+    propagator = Complex{Float64}(0, 0)
+    ich = IH0.iCH
+    CH0 = CH[ich]
+    mi1, mi2 = CH0.m[1], CH0.m[2]
+
+    lRm0 = isa(lRm, Int) ? lRm :
+           isa(lRm, Tuple{Vararg{Int}}) ? lRm[ich] :
+           error("lRm should be Int or Tuple{Vararg{Int}}")
+    if lRm0 == 0
+        if real(Ec) > (mi1 + mi2)
+            lRm0=2
+        end
+    end
+    # Compute mi2p2 based on helicity conditions
+    pi3 = (2 * pi)^3
+    mi1_sq = mi1^2
+    mi2_sq = mi2^2
+    mi1_le_mi2 = mi1 <= mi2
+    cE2 = sqrt.(kv .^ 2 .+ mi2_sq)
+    cE1 = sqrt.(kv .^ 2 .+ mi1_sq)
+
+    if cutoff_type == :infty
+        cutoffi = mi1 + 0.22 * CH0.cutoff
+        cutoffi4 = cutoffi^4
+        if mi1_le_mi2
+            k2 = (Ec .- cE2) .^ 2 .- kv .^ 2
+            FFre = exp.(-2.0 .* (mi1_sq .- k2) .^ 2 ./ cutoffi4)
+        else
+            k2 = (Ec .- cE1) .^ 2 .- kv .^ 2
+            FFre = exp.(-2.0 .* (mi2_sq .- k2) .^ 2 ./ cutoffi4)
+        end
+    else
+        FFre = fill(1.0 + 0.0im, Np)
+    end
+
+    for i in 1:Np
+        k = kv[i]
+        w = wv[i]
+        G0val=0.0im
+        if ChUA==:qBSE
+            if mi1_le_mi2
+                G0val=G0(Ec, cE1[i], cE2[i], ChUA)
+            else
+                G0val=G0(Ec, cE2[i], cE1[i], ChUA)
+            end
+        else
+            G0val=G0(Ec, cE1[i], cE2[i], ChUA)
+        end
+        propagator += k^2 * w / pi3 * G0val * FFre[i]
+    end
+
+    delta1 = Ec^2 - (mi1 + mi2)^2
+    delta2 = Ec^2 - (mi2 - mi1)^2
+    konc=sqrt(delta1 * delta2) / (2 * Ec)
+    if imag(konc) < 0
+        konc=-konc
+    end
+    factor = konc / (4.0 * pi3 * Ec)
+
+    if real(Ec)>mi1+mi2 || (ChUA==:qBSE && real(Ec)<abs(mi1-mi2))
+        intp=0.0im
+        for i3 in 1:Np
+            intp += wv[i3] / (kv[i3]^2 - konc^2)
+        end
+        intp*=2.0*konc
+        if cutoff_type==:cut
+            intp+=log((CH0.cutoff+konc)/(CH0.cutoff-konc))
+        end
+        propagator += intp*factor
+        propagator -= factor * pi * 1.0im
+    end
+    # 2. For on-shell
+    if lRm0==2
+        propagator += factor * pi * 2.0im
+    end
+    mi2p2 = (IH0.helh[1] == 2) ? 2.0 * mi1 : 1.0
+    mi2p2 *= (IH0.helh[2] == 2) ? 2.0 * mi2 : 1.0
+    return propagator*mi2p2
 end
 #------------------------------------------------------------------------------------------
 # calculate V G I  -> res0
-function fVGI(Ec, qn, SYS, IA, CH, IH, VVertex, lRm, eps)
+function fVGI(Ec, qn, SYS, IA, CH, IH, VVertex, lRm)
     # Determine the dimension of the work matrix. 
     Np = length(SYS.kv)
     SYS, IH, Dim, = workSpace(Ec, lRm, Np, SYS, CH, IH)
     Nt = size(Dim, 2)
-
+    cutoff_type=SYS.cutoff_type
+    ChUA=SYS.ChUA
     # Initialize matrices
     Vc = zeros(Complex{Float64}, Nt, Nt)
     Gc = zeros(Complex{Float64}, Nt, Nt)
     II = zeros(Float64, Nt, Nt)
 
-    # Populate Vc, Gc, and II
-    for i_f in 1:Nt
-        IHf = IH[Dim[1, i_f]]
-        kf = Dim[3, i_f] == 1 ? IHf.k : real(SYS.kv[Dim[2, i_f]])
-        for i_i in i_f:Nt
-            IHi = IH[Dim[1, i_i]]
-            ki = Dim[3, i_i] == 1 ? IHi.k : real(SYS.kv[Dim[2, i_i]])
-            # Compute Vc for upper triangular part
-            Vc[i_f, i_i] = kernel(kf, ki, Ec, qn, SYS, IA, CH, IHf, IHi, VVertex)::ComplexF64
-            #@show Vc[i_f, i_i] 
-            #exit()
+    if ChUA!=:off
+        for i_f in 1:Nt
+            IHf = IH[i_f]
+            kf = IHf.kon
+            for i_i in i_f:Nt
+                IHi = IH[i_i]
+                ki = IHi.kon
+                # Compute Vc for upper triangular part
+                Vc[i_f, i_i] = kernel(kf, ki, Ec, qn, SYS, IA, CH, IHf, IHi, VVertex)::ComplexF64
+                # Compute Gc and II only on the diagonal
+                if i_i == i_f
+                    if cutoff_type == :infty
+                        kv, wv = SYS.kv, SYS.wv
+                    elseif cutoff_type == :cut
+                        CH0 = CH[IHi.iCH]
+                        kv, wv = CH0.kv, CH0.wv
+                    end
+                    Gc[i_f, i_i] = propagator_ChUA(kv, wv, Ec, Np, CH, IHf, lRm, cutoff_type, ChUA)
+                    II[i_f, i_i] = 1.0
+                end
+            end
 
-            # Compute Gc and II only on the diagonal
-            if i_i == i_f
-                w = Dim[3, i_f] == 1 ? 0. : real(SYS.wv[Dim[2, i_f]])
-                Gc[i_f, i_i] = propagator(kf, SYS.kv, w, SYS.wv, Ec, Np, CH, IHf, Dim[3, i_f], lRm, eps)
-                II[i_f, i_i] = 1.0
+        end
+    else
+        temp=0.0+0.0im
+        for i_f in 1:Nt
+            IHf = IH[Dim[1, i_f]]
+            if SYS.potential==:PW
+                kf = IHf.kon
+            else
+                if Dim[3, i_f] == 1
+                    kf = IHf.kon
+                else
+                    if cutoff_type == :infty
+                        kf = real(SYS.kv[Dim[2, i_f]])
+                    elseif cutoff_type == :cut
+                        CH0 = CH[IHf.iCH]
+                        kf = real(CH0.kv[Dim[2, i_f]])
+                    else
+                        error("Unsupported cutoff_type")
+                    end
+                end
+            end
+
+            for i_i in i_f:Nt
+                IHi = IH[Dim[1, i_i]]
+                if SYS.potential==:PW
+                    ki = IHi.kon
+                else
+                    if Dim[3, i_i] == 1
+                        ki = IHi.kon
+                    else
+                        if cutoff_type == :infty
+                            ki = real(SYS.kv[Dim[2, i_i]])
+                        elseif cutoff_type == :cut
+                            CH0 = CH[IHi.iCH]
+                            ki = real(CH0.kv[Dim[2, i_i]])
+                        else
+                            error("Unsupported cutoff_type")
+                        end
+                    end
+                end
+                # Compute Vc for upper triangular part
+                if SYS.potential==:PW
+                    if i_i-IHi.Dimb==i_f-IHf.Dimb
+                        Vc[i_f, i_i] = kernel(kf, ki, Ec, qn, SYS, IA, CH, IHf, IHi, VVertex)::ComplexF64
+                    end
+                else
+                    Vc[i_f, i_i] = kernel(kf, ki, Ec, qn, SYS, IA, CH, IHf, IHi, VVertex)::ComplexF64
+                end
+                # Compute Gc and II only on the diagonal
+                if i_i == i_f
+                    if SYS.potential==:PW
+                        if i_f==IHf.Dimb
+                            prop=0.0+0.0im
+                            for i in IHf.Dimb:IHf.Dime
+                                if SYS.cutoff_type == :infty
+                                    kv, wv = SYS.kv, SYS.wv
+                                elseif SYS.cutoff_type == :cut
+                                    CH0 = CH[IHf.iCH]
+                                    kv, wv = CH0.kv, CH0.wv
+                                end
+                                if Dim[3, i] == 1
+                                    kf = IHf.kon
+                                else
+                                    if cutoff_type == :infty
+                                        kf = real(SYS.kv[Dim[2, i]])
+                                    elseif cutoff_type == :cut
+                                        CH0 = CH[IHf.iCH]
+                                        kf = real(CH0.kv[Dim[2, i]])
+                                    else
+                                        error("Unsupported cutoff_type")
+                                    end
+                                end
+                                w = Dim[3, i] == 1 ? 0. : real(wv[Dim[2, i]])
+                                prop+=propagator(kf, kv, w, wv, Ec, Np, CH, IHf, Dim[3, i], lRm,  cutoff_type)
+                            end
+                            temp=prop
+                        end
+                        Gc[i_f, i_i]=temp
+                    else
+                        if SYS.cutoff_type == :infty
+                            kv, wv = SYS.kv, SYS.wv
+                        elseif SYS.cutoff_type == :cut
+                            CH0 = CH[IHf.iCH]
+                            kv, wv = CH0.kv, CH0.wv
+                        end
+                        w = Dim[3, i_f] == 1 ? 0. : real(wv[Dim[2, i_f]])
+                        Gc[i_f, i_i] = propagator(kf, kv, w, wv, Ec, Np, CH, IHf, Dim[3, i_f], lRm, cutoff_type)
+                    end
+                    II[i_f, i_i] = 1.0
+                end
             end
         end
     end
-
-
     # Populate lower triangular part of Vc based on conjugate symmetry
     for i_f in 2:Nt
-        Dimf_IH = IH[Dim[1, i_f]]
-
-        for i_i in 1:i_f-1
-            Dimi_IH = IH[Dim[1, i_i]]
-
-            if Dimf_IH.iCH != Dimi_IH.iCH
-                Vc[i_f, i_i] = conj(Vc[i_i, i_f])
-            else
-                Vc[i_f, i_i] = Vc[i_i, i_f]
-            end
+        for i_i in 1:(i_f-1)
+            Vc[i_f, i_i] = (Vc[i_i, i_f])
         end
     end
-    #@show Vc[:,1]
-    #exit()
     return Vc, Gc, II, IH, Dim
 end
 #*******************************************************************************************
@@ -686,7 +922,6 @@ end
 # Show  informations ->res
 function showSYSInfo(Range, qn, IA, CH, IH)
 
-
     Nc = eachindex(CH)
     println(repeat('-', 90))
     @printf("%-16s%-15s\n", "channel", "number of exchanges",)
@@ -696,7 +931,13 @@ function showSYSInfo(Range, qn, IA, CH, IH)
         for i in Nc
             @printf("%2d ", IA[i1, i].Nex)
         end
-        @printf(";  cutoff = %5.3f GeV\n", CH[i1].cutoff)
+        @printf(";  cutoff = %5.3f GeV", CH[i1].cutoff)
+        lRm=qn.lRm
+        lRm0 = isa(lRm, Int) ? lRm :
+               isa(lRm, Tuple{Vararg{Int}}) ? lRm[i1] :
+               error("lRm should be Int or Tuple{Vararg{Int}}")
+        @printf(";  lRm = %1d\n", lRm0)
+
     end
     println(repeat('-', 81))
     P = if isdefined(qn, :P) && !isnothing(qn.P)
@@ -723,7 +964,7 @@ function showPoleInfo(qn, Ec, reslog, filename)
     open(filename, "w") do f
         # 打开文件写入模式会自动清空内容
     end
-    Ampmin, Ampminx, Ampminy = 0.0, 0.0, 0.0
+    Ampmin, Ampminx, Ampminy = 100.0, 100.0, 100.0
     for i in eachindex(Ec)
         Eci = Ec[i]
         logdetVGI = reslog[i]
@@ -754,7 +995,7 @@ function showPoleInfo(qn, Ec, reslog, filename)
     return Ampmin, Ampminx, Ampminy
 end
 # Calculate the rescattering process   ->resc
-function resc0(Range, iER, qn, SYS, IA, CH, IH, VVertex, eps)
+function resc0(Range, iER, qn, SYS, IA, CH, IH, VVertex)
     # ⚠ 复制 IH 防止并行修改共享引用
     IH_local = deepcopy(IH)
 
@@ -781,7 +1022,7 @@ function resc0(Range, iER, qn, SYS, IA, CH, IH, VVertex, eps)
         Ec = ER + EI * im
 
         # 调用 fVGI 时使用本地 IH_local，避免 race condition
-        Vc, Gc, II, IH_local, Dim = fVGI(Ec, qn, SYS, IA, CH, IH_local, VVertex, qn.lRm, eps)
+        Vc, Gc, II, IH_local, Dim = fVGI(Ec, qn, SYS, IA, CH, IH_local, VVertex, qn.lRm)
         VGI = II - Vc * Gc
         detVGI = det(VGI)
         logdetVGI = log(abs(detVGI)^2)
@@ -805,7 +1046,7 @@ function resc0(Range, iER, qn, SYS, IA, CH, IH, VVertex, eps)
     return Ect, reslogt, resM2, IH_local, Dim, TG
 end
 # parallel calculation 
-function worker_resc(r_range, Range, iER_start, qn, SYS, IA, CH, IH, VVertex, eps, progressbar)
+function worker_resc(r_range, Range, iER_start, qn, SYS, IA, CH, IH, VVertex, progressbar)
     # r_range 是迭代范围，iER_start 是起始索引（用于回调）
 
     Ec_local = ComplexF64[]
@@ -831,7 +1072,7 @@ function worker_resc(r_range, Range, iER_start, qn, SYS, IA, CH, IH, VVertex, ep
     end
 
     for (local_idx, iER) in enumerate(r_range)
-        res0 = resc0(Range, iER, qn, SYS, IA, CH, deepcopy(IH), VVertex, eps)
+        res0 = resc0(Range, iER, qn, SYS, IA, CH, deepcopy(IH), VVertex)
 
         append!(Ec_local, res0[1])
         append!(reslog_local, res0[2])
@@ -886,12 +1127,13 @@ function dim_to_3d_filled(Dimt::Vector{Matrix{Int}})
     Dim = SharedArray(result)
     return Dim
 end
-function resc(Sys, qn, Range, channels, Ff, cutoff, VVertex; Np=10, Nx=10, Nphi=5, eps=+1e-4im, progressbar=true,output="res/output.txt")
+function resc(Sys, qn, Range, channels, Ff, config, VVertex; Np=10, Nx=10, Nphi=5, progressbar=true, output="res/output.txt")
 
     # -------------------------
     # 初始化系统
     # -------------------------
-    SYS, IA, CH, IH = preprocessing(Sys, qn, channels, Ff, cutoff, Np, Nx, Nphi)
+
+    SYS, IA, CH, IH = preprocessing(Sys, qn, channels, Ff, config, Np, Nx, Nphi)
 
     Ec = ComplexF64[]
     ER = Float64[]
@@ -922,7 +1164,7 @@ function resc(Sys, qn, Range, channels, Ff, cutoff, VVertex; Np=10, Nx=10, Nphi=
     # 使用pmap并行计算
     results = pmap(1:num_workers) do worker_id
         worker_resc(ranges[worker_id], Range, start_indices[worker_id],
-            qn, SYS, IA, CH, IH, VVertex, eps,
+            qn, SYS, IA, CH, IH, VVertex,
             progressbar && worker_id == 1)  # 只在第一个工作进程显示进度条
     end
 
@@ -1113,7 +1355,7 @@ function TGA(para, cfinal, cinter, ranges)
     ii = Range.NER - Xs.Nsij(E, Range.ERmin, Range.ERmax, Range.NER - 1)
     Emin, Emax = Et[ii+1], Et[ii]
     dmin, dmax = TGt[2][ii+1], TGt[2][ii]
-    Tmin, Tmax = view(TGt[1], :, :, ii + 1), view(TGt[1], :, :, ii)
+    Tmin, Tmax = view(TGt[1],:,:,(ii+1)), view(TGt[1],:,:,ii)
     TeT = dmin == dmax
     #Tmin, Tmax = TGt[ii+1], TGt[ii]
     #TeT = size(Tmin) == size(Tmax)
@@ -1125,7 +1367,7 @@ function TGA(para, cfinal, cinter, ranges)
     else
         mid = 0.5 * (Emin + Emax)
         idx = (E < mid) + 1
-        TG = view(TGt[1], :, :, ii + idx - 1)
+        TG = view(TGt[1],:,:,(ii+idx-1))
         #TG = TGt[ii+idx-1]
 
     end
@@ -1168,7 +1410,7 @@ function TGA(para, cfinal, cinter, ranges)
                     lm = build_full_idx(l, resc, [-la, -lb], length(ranges))
                     for iDim in IHc.Dimb:IHc.Dime
 
-                        kc = Dim[3, iDim] == 1 ? real(IHc.k) : real(SYS.kv[Dim[2, iDim]])
+                        kc = Dim[3, iDim] == 1 ? real(IHc.kon) : real(SYS.kv[Dim[2, iDim]])
                         Eon = sqrt(kc^2 + (m1 > m2 ? m1^2 : m2^2))  # 较重粒子能量
                         E1 = m1 > m2 ? Eon : E - Eon                # 粒子1能量
                         E2 = m1 > m2 ? E - Eon : Eon                # 粒子2能量
@@ -1206,7 +1448,7 @@ function TGA(para, cfinal, cinter, ranges)
                             TG0 = TG[IHf.Dime, iDim]
                         end
                         if IHc.hel[1] == 0 && IHc.hel[2] == 0
-                            A /=  sqrt(2.0)
+                            A /= sqrt(2.0)
                         end
                         TGA += (A * TG0) * cinter0.weight  #note that the weights and p20^2/(2pi)^3 is in G0
                     end

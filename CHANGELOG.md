@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.5.0] - 2026-06-27
+
+### Improved 
+- **Performance Optimization (`GEN` Module - Custom RAMBO Algorithm)**: Rewrote the native phase space generator using a highly optimized, custom **RAMBO** (Random Multiple Body Objects) flat-sampling algorithm. Achieved near-zero heap allocation via thread-local scratchpad buffering and loop-unrolled scalar expansion, entirely bypassing GC bottlenecks.
+  - *Kinematic Pure-Generation Benchmark*: Clocked an elite throughput of **$10^7$ 4-body final-state momentum events within 3.0 seconds on a single CPU core @ 3.0 GHz** (~3.33 MHz pure event-generation rate).
+
+### Added
+
+-  New feathues added in  `qBSE` Module
+   - **Momentum cutoff (finite cutoff) qBSE configurations**:  Added support for `cutoff_type = :cut` with both PW (`potential = :PW`) and unPW (`potential = :unPW`) potentials for standard qBSE.
+   - **Chiral Unitary Approach (ChUA) implementations**:
+      - ChUA using qBSE propagator (`ChUA = :qBSE`) with cutoff regularization (dimensional regularization planned for future).
+      - Standard ChUA with `oset1405` prescription, covering both PW and unPW potentials.
+
+   > **Note**: The existing infinite cutoff qBSE (`cutoff_type = :infty`, `potential = :unPW`, with exponential form factor and multiple `cutoff_re_type` options) remains unchanged and fully supported.
+
+### Changed
+
+- Improved the treatment of singularities on the real axis. The `eps` parameter in functions `propagator`, `resc0`, and `resc` is no longer required and has been removed.
+
 ## [0.4.4] - 2026-06-10
 
 ### Changed
