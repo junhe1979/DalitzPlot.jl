@@ -805,7 +805,7 @@ The `struct structSys` (often referenced as `SYS` in the code) stores informatio
 - `sp::Vector{Float64}`, `cp::Vector{Float64}`: Sine and cosine values of the discretized $\phi$ angles.
 - `expphi::Matrix{Complex{Float64}}`: Precomputed $e^{i\phi}$ factors for partial-wave projections.
 - `ChUA::Symbol`: Selects the chiral unitary approach variant; `:off` disables it, `:qBSE` uses the qBSE propagator, and `:oset1405` uses the standard oset1405 prescription.
-- `potential::Symbol`: Specifies whether the potential is `:PW`  or `:unPW` .
+- `potential::Symbol`: Specifies whether the potential is `:PW`  or `:nopW` .
 - `cutoff_type::Symbol`: Defines the cutoff scheme: `:infty` for an infinite cutoff with exponential form factor, or `:cut` for a finite momentum cutoff.
 - `cutoff_re_type::Symbol`: Type of cutoff applied to the constituent (rearranged) particles. Options include `:Lambda` (fixed $\Lambda$), `:alpha` ($\Lambda = m + 0.22\alpha$, with $m$ the exchanged meson mass), and `:alpha_light` (uses the mass of the light meson).
 - `cutoff_ex_type::Symbol`: Type of cutoff for the exchanged meson (e.g., `:Lambda` for a fixed value).
@@ -951,12 +951,12 @@ This function is designed to be called within `res` to prepare the system and ch
   
     
   - `cutoff_type = :infty` – Defines the ultraviolet regularization scheme:
-    - `:infty` – infinite momentum cutoff with an exponential form factor (form factor provides natural damping). **Note:** `potential` must be `:unPW` in this case.
+    - `:infty` – infinite momentum cutoff with an exponential form factor (form factor provides natural damping). **Note:** `potential` must be `:nopW` in this case.
     - `:cut` – finite hard momentum cutoff (integration upper limit =$q_{max}$). **Note:** `cutoff_re_type` should be set to `:Lambda` when using this scheme.
 
-  - `potential = :unPW` – Specifies how the potential is treated:
+  - `potential = :nopW` – Specifies how the potential is treated:
     - `:PW` – potential after partial-wave decompostion.
-    - `:unPW` – bare potential without partial-wave decompostion.
+    - `:nopW` – bare potential without partial-wave decompostion.
 
   
   - `cutoff_re_type = :Lambda` – Type of cutoff applied to constituent (rearranged) particles:
@@ -967,7 +967,7 @@ This function is designed to be called within `res` to prepare the system and ch
   - `cutoff_ex_type = :Lambda`  `cutoff_ex = 0.0`  `FF_ex_type = 3` see `function propFFex()`.
 
 **Important constraints:**
-- When `cutoff_type = :infty`, `potential` **must** be `:unPW`.
+- When `cutoff_type = :infty`, `potential` **must** be `:nopW`.
 - When `cutoff_type = :cut`, `cutoff_re_type` **should** be `:Lambda` (fixed cutoff).
 - The `ChUA = :qBSE`,`:oset1405` or `:qBSE` options are currently **implemented only for `cutoff_type = :cut`**; support for `:infty` is **not yet implemented** and will be added in a future release. Using these options with `:infty` may lead to incorrect results or runtime errors.
 
