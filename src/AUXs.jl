@@ -183,16 +183,16 @@ end
 function extract_parameters(parameter)
     # 提取初始值
     initial = [p[1] for p in parameter]
-    
+
     # 提取 mask（第4个元素）
     mask = [p[4] for p in parameter]
-    
+
     # 提取 upper（第3个元素）
     upper = [p[3] for p in parameter]
-    
+
     # 提取 lower（第2个元素）
     lower = [p[2] for p in parameter]
-    
+
     return initial, upper, lower, mask
 end
 function bin_average(x, y, x_data; npts=100)
@@ -200,27 +200,27 @@ function bin_average(x, y, x_data; npts=100)
     x_local = copy(x)
     y_local = copy(y)
     x_data_local = copy(x_data)
-    
+
     # 排序
     p = sortperm(x_local)
     x_sorted = x_local[p]
     y_sorted = y_local[p]
-    
+
     nbins = length(x_data_local)
     y_th = zeros(nbins)
-    
+
     if nbins >= 2
         bin_width = x_data_local[2] - x_data_local[1]
     else
         error("至少需要两个 bin 中心")
     end
-    
+
     # 预计算斜率（避免重复计算）
     slopes = zeros(length(x_sorted)-1)
     for i in eachindex(slopes)
         slopes[i] = (y_sorted[i+1] - y_sorted[i]) / (x_sorted[i+1] - x_sorted[i])
     end
-    
+
     # 手动插值函数（纯函数，无状态）
     function interp(xx)
         if xx <= x_sorted[1]
@@ -244,33 +244,38 @@ function bin_average(x, y, x_data; npts=100)
             return y_sorted[lo] + slopes[lo] * (xx - x_sorted[lo])
         end
     end
-    
+
     for i in 1:nbins
         center = x_data_local[i]
         a = center - bin_width / 2
         b = center + bin_width / 2
-        
+
         # 使用 Simpson 法则（更高精度）
         n = npts * 2
         h = (b - a) / n
-        
+
         sum_odd = 0.0
         sum_even = 0.0
-        
-        for j in 1:n-1
+
+        for j in 1:(n-1)
             x_val = a + j * h
             f_val = interp(x_val)
+            if f_val<0
+                f_val = 0.0
+            end
             if j % 2 == 1
                 sum_odd += f_val
             else
                 sum_even += f_val
             end
         end
-        
+
         integral = h/3 * (interp(a) + interp(b) + 4*sum_odd + 2*sum_even)
+
         y_th[i] = integral / bin_width
+
     end
-    
+
     return y_th
 end
 end

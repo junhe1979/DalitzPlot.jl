@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.5.1] - 2026-07-6
+
+Fixed several known issues to improve version stability and overall runtime performance.
+
 ## [0.5.0] - 2026-06-27
 
 ### Improved 
