@@ -19,6 +19,7 @@ struct structSys #SYS
     cp::Vector{Float64} #cos phi
     expphi::Matrix{Complex{Float64}} # exp(iphi)
     ChUA::Symbol  # key for chiral unitary appraoch
+    width::Bool #consider the widths of the interacted particles or not
     potential::Symbol # key for PW or noPW potential
     cutoff_type::Symbol # key for cutoff with cut or infity
     cutoff_re_type::Symbol # cutoff type for  constituent particles 
@@ -92,6 +93,7 @@ struct structParticle
     nameL::String #Latex.
     anti::Int #antiparticle
     m::Float64 #mass
+    G::Float64 #width
     J::Int64 #spin
     Jh::Int64  #for fermion, the helicity is obtianed by J/Jh
     P::Int64 #parity
@@ -104,8 +106,7 @@ function particles!(particles::Dict{String,structParticle}, filename::String) #r
         for line in eachline(file)
             parts = split(line)
             particle = structParticle(parts[2], parts[3], parse(Int, parts[4]),
-                parse(Float64, parts[5]), parse(Int64, parts[6]), parse(Int64, parts[7]),
-                parse(Int64, parts[8]))
+                parse(Float64, parts[5]), parse(Float64, parts[6]), parse(Int64, parts[7]), parse(Int64, parts[8]), parse(Int64, parts[9]))
             particles[parts[1]] = particle
             i += 1
         end
@@ -290,6 +291,7 @@ function preprocessing(Sys, qn, channels, Ff, config, Np, Nx, Nphi, showInfo)
 
     SYS = structSys(Sys, kv, wv, xv, wxv, wd, pv, wpv, sp, cp, expphi,
         get(config, :ChUA, :off),
+        get(config, :width, false),
         get(config, :potential, :noPW),
         get(config, :cutoff_type, :infty),
         get(config, :cutoff_re_type, :Lambda),
@@ -386,8 +388,6 @@ function workSpace(Ec, lRm, Np, SYS, CH, IH)
 
     return SYS, IH, Dim
 end
-
-
 #------------------------------------------------------------------------------------------
 # Potential kernel 
 # Form factor. ->fV
@@ -499,7 +499,7 @@ function fV(Ec, k, l, SYS, IA0, CHf, CHi, VVertex)
             if SYS.ChUA==:off && SYS.cutoff_type==:infty && SYS.potential==:noPW
                 FF = qBSE.FFre(k, cutoffi, cutofff, cutoff_re_type=SYS.cutoff_re_type, CHi=CHi, CHf=CHf)
             end
-            KerV = VVertex(Ec, k, pol_f1, pol_f2, pol_i1, pol_i2, SYS, CHi, CHf,) * IA0.Ff[1]*FF
+            KerV = VVertex(Ec, k, pol_f1, pol_f2, pol_i1, pol_i2, SYS, CHi, CHf,) * IA0.Ff[1] * FF
 
         else
             J_ex, Jh_ex, m_ex = p[key_ex].J, p[key_ex].Jh, p[key_ex].m  # Quantum numbers and mass
@@ -527,7 +527,7 @@ function fV(Ec, k, l, SYS, IA0, CHf, CHi, VVertex)
 
             # Compute propagator with form factor
             if SYS.ChUA==:off && SYS.cutoff_type==:infty && SYS.potential==:noPW
-                FF = FFre(k, cutoffi, cutofff, cutoff_re_type=SYS.cutoff_re_type, key_ex=key_ex) 
+                FF = FFre(k, cutoffi, cutofff, cutoff_re_type=SYS.cutoff_re_type, key_ex=key_ex)
             end
             FFe = propFFex(k, key_ex, SYS.cutoff_ex, cutoff_ex_type=SYS.cutoff_ex_type, FF_ex_type=SYS.FF_ex_type)*FF
 
@@ -695,7 +695,7 @@ function G0(Ec, E1, E2, ChUA)
         return 0.5*(E1+E2) / (E2 * E1 * (Ec^2-(E1+E2)^2))
     end
 end
-function propagator_ChUA(kv, wv, Ec, Np, CH, IH0, lRm, cutoff_type, ChUA)
+function propagator_ChUA0(kv, wv, Ec, Np, CH, IH0, lRm, cutoff_type, ChUA)
     propagator = Complex{Float64}(0, 0)
     ich = IH0.iCH
     CH0 = CH[ich]
@@ -779,6 +779,99 @@ function propagator_ChUA(kv, wv, Ec, Np, CH, IH0, lRm, cutoff_type, ChUA)
     mi2p2 *= (IH0.helh[2] == 2) ? 2.0 * mi2 : 1.0
     return propagator*mi2p2
 end
+
+function propagator_ChUA(kv, wv, Ec, Np, CH, IH0, lRm, cutoff_type, ChUA,width)
+    propagator = Complex{Float64}(0, 0)
+    ich = IH0.iCH
+    CH0 = CH[ich]
+    mi1, mi2 = CH0.m[1], CH0.m[2]
+
+    lRm0 = isa(lRm, Int) ? lRm :
+           isa(lRm, Tuple{Vararg{Int}}) ? lRm[ich] :
+           error("lRm should be Int or Tuple{Vararg{Int}}")
+    if lRm0 == 0
+        if real(Ec) > (mi1 + mi2)
+            lRm0=2
+        end
+    end
+    # Compute mi2p2 based on helicity conditions
+    pi3 = (2 * pi)^3
+    mi1_sq = mi1^2
+    mi2_sq = mi2^2
+    if width
+        Gi1, Gi2 = p[CH0.p[1]].G, p[CH0.p[2]].G
+        mi1_sq = mi1^2 + 1im * mi1 * Gi1
+        mi2_sq = mi2^2 + 1im * mi2 * Gi2
+    end
+
+    mi1_le_mi2 = mi1 <= mi2
+    cE2 = sqrt.(kv .^ 2 .+ mi2_sq)
+    cE1 = sqrt.(kv .^ 2 .+ mi1_sq)
+
+    if cutoff_type == :infty
+        cutoffi = mi1 + 0.22 * CH0.cutoff
+        cutoffi4 = cutoffi^4
+        if mi1_le_mi2
+            k2 = (Ec .- cE2) .^ 2 .- kv .^ 2
+            FFre = exp.(-2.0 .* (mi1_sq .- k2) .^ 2 ./ cutoffi4)
+        else
+            k2 = (Ec .- cE1) .^ 2 .- kv .^ 2
+            FFre = exp.(-2.0 .* (mi2_sq .- k2) .^ 2 ./ cutoffi4)
+        end
+    else
+        FFre = fill(1.0 + 0.0im, Np)
+    end
+
+    for i in 1:Np
+        k = kv[i]
+        w = wv[i]
+        G0val=0.0im
+        if ChUA==:qBSE
+            if mi1_le_mi2
+                G0val=G0(Ec, cE1[i], cE2[i], ChUA)
+            else
+                G0val=G0(Ec, cE2[i], cE1[i], ChUA)
+            end
+        else
+            G0val=G0(Ec, cE1[i], cE2[i], ChUA)
+        end
+        propagator += k^2 * w / pi3 * G0val * FFre[i]
+    end
+
+    delta=Ec^4+(mi2_sq - mi1_sq)^2-2.0*Ec^2*(mi2_sq + mi1_sq)
+    konc=sqrt(delta) / (2 * Ec)
+    if imag(konc) < 0 &&  !width
+        konc=-konc
+    end
+    factor = konc / (4.0 * pi3 * Ec)
+
+    if real(Ec)>mi1+mi2 || (ChUA==:qBSE && real(Ec)<mi1-mi2)
+        intp=0.0im
+        for i3 in 1:Np
+            intp += wv[i3] / (kv[i3]^2 - konc^2)
+        end
+        intp*=2.0*konc
+        if cutoff_type==:cut
+            intp+=log((CH0.cutoff+konc)/(CH0.cutoff-konc))
+        end
+        propagator += intp*factor
+        propagator -= factor * pi * 1.0im
+    end
+    # 2. For on-shell
+    if lRm0==2
+        propagator += factor * pi * 2.0im
+    end
+    if ChUA==:osetPV
+        propagator*=(1.0+1.0/3.0*konc^2/mi2^2)
+    end
+
+    mi2p2 = (IH0.helh[1] == 2) ? 2.0 * mi1 : 1.0
+    mi2p2 *= (IH0.helh[2] == 2) ? 2.0 * mi2 : 1.0
+    return propagator*mi2p2
+end
+
+
+
 #------------------------------------------------------------------------------------------
 # calculate V G I  -> res0
 function fVGI(Ec, qn, SYS, IA, CH, IH, VVertex, lRm)
@@ -810,7 +903,7 @@ function fVGI(Ec, qn, SYS, IA, CH, IH, VVertex, lRm)
                         CH0 = CH[IHi.iCH]
                         kv, wv = CH0.kv, CH0.wv
                     end
-                    Gc[i_f, i_i] = propagator_ChUA(kv, wv, Ec, Np, CH, IHf, lRm, cutoff_type, ChUA)
+                    Gc[i_f, i_i] = propagator_ChUA(kv, wv, Ec, Np, CH, IHf, lRm, cutoff_type, ChUA,SYS.width)
                     II[i_f, i_i] = 1.0
                 end
             end
@@ -915,9 +1008,9 @@ function fVGI(Ec, qn, SYS, IA, CH, IH, VVertex, lRm)
         for i_i in 1:(i_f-1)
             #Dimi_IH = IH[Dim[1, i_i]]
             #if Dimf_IH.iCH != Dimi_IH.iCH
-                #Vc[i_f, i_i] = conj(Vc[i_i, i_f])
+            #Vc[i_f, i_i] = conj(Vc[i_i, i_f])
             #else
-                Vc[i_f, i_i] = Vc[i_i, i_f]
+            Vc[i_f, i_i] = Vc[i_i, i_f]
             #end
         end
     end
@@ -999,7 +1092,7 @@ function showPoleInfo(qn, Ec, reslog, filename)
         Eci = Ec[i]
         logdetVGI = reslog[i]
         open(filename, "a") do file
-            write(file, @sprintf("%.4f %.4f %.4f\n", real(Eci), imag(Eci) * 1e3, logdetVGI))
+            write(file, @sprintf("%.8f %.8f %.8f\n", real(Eci), imag(Eci) * 1e3, logdetVGI))
         end
         if Ampmin > logdetVGI
             Ampmin = logdetVGI
@@ -1037,10 +1130,12 @@ function resc0(Range, iER, qn, SYS, IA, CH, IH, VVertex)
     resM2 = zeros(Float64, NCH, NCH)
 
     # 计算 ER
-    ER = Range.ERmax - (iER - 1) * (Range.ERmax - Range.ERmin) / (Range.NER - 1)
+    #ER = Range.ERmax - (iER - 1) * (Range.ERmax - Range.ERmin) / (Range.NER - 1)
+    ER = Range.ERmin + (iER - 1) * (Range.ERmax - Range.ERmin) / (Range.NER - 1)
     # 如果使用 PL 方案，则转换 ER
     if Range.Ep[1] == "L"
         PL = Range.ERmax - iER * (Range.ERmax - Range.ERmin) / (Range.NER - 1)
+        PL = Range.ERmin + iER * (Range.ERmax - Range.ERmin) / (Range.NER - 1)
         ER = sqrt((sqrt(PL^2 + p[Range.Ep[2]].m^2) + p[Range.Ep[3]].m)^2 - PL^2)
     end
 
@@ -1190,7 +1285,7 @@ function resc(Sys, qn, Range, channels, Ff, config, VVertex; Np=10, Nx=10, Nphi=
         push!(ranges, start_idx:end_idx)
         push!(start_indices, start_idx)
     end
-
+    # 2. 在主进程管理进度
     # 使用pmap并行计算
     results = pmap(1:num_workers) do worker_id
         worker_resc(ranges[worker_id], Range, start_indices[worker_id],
@@ -1301,17 +1396,17 @@ end
 #------------------------------------------------------------------------------------------
 # Get the corresponding IH and Dim for the given case. Note: Interpolation is not performed here simultaneously, as it may cause memory leaks for unknown reasons. -> setTGA
 function IHDim(E, Et, Range, TGt, IHt, Dimt)
-    ii = Range.NER - Xs.Nsij(E, Range.ERmin, Range.ERmax, Range.NER - 1)
-    Emin, Emax = Et[ii+1], Et[ii]
-    dmin, dmax = TGt[2][ii+1], TGt[2][ii]
-    if dmin == dmax
+    ii = Xs.Nsij(E, Range.ERmin, Range.ERmax, Range.NER - 1)
+    Elower, Eupper = Et[ii], Et[ii+1]
+    dlower, dupper = TGt[2][ii], TGt[2][ii+1]
+    if dlower == dupper
         #Tmin, Tmax = TGt[ii+1], TGt[ii]
         #if size(Tmin) == size(Tmax)
 
         return IHt[ii], Dimt[:, :, ii]
     else
-        mid = 0.5 * (Emin + Emax)
-        idx = (E < mid) + 1
+        mid = 0.5 * (Elower + Eupper)
+        idx = (E > mid) + 1
         return IHt[ii+idx-1], Dimt[:, :, ii+idx-1]
     end
 end
@@ -1384,21 +1479,20 @@ function TGA(para, cfinal, cinter, ranges)
 
 
     # Interpolation: placing interpolation here helps prevent memory leaks
-    ii = Range.NER - Xs.Nsij(E, Range.ERmin, Range.ERmax, Range.NER - 1)
-    Emin, Emax = Et[ii+1], Et[ii]
-    dmin, dmax = TGt[2][ii+1], TGt[2][ii]
-    Tmin, Tmax = view(TGt[1],:,:,(ii+1)), view(TGt[1],:,:,ii)
-    TeT = dmin == dmax
-    #Tmin, Tmax = TGt[ii+1], TGt[ii]
-    #TeT = size(Tmin) == size(Tmax)
+    ii = Xs.Nsij(E, Range.ERmin, Range.ERmax, Range.NER - 1)
+    Elower, Eupper = Et[ii], Et[ii+1]
+    dlower, dupper = TGt[2][ii], TGt[2][ii+1]
+    Tlower, Tupper = view(TGt[1],:,:,(ii)), view(TGt[1],:,:,(ii+1))
+    TeT = dlower == dupper
+
 
     if TeT
-        inv_dE = 1.0 / (Emax - Emin)
-        ww = (E - Emin) * inv_dE
+        inv_dE = 1.0 / (Eupper - Elower)
+        ww = (E - Elower) * inv_dE
 
     else
-        mid = 0.5 * (Emin + Emax)
-        idx = (E < mid) + 1
+        mid = 0.5 * (Elower + Eupper)
+        idx = (E > mid) + 1
         TG = view(TGt[1],:,:,(ii+idx-1))
         #TG = TGt[ii+idx-1]
 
@@ -1475,7 +1569,7 @@ function TGA(para, cfinal, cinter, ranges)
                         end
 
                         if TeT
-                            TG0 = Tmin[IHf.Dime, iDim] * (1.0 - ww) + Tmax[IHf.Dime, iDim] * ww #插值
+                            TG0 = Tlower[IHf.Dime, iDim] * (1.0 - ww) + Tupper[IHf.Dime, iDim] * ww #插值
                         else
                             TG0 = TG[IHf.Dime, iDim]
                         end

@@ -5,7 +5,12 @@
 		},
 		{
 			"path": "../../../../sony"
+		},
+		{
+			"path": "../Example"
 		}
 	],
-	"settings": {}
+	"settings": {
+		"julia.environmentPath": "/root/work/0/jl/Example"
+	}
 }

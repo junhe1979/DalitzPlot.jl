@@ -1,5 +1,4 @@
 module GEN
-
 export GENEV, reset_genev_rngs!, get_process_rng
 using StaticArrays
 using Random

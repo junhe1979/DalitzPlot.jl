@@ -332,54 +332,115 @@ The function `cross_section` (or `Xs.xsection`) accepts a keyword argument `symm
 The procedure consists of three steps:
 
 #### 1. Generation of unique index combinations for each axie
-For each axis string (e.g. `"p1:p1"` or `"p1:p2"`), the code finds all possible assignments of the named particles to the final‑state momenta.  
-If an axis contains only particles with the same name (i.e. truly identical particles), the combinations are **sorted and deduplicated**. For instance, $[1,2]$ and $[2,1]$ are considered the same physical pair because the particles are indistinguishable.  
-After this step, every axis holds a list of unique ordered index tuples.
+For each axis string (e.g. `"p1:p1"` or `"p1:p2"`), the code first finds all occurrences of the specified particles in the final-state particle list and then generates all possible assignments of these particles to the final-state momenta. For example, if the final-state particles are ordered as `p1`, `p1`, `p2`, corresponding to particle indices $1$, $2$, and $3$, respectively, the axis `"p1:p1"` initially generates the assignments $[1,2]$ and $[2,1]$, whereas `"p1:p2"` generates $[1,3]$ and $[2,3]$.
+
+When all particles appearing in an axis have the same name, the generated index combinations are sorted and deduplicated. Thus, for `"p1:p1"`, the assignments $[1,2]$ and $[2,1]$ are identified as the same physical combination and only the sorted combination $[1,2]$ is retained. In contrast, for an axis containing different particle names, such as `"p1:p2"`, no such sorting or deduplication is applied, and the two combinations $[1,3]$ and $[2,3]$ are retained as distinct combinations.
+
+After this step, each axis is therefore associated with the list of particle-index combinations used subsequently to construct the invariant-mass distributions.
 
 #### 2. Building valid Dalitz pairs (`fill_pairs`)
-For a two‑dimensional Dalitz plot, the code needs to form pairs of combinations $(c1, c2)$ from the first and second axis. The following priorities are used to select physically meaningful pairs:
 
-- **Completely non‑overlapping** (ideal for four‑body final states, e.g. $(12,34)$).
-- **Sharing exactly one particle** (typical for three‑body final states, e.g. $(12,13)$, $(12,23)$, $(13,23)$).
-- **All other cases**  (including pairs that are not subsets of each other, e.g. (234,123), as well as all possible combinations)  – only as a last resort, with a warning that the variable definition may be non‑standard.
+For a two-dimensional distribution, the first two axes are used to construct the Dalitz variables. Suppose the combinations associated with the first and second axes are denoted by $c_1$ and $c_2$, respectively. The code constructs the list `fill_pairs` in the following sequence.
 
-Within each category, duplicate pairs (equivalent under particle exchange) are removed.
+1. **First, search for non-overlapping pairs.**
+
+   The code loops over all combinations $c_1$ from the first axis and $c_2$ from the second axis and checks whether they have no particle indices in common, i.e. $\mathrm{intersect}(c_1,c_2)=\varnothing$.
+
+   Every pair satisfying this condition is added to `fill_pairs`, provided that an equivalent pair has not already been included. For example, for a four-particle final state, this can generate pairs such as $([1,2],[3,4])$.
+
+2. **If no non-overlapping pair is found, search for pairs sharing exactly one particle.**
+
+   This step is performed only when `fill_pairs` is still empty after the first search. The code again loops over all $c_1$ and $c_2$ and selects pairs satisfying $|\mathrm{intersect}(c_1,c_2)|=1$.
+
+   Here, $|\mathrm{intersect}(c_1,c_2)|=1$ means that the two invariant-mass combinations contain **exactly one common final-state particle index**. For example,
+
+   $[1,2]$ and $[1,3]$ share particle $1$,
+
+   $[1,2]$ and $[2,3]$ share particle $2$,
+
+   and $[1,3]$ and $[2,3]$ share particle $3$.
+
+   Therefore, the three possible pairs
+
+   $([1,2],[1,3])$, $([1,2],[2,3])$, and $([1,3],[2,3])$
+
+   all satisfy $|\mathrm{intersect}(c_1,c_2)|=1$. These are the standard pairs of two-particle invariant masses in a three-body system: each pair of invariant masses corresponds to two particle pairs that have one particle in common.
+
+
+3. **If neither of the above searches produces a pair, use all combinations.**
+
+   If `fill_pairs` remains empty after the second search, the code issues a warning and loops over all possible pairs $(c_1,c_2)$ without imposing any condition on their overlap. Every non-duplicate pair is then added to `fill_pairs`.
+
+In all three steps, the code uses a duplicate check to avoid adding the same pair twice. Specifically, the function `is_dup(p)`checks whether the two invariant-mass combinations in the new pair have already appeared in `fill_pairs`, irrespective of their order. For example, the pairs
+
+$( [1,2], [3,4] )$ and $( [3,4], [1,2] )$
+
+contain the same two invariant-mass combinations, with only the first and second axes exchanged. The duplicate check therefore regards them as the same pair and keeps only one of them.
+
+This duplicate check is different from the deduplication performed in the previous step. In Step 1, combinations such as $[1,2]$ and $[2,1]$ are identified because they correspond to the same invariant-mass combination of two identical particles. Here, the duplicate check is applied **between two invariant-mass combinations**: $( [1,2], [3,4] )$ and $( [3,4], [1,2] )$ are identified because they represent the same pair of variables with the two axes exchanged.
+
+The resulting `fill_pairs` list is subsequently used to determine which pairs of invariant-mass combinations are filled in the two-dimensional distribution.
 
 #### 3. Filling the histograms
-- **2‑D histogram (`zsumd`)**  
-  Only the first two axes contribute to the Dalitz plot.  
-  In `symmetrize = true` mode, all pairs in `fill_pairs` are filled, and the event weight is divided by the number of pairs.  
-  In `symmetrize = false` mode, only the first pair in `fill_pairs` is used, and the full event weight is deposited.  
-- **1‑D histograms (`zsumt`)**  
-  Every axis defined by the user produces a one‑dimensional invariant‑mass spectrum.  
-  In symmetrised mode, all combinations of an axis are filled with weight divided by the number of combinations.  
-  In fixed‑label mode, each axis uses only its first combination.  
-  The 1‑D spectra are always self‑consistent with the Dalitz plot: no separate projection is needed because the event loop directly fills both `zsumt` and `zsumd`.
+
+* **2-D histogram (`zsumd`)**
+
+  Only the first two axes are used to construct the two-dimensional distribution.
+
+  In `symmetrize = true` mode, all valid pairs in `fill_pairs` are filled, and the event weight is divided equally among these pairs.
+
+  In `symmetrize = false` mode, only the first valid pair in `fill_pairs` is used, and the full event weight is deposited.
+
+* **1-D histograms (`zsumt`)**
+
+  Every axis defined by the user produces its own one-dimensional invariant-mass spectrum.
+
+  In `symmetrize = true` mode, all particle-index combinations associated with an axis are filled, with the event weight divided equally among these combinations.
+
+  In `symmetrize = false` mode, only the first combination associated with each axis is used, with the full event weight.
+
+  The 1-D spectra and the 2-D distribution are filled directly during the same event loop. Thus, no separate projection of the 2-D histogram is required to obtain the 1-D spectra.
 
 #### 4. Event weight and normalisation
-The raw Monte‑Carlo weight `wt` from the phase‑space generator is multiplied by the (already symmetrised) amplitude squared.  
-The final cross sections `cs0`, `cs1` and `cs2` are obtained by dividing the accumulated sums by the total number of generated events (`nevtot`) and the appropriate bin widths.  
 
-**Note on statistical factors for identical particles:**  
-The phase‑space generator `GENEV` does **not** automatically include the factor $1/N!$ for $N$ identical particles. To obtain the correct absolute normalisation, the user must either:
-- incorporate the factor into the amplitude (e.g. multiply by $1/\sqrt{N!}$ before squaring), or
-- divide the resulting cross section by $N!$ after the integration.  
+For each generated event, the code obtains the phase-space weight `wt` from `GENEV` and multiplies it by the corresponding amplitude returned by `proc.amps`. The resulting weighted amplitude is accumulated in `zsum`, `zsumt`, and `zsumd`.
 
-This is not done automatically because the required factors depend on the specific amplitude model.
+The final result `cs0` is obtained by dividing the accumulated sum by the total number of generated events, `nevtot`. For the one- and two-dimensional distributions, the corresponding sums are additionally divided by the appropriate bin widths.
+
+**Note on identical particles:**
+
+The phase-space generator `GENEV` does **not** automatically include the statistical factor $1/N!$ for $N$ identical particles. Therefore, if the amplitude used in `proc.amps` is defined without this normalization factor, the corresponding factor must be included when calculating the absolute cross section. This can be done either by including the factor $1/\sqrt{N!}$ in the amplitude before squaring, or equivalently by dividing the final cross section by $N!$.
+
+This statistical factor is independent of the weight sharing used for `symmetrize = true`. The latter only distributes the weight of one physical event among the different particle-index combinations used to fill an invariant-mass histogram; it does not provide the $1/N!$ identical-particle factor.
+
 
 ### Behaviour for more than two axes
 
-The user may supply more than two axis strings (e.g. `axes = ["p1:p2", "p3:p4", "p1:p3"]`).  
-The first two axes are used to define the Dalitz plot; all axes produce their own one‑dimensional invariant‑mass spectra.  
-The same symmetrisation rules apply to every axis independently.
+The user may supply more than two axis strings. For example,
 
-### Summary of symmetrisation options
+`axes = ["p1:p2", "p3:p4", "p1:p3"]`.
 
-| Situation | `symmetrize = true` | `symmetrize = false` |
-|-----------|---------------------|----------------------|
-| 3 identical particles (e.g. $3\pi^0$) | Fills three points per event (shared‑particle pairs). Dalitz plot is fully symmetric. | Fills one point (the first valid pair). Shape identical if amplitude is symmetric. |
-| 4 identical particles (e.g. $4\pi^0$) | Fills three non‑overlapping pairs per event. Three‑sector Dalitz plot. | Fills one point. Shape identical if amplitude is symmetric. |
-| Mixed final states (e.g. $2\pi^++\pi^-+\pi^0$) | Symmetrises only the axes that contain identical particles. | Uses one representative pairing per axis. |
+The first two axes are used to construct the two-dimensional distribution, while every axis produces its own one-dimensional invariant-mass spectrum.
+
+The same combination and symmetrisation procedure is applied independently to each one-dimensional axis. For the two-dimensional distribution, however, only the first two axes enter `fill_pairs` and hence determine the pairs used to fill `zsumd`.
+
+
+### Summary of the two symmetrisation options
+
+The two options differ only in how many particle-index combinations are used when filling the invariant-mass distributions.
+
+| Situation                        | `symmetrize = true`                                                                                                                                                                                                     | `symmetrize = false`                                                                    |
+| -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| **One-dimensional distribution** | Uses **all** allowed particle-index combinations. If an event has two combinations for an axis, both are filled, with the event weight divided equally between them.                                                    | Uses **only one** representative combination for each axis, with the full event weight. |
+| **Two-dimensional distribution** | Uses **all valid pairs** in `fill_pairs`. The event weight is divided equally among these pairs.                                                                                                                        | Uses **only the first valid pair** in `fill_pairs`, with the full event weight.         |
+| **Example: $3\pi^0$**            | The three combinations $[1,2]$, $[1,3]$, and $[2,3]$ are available. The corresponding valid pairs are $([1,2],[1,3])$, $([1,2],[2,3])$, and $([1,3],[2,3])$. Thus, one event can contribute to all three Dalitz points. | Only the first valid pair is used, so one event contributes to one Dalitz point.        |
+| **Example: $4\pi^0$**            | The valid non-overlapping pairs are $([1,2],[3,4])$, $([1,3],[2,4])$, and $([1,4],[2,3])$. Thus, one event can contribute to all three Dalitz points.                                                                   | Only the first valid pair is used, so one event contributes to one Dalitz point.        |
+| **Mixed final states**, e.g. $2\pi^+ + \pi^- + \pi^0$ | Uses all allowed particle-index combinations for each axis. For an axis involving the two identical $\pi^+$ mesons, both possible assignments are retained. For example, `pi+:pi-` gives $[1,3]$ and $[2,3]$, while `pi-:pi0` has only one combination, $[3,4]$. | Uses only one representative combination for each axis. |
+
+
+
+Therefore, `symmetrize=true` means that **all allowed particle assignments are retained**, while `symmetrize=false` means that **only one representative assignment is retained**. The latter is useful when one wants to plot a fixed-label representation of the event sample.
+
 
 ## Plot Dalitz Plot
 

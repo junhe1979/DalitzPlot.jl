@@ -47,7 +47,6 @@
     - [`TGA(para, cfinal, cinter, ranges)`](#tgapara-cfinal-cinter-ranges)
       - [`function Vertex14(k, P, l, Vert)`](#function-vertex14k-p-l-vert)
 
-
 # Quasipotential approximation
 
 The general form of the Bethe-Salpeter equation (BSE) for the scattering amplitude can be written as follows:
@@ -333,12 +332,11 @@ $\int^{q_{max}}_0 dq F(q)\frac{1}{W-E_1-E_2+i\epsilon}={\cal P}\int^{q_{max}}_0 
 
 $\rho(\bar{q})=F(\bar{q})\delta(W-E_1-E_2)=F(\bar{q})\frac{\delta(q-\bar{q})}{|(-\frac{1}{2})(\frac{2\bar{q}}{\bar{E}_1}+\frac{2\bar{q}}{\bar{E}_2})|}=F(\bar{q})\frac{\bar{E}_1\bar{E}_2}{\bar{q}W}\delta(q-\bar{q})$
 
-
 Using $\frac{\bar{q}^2-q^2}{W-E_1-E_2}|_{q\to \bar{q}}=\frac{-2q}{-\frac{q}{E_1}-\frac{q}{E_2}}|_{q\to \bar{q}}=\frac{2\bar{E}_1\bar{E}_2}{W}$,
 
 ${\cal P}\int^{q_{max}}_0 dq F(q)\frac{1}{W-E_1-E_2}=\int^{q_{max}}_0 dq \left[F(q)\frac{\bar{q}^2-q^2}{W-E_1-E_2}-F(\bar{q})\frac{\bar{q}^2-q^2}{W-E_1-E_2}|_{q\to \bar{q}}\right]\frac{1}{\bar{q}^2-q^2}+{\cal P}\int^{q_{max}}_0 dq F(\bar{q})\frac{\bar{q}^2-q^2}{W-E_1-E_2}|_{q\to \bar{q}}\frac{1}{\bar{q}^2-q^2}=\int^{q_{max}}_0 dq \left[F(q)\frac{1}{W-E_1-E_2}-F(\bar{q})\frac{2\bar{E}_1\bar{E}_2}{W}\frac{1}{\bar{q}^2-q^2}\right]+F(\bar{q})\frac{2\bar{E}_1\bar{E}_2}{W}\frac{1}{2\bar{q}}\ln|\frac{q_{max}+\bar{q}}{q_{max}-\bar{q}}|$
 
-Hence, we have 
+Hence, we have
 
 $\int^{q_{max}}_0 dq F(q)\frac{1}{W-E_1-E_2+i\epsilon}=\int^{q_{max}}_0 dq \left[F(q)\frac{1}{W-E_1-E_2}-F(\bar{q})\frac{2\bar{E}_1\bar{E}_2}{W}\frac{1}{\bar{q}^2-q^2}\right]+F(\bar{q})\frac{\bar{E}_1\bar{E}_2}{\bar{q}W}\ln|\frac{q_{max}+\bar{q}}{q_{max}-\bar{q}}|- i\pi F(\bar{q})\frac{\bar{E}_1\bar{E}_2}{\bar{q}W}$
 
@@ -346,10 +344,9 @@ $=\int^{q_{max}}_0 dq F(q)\frac{1}{W-E_1-E_2}+F(\bar{q})\frac{\bar{E}_1\bar{E}_2
 
 If $q_{max}\to\infty$, $\ln|\frac{q_{max}+q_0}{q_{max}-q_0}|\to 0$.
 
-Now 
+Now
 
 $F({\rm k}'')=\frac{{\rm k}''^2}{(2\pi)^3}i{\cal V}^{J^P}({\rm k},{\rm k}'') \frac{1}{2 E_2[W-E_2+E_1]}i{\cal M}^{J^P}({\rm k}'', {\rm k}')\to F(\bar{\rm k}'')=\frac{\bar{\rm k}''^2}{(2\pi)^3}i{\cal V}^{J^P}_o({\rm k},\bar{\rm k}'') \frac{1}{4\bar{E}_2\bar{E}_1}i{\cal M}^{J^P}_o(\bar{\rm k}'', {\rm k}')$
-
 
 $$
 \begin{align}
@@ -359,7 +356,6 @@ $$
 +\frac{\bar{\rm k}''}{32\pi^3W}i{\cal V}_o^{J^P}({\rm k},\bar{\rm k}'') i{\cal M}_o^{J^P}(\bar{\rm k}'', {\rm k}')\left[2\bar{\rm k}''\int^{{\rm k}''_{max}}_0d{\rm k}''\frac{1}{{\rm k}''^2-\bar{\rm k}''^2}+\ln(\frac{{\rm k}''_{max}+\bar{\rm k}''}{{\rm k}''_{max}-\bar{\rm k}''})- i\pi \right]
 \end{align}
 $$
-
 
 We have
 
@@ -401,7 +397,8 @@ $$
 \end{align}
 $$
 
-If $q_{max}\to\infty$ 
+If $q_{max}\to\infty$
+
 $$
 \begin{align}
 	G_j=\left\{\begin{array}{cl}-\frac{i\bar{q}}{32\pi^2 W}+\sum_j
@@ -498,14 +495,13 @@ $$
 
 ## Pole search
 
-To find a bound state or resonance, the singularities should be searched at the pole of the $M(z)=0$ in the complex plane after analytic continuation total energy $W$ into the complex plane as $z$. 
+To find a bound state or resonance, the singularities should be searched at the pole of the $M(z)=0$ in the complex plane after analytic continuation total energy $W$ into the complex plane as $z$.
 
 Since $E=\sqrt{m_1^2+p^2}+\sqrt{m_2^2+p^2}$, the $p$-plane correspond to two Reimann sheets for $E$. The bound state is located in the first Reimann sheet while the resonances located in the second Reimann sheet.
 
 ![Description](fig/Riemansheet.png)
 
 From the above figure, the resonances should be found with $Im(q)<0$. The potential $V$ is dependent on the $E$.
-
 
 After extend the energy in the center of mass frame $W$ into complex energy plane as $z$, the pole can be found by variation of $z$ to satisfy
 
@@ -675,7 +671,7 @@ $$
 \begin{align}
 i{\cal M}^{d}_{\lambda_1,\lambda_2,\lambda_{3};\lambda}(p_1,p_2,p_{3})&=i{\cal A}_{\lambda_1,\lambda_2;\lambda_3;\lambda}(p_1,p_2,p_3)=i{\cal A}_{\lambda_1,\lambda_2;\lambda_3;\lambda}(\Omega_2,\Omega_3,M_{12}), \nonumber\\
 %
-​&=\sum_{JM}N_JD^{J*}_{ M\lambda_{21}}( \Omega_2)i{\cal A}^{JM}_{\lambda_1,\lambda_2;\lambda_3;\lambda}(\Omega_3,M_{12}),\ \ \ {\rm for\ onshell}\nonumber\\
+&=\sum_{JM}N_JD^{J*}_{ M\lambda_{21}}( \Omega_2)i{\cal A}^{JM}_{\lambda_1,\lambda_2;\lambda_3;\lambda}(\Omega_3,M_{12}),\ \ \ {\rm for\ onshell}\nonumber\\
 %
 i{\cal M}^{d}_{\lambda_1\lambda_2;\lambda_3;\lambda}(p_1,p_2,p_3)&=i{\cal A}_{\lambda_1\lambda_2;\lambda_3;\lambda}(\Omega'_2,{\rm p}'_2,\Omega_3,M_{12}) \nonumber\\
 %
@@ -706,8 +702,6 @@ Note: when consider the rescattering of different particles, the different cm fr
 
 ## Decay width
 
-
-
 The phase space is given by
 
 $$
@@ -715,7 +709,6 @@ $$
 d\Phi=(2\pi)^4\delta^4(P-\sum_{i=1}^n p_i)\prod_{i=1}^n \frac{d^3p_i}{2E_i(2\pi)^3}
 \end{align}
 $$
-
 
 We conisder Monte-Carlo method to generate the
 event.
@@ -825,7 +818,6 @@ The `struct structInterAction` structure (typically used as `IA` in the code) st
 
 These definitions ensure that all relevant quantum numbers and parameters for each interaction are explicitly tracked, supporting flexible and accurate construction of the interaction kernel in qBSE calculations.
 
-
 ## Data Structures for the Dimensions
 
 In the qBSE approach, matrix dimensions for a coupled-channel system are organized hierarchically: the outermost level corresponds to different channels, the next to independent helicities, and the innermost to discretized momentum points. The data structures are designed to clearly separate and manage these levels.
@@ -865,7 +857,6 @@ Here, `N` denotes the total number of dimensions, and `NE` represents the number
 
 These auxiliary data structures ensure proper association between each discretized momentum point and its corresponding helicity and integration weight, thereby enabling accurate matrix construction and numerical computations in the qBSE framework.
 
-
 ## Additional Data Structures
 
 ### `structMomentum`
@@ -887,22 +878,22 @@ The `mutable struct structHelicity` structure stores the helicity information fo
 - `i2::Int64`, `i2h::Int64`: Helicity and denominator for initial particle 2.
 - `f2::Int64`, `f2h::Int64`: Helicity and denominator for final particle 2.
 
-## Particle 
+## Particle
 
 ### `structParticle`
 
 The `structParticle` structure defines the properties of a single particle.
 
 **Fields:**
+
 - `name0::String` — Particle key without charge (used for identification).
 - `nameL::String` — LaTeX representation of the particle name.
-- `anti::Int` — Flags antiparticle status: `0` for particle, `1` for antiparticle.  
-  **Note:** The labeling convention distinguishes between particles and antiparticles, with specific assignments depending on the particle type (e.g., all three pions $\pi^\pm$ and $\pi^0$ are typically treated as particles (`0`), while certain kaon states $\bar{K}^0$ and $K^-$ are treated as antiparticles (`1`)).
+- `anti::Int` — Flags antiparticle status: `0` for particle, `1` for antiparticle.**Note:** The labeling convention distinguishes between particles and antiparticles, with specific assignments depending on the particle type (e.g., all three pions $\pi^\pm$ and $\pi^0$ are typically treated as particles (`0`), while certain kaon states $\bar{K}^0$ and $K^-$ are treated as antiparticles (`1`)).
 - `m::Float64` — Particle mass.
 - `J::Int64` — Total angular momentum.
 - `Jh::Int64` — Related spin quantum number.
 - `P::Int64` — Parity.
-  
+
 ---
 
 ### function to read partilce data file
@@ -912,21 +903,23 @@ The `structParticle` structure defines the properties of a single particle.
 Populates a dictionary of particle structures by reading particle information from a formatted data file.
 
 **Arguments:**
+
 - `particles::Dict{String,structParticle}` — Dictionary mapping particle  to their corresponding `structParticle` instances.
 - `filename::String` — Path to the particle data file.
 
 **Behavior:**
+
 - Reads the file line by line, skipping the header.
 - Parses each column into the corresponding `structParticle` field.
 - Stores the constructed particle object in the dictionary using the first column (charged) as the key.
 
 **Returns:**
+
 - Nothing (modifies the `particles` dictionary in place).
 
 `const p = Dict{String,structParticle}()`
 
 store of information of particles in this global vector
-
 
 ## Functions for the qBSE
 
@@ -944,29 +937,28 @@ This function is designed to be called within `res` to prepare the system and ch
 - `config`: A `NamedTuple` (or `Dict`) providing runtime configuration flags. The user may supply only the required fields; omitted fields are set to their defaults as listed below:
 
   - `ChUA = :off` – Selects the chiral unitary approach (cutoff regularization only; dimensional regularization planned):
+
     - `:off` – standard qBSE (no ChUA).
     - `:qBSE` – ChUA using the qBSE propagator.
     - `:oset1405` – standard ChUA used in the calculation of $\Lambda(1405)$.
     - `:oset980` – standard ChUA used in the calculation of $f_0(980)$.
-  
-    
   - `cutoff_type = :infty` – Defines the ultraviolet regularization scheme:
+
     - `:infty` – infinite momentum cutoff with an exponential form factor (form factor provides natural damping). **Note:** `potential` must be `:nopW` in this case.
     - `:cut` – finite hard momentum cutoff (integration upper limit =$q_{max}$). **Note:** `cutoff_re_type` should be set to `:Lambda` when using this scheme.
-
   - `potential = :nopW` – Specifies how the potential is treated:
+
     - `:PW` – potential after partial-wave decompostion.
     - `:nopW` – bare potential without partial-wave decompostion.
-
-  
   - `cutoff_re_type = :Lambda` – Type of cutoff applied to constituent (rearranged) particles:
+
     - `:Lambda` – fixed constant Λ.
     - `:alpha` – Λ = m_ex + 0.22·α, where m_ex is the mass of the exchanged meson and α is a tunable parameter.
     - `:alpha_light` – uses the mass of the lightest meson (e.g., pion) as a reference.
-  
   - `cutoff_ex_type = :Lambda`  `cutoff_ex = 0.0`  `FF_ex_type = 3` see `function propFFex()`.
 
 **Important constraints:**
+
 - When `cutoff_type = :infty`, `potential` **must** be `:nopW`.
 - When `cutoff_type = :cut`, `cutoff_re_type` **should** be `:Lambda` (fixed cutoff).
 - The `ChUA = :qBSE`,`:oset1405` or `:qBSE` options are currently **implemented only for `cutoff_type = :cut`**; support for `:infty` is **not yet implemented** and will be added in a future release. Using these options with `:infty` may lead to incorrect results or runtime errors.
@@ -1042,7 +1034,6 @@ In the `fV` function, form factors for the exchanged mesons can be included via 
 
 These options allow flexible control over the inclusion and type of form factors in the potential kernel, supporting different regularization schemes as needed for the physical system under study.
 
-
 ### `function fV(k, l, SYS, IA0, CHf, CHi, VVertex)`
 
 This function defines the potential kernel for qBSE calculations by extracting vertices or the direct potential from VVertex, which is then passed to the kernel function. It is responsible for computing the interaction potential between particles in a scattering process.
@@ -1053,7 +1044,7 @@ This function defines the potential kernel for qBSE calculations by extracting v
 - `SYS::structSys`: The same as above.
 - `IA0::structInterAction`: The interaction object containing information about the interactions and their properties, one of element of `IA` above.
 - `CHf::structChannel`,`CHi::structChannel`: The final and initial channel object containing information about the final state particles, one of element of `CH` above.
-- `VVertex`: The vertices of the interactions or direct potential for qBSE, which should defiend in main file. 
+- `VVertex`: The vertices of the interactions or direct potential for qBSE, which should defiend in main file.
 
 **Returns:**
 
@@ -1084,7 +1075,7 @@ This function is designed to be called within `res` to  calculates the rescateri
 - `iER`: The index of the energy range, energy can be obtained as `ER = Range.ERmax - iER * (Range.ERmax - Range.ERmin) / (Range.NER - 1)`.
 - `qn`: The quantum numbers for the process.
 - `SYS`, `IA`, `CH`, `IH`:  Obtained by `preprocessing`.
-- `VVertex`: Interaction vertices or direct potentials for qBSE framework. 
+- `VVertex`: Interaction vertices or direct potentials for qBSE framework.
   Flow: `VVertex` → `res` → `VGI()` → `kernel()` → `fV()` in computation pipeline.
 - `eps`: Optional regularization parameter (default: 1e-4im) to add a small imaginary part to propagator denominators to avoid singularities.
 
@@ -1119,7 +1110,6 @@ This function, which employs parallel computation to model the rescattering proc
 - `IH::Vector{structIndependentHelicity}`: The independent helicity objects, recalculated from the input `IH`.
 - `Dim::Vector{structDimension}`: The dimension objects, recalculated from the input `Dim`.
 - `TG::Matrix{ComplexF64}`: The $TG$ matrix used for decays.
-
 
 ### `function simpleXsection(ER, resM2, CH, qn; Ep=("cm",))`
 
@@ -1183,9 +1173,6 @@ The function `LorentzBoost` takes two arguments: `k`, which is a 5-component mom
 
 Here the momenta is a vector of 5-component momentum vectors. The function applies the Lorentz boost to each momentum vector in the array `momenta` using the momentum vector `p`.
 
-
-
-
 ### `function setTGA(par, sij, k, tecm, i, j)`
 
 set the frame and other things for calculating TGA, which should be usde before `TGA` function.
@@ -1212,24 +1199,17 @@ This function calculates the transition amplitude for a given final state `cfina
 - `cfinal::String`: The final state configuration (e.g., String with `":"` for the outgoing particles).
 - `cinter::Tuple{String, Float64, Function, NamedTuple}}`: The indices of intermediate channels (`ch=::String`) with weights (`weight=::Float64`), the corresponding vertex functions (`Vertex=::Function`),  and associated data, including the vertex structure, precomputed spinors or polarization vectors ( `cached=::NamedTuple` e.g., `cached=(ULc=GA1 * FR.U(para14.P, lLc),)`). The content in `cached` will be used in functions `Vertex`, such as `Vertex14(k, P, l, cached) = FR.U(k[4], l[4], bar=true) * cached.ULc`, defined in `function amps` in main file.
 
-
 #### `function Vertex14(k, P, l, Vert)`
 
 This function computes the initial decay vertex for a process involving two rescattering particles.
 
 **Arguments:**
 
-
-- `k`: Momenta of the two rescattering particles and all other final-state particles. 
+- `k`: Momenta of the two rescattering particles and all other final-state particles.
 - `P`: Four-momentum of the parent (initial) particle.
-- `l`: Helicity indices of the two rescattering particles and all other final-state particles.  
+- `l`: Helicity indices of the two rescattering particles and all other final-state particles.
 - `Vert`: Vertex structure or function, defined in  `function TGA`
 
 **Returns:**
 
 A value representing the decay vertex amplitude, suitable for use in the qBSE package's transition amplitude calculations.
-
-
-
-
-
