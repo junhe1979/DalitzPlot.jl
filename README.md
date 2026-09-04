@@ -379,7 +379,7 @@ The construction proceeds in the following order.
 
    is a valid non-overlapping pair.
 
-2. **If no such pair exists, search for pairs sharing exactly one particle.**
+  **If no such pair exists, search for pairs sharing exactly one particle.**
 
    If no non-overlapping pair is found, the code searches for pairs satisfying
 
@@ -401,7 +401,7 @@ The construction proceeds in the following order.
 
    share particle index $2$.
 
-3. **If neither condition produces a pair, use all combinations.**
+   **If neither condition produces a pair, use all combinations.**
 
    If `fill_pairs` is still empty after the first two searches, the code issues a warning and uses all combinations of $c_1$ and $c_2$, subject only to the duplicate check.
 
@@ -427,7 +427,7 @@ The resulting `fill_pairs` list determines which pairs of invariant-mass combina
 
 For each generated event, `Nsum3` uses the particle-index combinations in `laxes` to determine the corresponding invariant-mass values and their bin indices. These event-dependent bin indices are stored in `Nsij`.
 
-* **1-D histograms (`zsumt`)**
+ **1-D histograms (`zsumt`)**
 
   Every user-defined axis produces its own one-dimensional invariant-mass spectrum.
 
@@ -473,7 +473,7 @@ For each generated event, `Nsum3` uses the particle-index combinations in `laxes
 
   and the full event weight $w$ is assigned to that combination. Thus, for `"p1:p2"`,the first combination `[1,3]` is selected, whereas `"p1:p1"` has only one independent combination `[1,2]` in either mode.
 
-* **2-D histogram (`zsumd`)**
+ **2-D histogram (`zsumd`)**
 
   Only the first two axes are used to construct the two-dimensional invariant-mass distribution. The valid pairs constructed in `fill_pairs` are converted into the corresponding event-dependent bin indices and used to fill `zsumd`.
 
