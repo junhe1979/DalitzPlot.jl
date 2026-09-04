@@ -363,7 +363,7 @@ For a two-dimensional distribution, only the first two axes are used. The code c
 
 The construction proceeds in the following order.
 
-1. **Search for non-overlapping pairs.**
+  **Search for non-overlapping pairs.**
 
    The code first selects pairs satisfying
 
