@@ -1,3 +1,59 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+
+**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+
+- [Derivation of quasipotential Bethe-Salpeter equation](#derivation-of-quasipotential-bethe-salpeter-equation)
+  - [Quasipotential approximation](#quasipotential-approximation)
+  - [Partial-wave expansion](#partial-wave-expansion)
+  - [Fixed parity](#fixed-parity)
+- [Solution of quasipotential Bethe-Salpeter equation](#solution-of-quasipotential-bethe-salpeter-equation)
+  - [Independent amplitudes](#independent-amplitudes)
+  - [Treatment of the singularity](#treatment-of-the-singularity)
+  - [Transformation to a matrix equation](#transformation-to-a-matrix-equation)
+  - [For old code](#for-old-code)
+  - [Pole search](#pole-search)
+- [2-2 cross section](#2-2-cross-section)
+  - [The cross section for the channel considered](#the-cross-section-for-the-channel-considered)
+  - [Argand plot](#argand-plot)
+- [Three body decay](#three-body-decay)
+  - [kinematics](#kinematics)
+    - [Lorentz boost](#lorentz-boost)
+  - [Amplitude](#amplitude)
+  - [Decay width](#decay-width)
+- [qBSE package](#qbse-package)
+  - [Data Structures for the Interactions](#data-structures-for-the-interactions)
+    - [`structSys`](#structsys)
+    - [`structInterAction`](#structinteraction)
+  - [Data Structures for the Dimensions](#data-structures-for-the-dimensions)
+    - [`structChannel`](#structchannel)
+    - [`structIndependentHelicity`](#structindependenthelicity)
+  - [Additional Data Structures](#additional-data-structures)
+    - [`structMomentum`](#structmomentum)
+    - [`structHelicity`](#structhelicity)
+  - [Particle](#particle)
+    - [`particles!(filename::String)`](#particlesfilenamestring)
+  - [Functions for the qBSE](#functions-for-the-qbse)
+    - [`function preprocessing(Sys, qn, channels, Ff, config, Np, Nx, Nphi)`](#function-preprocessingsys-qn-channels-ff-config-np-nx-nphi)
+    - [`function FFre(k, cutoffi, cutofff; cutoff_re_type=:Lambda, CHi=nothing, CHf=nothing, key_ex=0)`](#function-ffrek-cutoffi-cutofff-cutoff_re_typelambda-chinothing-chfnothing-key_ex0)
+    - [`function propFFex(k, key_ex, cutoff; cutoff_ex_type=:Lambda, FF_ex_type=3)`](#function-propffexk-key_ex-cutoff-cutoff_ex_typelambda-ff_ex_type3)
+    - [`function fV(k, l, SYS, IA0, CHf, CHi, VVertex)`](#function-fvk-l-sys-ia0-chf-chi-vvertex)
+  - [Functions for rescattering amplitudes and poles](#functions-for-rescattering-amplitudes-and-poles)
+    - [auxiliary function](#auxiliary-function)
+    - [`function resc0(Range, iER, qn, SYS, IA, CH, IH, VVertex)`](#function-resc0range-ier-qn-sys-ia-ch-ih-vvertex)
+    - [`function resc(Sys, qn, Range, channels, Ff, cutoff, VVertex; Np=10, Nx=10, Nphi=5)`](#function-rescsys-qn-range-channels-ff-cutoff-vvertex-np10-nx10-nphi5)
+    - [`function simpleXsection(ER, resM2, CH, qn; Ep=("cm",))`](#function-simplexsectioner-resm2-ch-qn-epcm)
+    - [`function lambda(m1, m2, m3)`](#function-lambdam1-m2-m3)
+  - [Decay](#decay)
+    - [`function proc(pf, pin, amps)`](#function-procpf-pin-amps)
+    - [`function LorentzBoost(k::SVector{5,Float64}, p::SVector{5,Float64})`](#function-lorentzboostksvector5float64-psvector5float64)
+    - [`function setTGA(par, sij, k, tecm, i, j)`](#function-settgapar-sij-k-tecm-i-j)
+    - [`TGA(para, cfinal, cinter, ranges)`](#tgapara-cfinal-cinter-ranges)
+      - [`function Vertex14(k, P, l, Vert)`](#function-vertex14k-p-l-vert)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 - [Quasipotential approximation](#quasipotential-approximation)
   - [Partial-wave expansion](#partial-wave-expansion)
   - [Fixed parity](#fixed-parity)
@@ -47,7 +103,11 @@
     - [`TGA(para, cfinal, cinter, ranges)`](#tgapara-cfinal-cinter-ranges)
       - [`function Vertex14(k, P, l, Vert)`](#function-vertex14k-p-l-vert)
 
-# Quasipotential approximation
+<!-- tocstop -->
+
+# Derivation of quasipotential Bethe-Salpeter equation
+
+## Quasipotential approximation
 
 The general form of the Bethe-Salpeter equation (BSE) for the scattering amplitude can be written as follows:
 
@@ -62,7 +122,7 @@ M}(k''_1k''_2,k_1k_2;P),\quad
 \end{align}
 $$
 
-where ${\cal V}$ is the potential kernel and $G$ is the propagator for the two constituent particles. The total momentum of the system is denoted by $P = k_1 + k_2 = k'_1 + k'_2 = k''_1 + k''_2$.
+where ${\cal V}$ is the potential kernel and $G$ is the propagator for the two constituent particles. The total momentum of the system is denoted by $P = k_1 + k_2 = k'_1 + k'_2 = k''_1 + k''_2$, with $k_{1,2}$, $k'_{1,2}$ and $k''_{1,2}$ being the initial, final and intermediate momenta, respectively.
 
 The Bethe-Salpeter equation can be succinctly expressed as
 
@@ -70,13 +130,13 @@ $$
 {\cal M} = {\cal V} + {\cal V} G {\cal M},
 $$
 
-The Bethe-Salpeter (BS) equation for the amputated scattering matrix with external legs, denoted as ${\cal M}_{[\mu_f][\mu_i]}$, is given by:
+The Bethe-Salpeter (BS) equation for the amputated scattering matrix without external legs, denoted as ${\cal M}_{\mu'_1\mu'_2\mu_1\mu_2}$, is given by:
 
 $$
 \begin{align}
-	{\cal M}_{[\mu_f][\mu_i]}={\cal V}_{[\mu_f][\mu_i]}
-	+{\cal V}_{[\mu_f][\mu']}G^{[\mu'][\mu]}{\cal
-	M}_{[\mu][\mu_i]},
+	{\cal M}_{\mu'_1\mu'_2\mu_1\mu_2}={\cal V}_{\mu'_1\mu'_2\mu_1\mu_2}
+	+{\cal V}_{\mu'_1\mu'_2\rho'_1\rho'_2}G^{\rho'_1\rho'_2\rho_1\rho_2}{\cal
+	M}_{\rho_1\rho_2\mu_1\mu_2},
 \end{align}
 $$
 
@@ -84,14 +144,29 @@ where the propagator for the two constituent particles is given by
 
 $$
 \begin{align}
-G^{[\mu'][\mu]} = G_1^{[\mu'_1][\mu_1]} \, G_2^{[\mu'_2][\mu_2]}
-= \frac{-P^{[\mu'][\mu]}}{(k_1^2 - m_1^2)(k_2^2 - m_2^2)}
-= P^{[\mu'][\mu]} \, \tilde{G}_0,
+G^{\rho'_1\rho'_2\rho_1\rho_2} = G_1^{\rho'_1\rho_1} \otimes G_2^{\rho'_2\rho_2}
+= \frac{iP_1^{\rho'_1\rho_1}}{(k_1^2 - m_1^2)} \otimes\frac{iP_2^{\rho'_2\rho_2}}{(k_2^2 - m_2^2)}
+=[ \sum_{\lambda_1} A_{1\lambda_1}^{\rho'_1} \bar{A}_{1\lambda_1}^{\rho_1} \otimes \sum_{\lambda} A_{2\lambda_2}^{\rho'_2} \bar{A}_{2\lambda_2}^{\rho_2}] \tilde{G}_0,
 \end{align}
 $$
 
-where $P^{[\mu'][\mu]}$ is a general tensor structure. For example, for two vector mesons, $P^{[\mu'][\mu]} = (-g^{\mu'_1\mu_1} + k^{\mu'_1}_1 k^{\mu_1}_1 / m_1^2)(-g^{\mu'_2\mu_2} + k^{\mu'_2}_2 k^{\mu_2}_2 / m_2^2)$; for two spin-$1/2$ baryons, $P^{[\mu'][\mu]} = (\gamma \cdot k_1 + m_1)(\gamma \cdot k_2 + m_2)$.
-In general, such propagators are difficult to handle because the potential ${\cal V}$ and amplitude ${\cal M}$ cannot be factorized. However, since the dominant contribution comes from the region where both constituents are near their mass shells, a form factor or cutoff is usually introduced to restrict the propagator to the near on-shell region. Therefore, it is reasonable to approximate $P^{[\mu'][\mu]}$ by its on-shell value, which can be expressed as a sum over polarization vectors or spinors: $P^{[\mu'][\mu]} \approx \sum_{\lambda_1, \lambda_2} A_{\lambda_1}^{[\mu'_1]} A_{\lambda_1}^{[\mu_1]} A_{\lambda_2}^{[\mu'_2]} A_{\lambda_2}^{[\mu_2]}$, where $A$ denotes the polarization vector or spinor.
+where $P_i^{\rho'_i\rho_i}$ is a general tensor structure. For example, for two vector mesons, $P^{\rho'\rho} = (-g^{\rho'\rho} + k^{\rho'} k^{\rho} / m^2)=\sum_\lambda \varepsilon^{\rho'}_\lambda\varepsilon^{\rho*}_\lambda$; for two spin-$1/2$ baryons, $P = (\gamma \cdot k + m)=2m \sum_\lambda u_\lambda \bar{u}_\lambda$ (Here we adopt convetion $\bar{u}u=1$).
+In general, such propagators are difficult to handle because the potential ${\cal V}$ and amplitude ${\cal M}$ cannot be factorized. However, since the dominant contribution comes from the region where both constituents are near their mass shells, a form factor or cutoff is usually introduced to restrict the propagator to the near on-shell region. Therefore, it is reasonable to approximate $P^{\rho'\rho}$ by its on-shell value, which can be expressed as a sum over polarization vectors or spinors: $P^{\rho'\rho} \approx \sum_{\lambda} A_{\lambda}^{\rho'} \bar{A}_{\lambda}^{\rho}$, where $A$ denotes the polarization vector  $\varepsilon$  or spinor $u$.   The factor $\tilde{G}_0$ is given by
+$
+\tilde{G}_0 = -\frac{1}{(k_1^2-m_1^2)(k_2^2-m_2^2)},
+$
+where, for **fermions**, an additional $2m$ factor should be included, as required by the spinor convention.
+
+After projecting the Bethe-Salpeter (BS) equation onto the polarization states, i.e., multiplying both sides by $\bar{A}_{1\lambda'_1}\bar{A}_{2\lambda'_2}$ and $A_{1\lambda_1}A_{2\lambda_2}$, the BS equation becomes
+
+$$
+\begin{align}
+	i\bar{A}_{1\lambda'_1} \bar{A}_{2\lambda'_2}{\cal M}A_{1\lambda_1} A_{2\lambda_2}=i\bar{A}_{1\lambda'_1} \bar{A}_{2\lambda'_2}{\cal V}A_{1\lambda_1} A_{2\lambda_2}
+	+\sum_{\lambda''_1, \lambda''_2}(i\bar{A}_{1\lambda'_1} \bar{A}_{2\lambda'_2}{\cal V}A_{\lambda''_1} {A}_{\lambda''_2}) \tilde{G}_0/i   (i\bar{A}_{\lambda''_1} \bar{A}_{\lambda''_2}{\cal	M}A_{1\lambda_1} A_{2\lambda_2}),
+\end{align}
+$$
+
+We define $\bar{A}_{1\lambda'_1}\bar{A}_{2\lambda'_2}\mathcal{M}A_{1\lambda_1}A_{2\lambda_2}$ as $\mathcal{M}_{\lambda'_1\lambda'_2\lambda_1\lambda_2}$, and similarly define the potential as $\bar{A}_{1\lambda'_1}\bar{A}_{2\lambda'_2}\mathcal{V}A_{1\lambda_1}A_{2\lambda_2} \equiv \mathcal{V}_{\lambda'_1\lambda'_2\lambda_1\lambda_2}$. In addition, we include the form factors of the two interacting particles in both the potential and the amplitude; for example, for the potential, $f(k'_1)f(k'_2)\mathcal{V}_{\lambda'_1\lambda'_2\lambda_1\lambda_2}f(k_1)f(k_2)$. This means that the obtained amplitudes include the form factor when the particles are off-shell. Hereafter, we will not explicitly show such form factors unless necessary. 
 
 The Gross form of proposed quasipotential propagators for particles 1 and 2 with mass $m_1$ and $m_2$ written down in
 the center of mass frame where $P=(W,{\boldsymbol 0})$ with particle 2 being on shell are
@@ -105,20 +180,44 @@ $$
 
 where $k_1=(k_1^0,\boldsymbol k)=(E_1,\boldsymbol k)$, $k_2=(k_2^0,-\boldsymbol k)=(W-E_1,-\boldsymbol k)$ with $E_1=\sqrt{m_1^2+|\boldsymbol k|^2}$.
 
-With the define of $G_0=g/(2\pi i)$, the four-dimensional BSE can be reduced to a three-dimensional equation in center of mass frame
+With the define of $G_0=g/(2\pi i)=\frac{1}{2E_2[(W-E_2)^2-E_1^2]}$, the four-dimensional BSE can be reduced to a three-dimensional equation in center of mass frame
 
 $$
 \begin{align}
-i{\cal M}({\boldsymbol k}',{\boldsymbol k})&=i{\cal
-V}({\boldsymbol k}',{\boldsymbol k})+\int\frac{d
+i{\cal M}_{\lambda'_1\lambda'_2\lambda_1\lambda_2}({\boldsymbol k}',{\boldsymbol k})&=i{\cal
+V}_{\lambda'_1\lambda'_2\lambda_1\lambda_2}({\boldsymbol k}',{\boldsymbol k})+\sum_{\lambda''_1, \lambda''_2}\int\frac{d
 {\boldsymbol k}''}{(2\pi)^3}
 i{\cal
-V}({\boldsymbol k}',{\boldsymbol k}'')G_0({\boldsymbol k}'')i{\cal
-M}({\boldsymbol k}'',{\boldsymbol k}),\quad
+V}_{\lambda'_1\lambda'_2\lambda''_1\lambda''_2}({\boldsymbol k}',{\boldsymbol k}'')G_0({\boldsymbol k}'')i{\cal
+M}_{\lambda''_1\lambda''_2\lambda_1\lambda_2}({\boldsymbol k}'',{\boldsymbol k}),\quad
 \end{align}
 $$
 
 Note: the $i{\cal M}$ and $i{\cal V}$ are usually real. In the center of mass frame. We choose ${\boldsymbol k}_2={\boldsymbol k}$ and ${\boldsymbol k}_1=-{\boldsymbol k}$.
+
+In the one-boson-exchange model, the potential can be written as
+
+$$
+\begin{align}
+i{\cal V}=\sum_{J_e=0}I_e^0\frac{-\Gamma_{upper}\Gamma_{lower}}{q^2-m_e^2}f_e(q^2) 
++\sum_{J_e=1}I_e^1\frac{-\Gamma_{upper}^\mu\Gamma_{lower}^\nu(-g^{\mu\nu}+q^\mu q^\nu/m_e^2)}{q^2-m_e^2}f_e(q^2)
+\end{align}
+$$
+where the minus sign arises from the $i$ in $i{\cal V}$ and the $i$ in the propagator. $J_e$ and $m_e$ are the spin and mass of the exchanged meson and only $J_e\leq1$ are considered.
+For a discussion on relating the potential kernel to the potential in the Schrödinger equation, see Ref. [He:2014nya].
+
+With the Lagrangians, the interaction vertices can be written straightforwardly by applying the following rules:
+
+- Legs:
+
+  + Scalar meson (spin $S = 0$): $1$
+  + Vector meson ($S = 1$): $\varepsilon^\mu$
+  + Baryon ($S = 1/2$): $u$
+  + Baryon ($S = 3/2$): $u^\mu$
+- Derivatives: $\partial^\mu \to -ip^\mu$
+  (Note: Pay attention to the momentum orientation when applying this rule.)
+- $\gamma$ matrices and $\epsilon^{\mu\nu\rho\lambda}$ tensors remain unchanged.
+- An additional factor of $i$ should be included for each vertex.
 
 ## Partial-wave expansion
 
@@ -141,7 +240,7 @@ D^{J}_{M,\lambda'}(\phi',\theta',0){\cal V}_{\lambda'\lambda}({\boldsymbol k}',{
 \end{align}
 $$
 
-where $N_J=\sqrt{\frac{2J+1}{4\pi}}$, $\int d\Omega D^{J*}_{\lambda_1,\lambda_2}(\phi,\theta,0)D^{J'*}_{\lambda'_1,\lambda'_2}(\phi,\theta,0)=N_J^{-2}$. $\sum_{M }D^{J*}_{M\lambda'}(\Omega)D^{J}_{M\lambda}(\Omega')=D^{J}_{\lambda'\lambda}(\Omega^{-1}\Omega')$
+where $N_J=\sqrt{\frac{2J+1}{4\pi}}$, $\int d\Omega D^{J*}_{\lambda_1,\lambda_2}(\phi,\theta,0)D^{J'*}_{\lambda'_1,\lambda'_2}(\phi,\theta,0)=N_J^{-2}$, and $\sum_{M }D^{J*}_{M\lambda'}(\Omega)D^{J}_{M\lambda}(\Omega')=D^{J}_{\lambda'\lambda}(\Omega^{-1}\Omega')$
 
 To calculate ${\cal V}_{\lambda'\lambda}^{JM}({\rm k}',{\rm k})$, we adopt a special CMS frame. The momenta are chosen as $k_2=(E_2,0,0,{\rm k})$, $k_1=(W-E_2,0,0,-{\rm k})$  and $k'_2=(E'_2,{\rm k}'\sin\theta_{k,k'},0,{\rm k}'\cos\theta_{k,k'})$, $k'_1=(W-E_2, -{\rm k}'\sin\theta_{k,k'},0,-{\rm k}'\cos\theta_{k,k'})$ with ${\rm k}=|{\boldsymbol k}|$ and ${\rm k}'=|{\boldsymbol k}'|$.
 
@@ -163,8 +262,9 @@ $$
 
 where $\int^1_{-1}d\cos\theta' d^{J'}_{\lambda,\lambda'}(\theta')d^{J}_{\lambda,\lambda'}(\theta')=N_J^{-2}/2\pi\delta_{JJ'}$ are used.
 
-NOTE: Which particle is chosen to parallel to $z$ axis is related to the order of $\lambda$ and $\lambda'$ in $d^{J}_{\lambda'\lambda}(\theta_{k,k'})$, so it can not be chosen arbitrarily. And the definition of helicity is also dependent of the definition of ${\boldsymbol k}_{1,2}$. Here, $\lambda=\lambda_2-\lambda_1$  and $\lambda_1=-s_1$, $\lambda_2=s_2$. The scattering amplitudes ${\cal M}$ has analogous relations.
+NOTE: Which particle is chosen to parallel to $z$ axis is related to the order of $\lambda$ and $\lambda'$ in $d^{J}_{\lambda'\lambda}(\theta_{k,k'})$, so it can not be chosen arbitrarily. And the definition of helicity is also dependent of the definition of ${\boldsymbol k}_{1,2}$. Here, $\lambda=\lambda_2-\lambda_1$  and $\lambda_1=-s_1$, $\lambda_2=s_2$. For brevity, however, the subscript $\lambda$ in $\mathcal{V}$ and $\mathcal{M}$ is used as a shorthand for the pair $(\lambda_1,\lambda_2)$; this shorthand should be distinguished from the true $\lambda = \lambda_2 - \lambda_1$ appearing in the Wigner $d$-function.
 
+The scattering amplitudes ${\cal M}$ has analogous relations.
 Now we have the partial wave BS equation,
 
 $$
@@ -181,7 +281,7 @@ $$
 
 ## Fixed parity
 
-For a helicity state $|J,\lambda\rangle=|J,\lambda_1\lambda_2\rangle$ fulfill the party property,
+For a helicity state $|J,\lambda_1\lambda_2\rangle\equiv|J,\lambda\rangle$ fulfill the party property,
 
 $$
 \begin{align}
@@ -204,67 +304,39 @@ $$
 \end{align}
 $$
 
+The amplitude with fixed parity is defined as
+
+$$
+{\cal M}^{J\pm}_{\lambda'\lambda}=\langle J,\lambda';\pm|{\cal M}|J,\lambda;\pm\rangle
+$$
+
+With such definition, we have
+
+$$
+\begin{align}
+{\cal M}^{J\pm}_{\lambda'-\lambda}=\pm\tilde{\eta} {\cal M}^{J\pm}_{\lambda'\lambda}\equiv\eta {\cal M}^{J\pm}_{\lambda'\lambda},\ \ {\cal M}^{J\pm}_{-\lambda'\lambda}=\pm\tilde{\eta}' {\cal M}^{J\pm}_{\lambda'\lambda}\equiv\eta' {\cal M}^{J\pm}_{\lambda'\lambda}
+\end{align}
+$$
+
+with $\eta=PP_1P_2(-1)^{J_1+J_2-J}$.
+
+For parity conserving interactions $M = \hat{P}^{−1}M \hat{P}$ follows:
+
 $$
 \begin{align}
 {\cal M}^{J}_{-\lambda'-\lambda}=\tilde{\eta}\tilde{\eta}'{\cal M}^{J}_{\lambda'\lambda}
 \end{align}
 $$
 
+We have
+
 $$
 \begin{align}
 	&{\cal M}^{J\pm}_{\lambda'\lambda}=\langle J,\lambda';\pm|{\cal M}|J,\lambda;\pm\rangle
 	={\cal M}^{J}_{\lambda'\lambda}\pm \tilde{\eta} {\cal M}^J_{\lambda'-\lambda}
-	={\cal M}^{J}_{\lambda'\lambda}\pm \tilde{\eta}'{\cal M}^J_{-\lambda'\lambda},\\
-&{\cal M}^{J\pm}_{\lambda'-\lambda}=\pm\tilde{\eta} {\cal M}^{J\pm}_{\lambda'\lambda}\equiv\eta {\cal M}^{J\pm}_{\lambda'\lambda},\ \ {\cal M}^{J\pm}_{-\lambda'\lambda}=\pm\tilde{\eta}' {\cal M}^{J\pm}_{\lambda'\lambda}\equiv\eta' {\cal M}^{J\pm}_{\lambda'\lambda}
+	={\cal M}^{J}_{\lambda'\lambda}\pm \tilde{\eta}'{\cal M}^J_{-\lambda'\lambda}
 \end{align}
 $$
-
-with $\eta=PP_1P_2(-1)^{J_1+J_2-J}$.
-The potential ${\cal V}^{J^P}_{\lambda'\lambda}$ has analogous relations.
-
-$$
-\begin{align}
-	 i{\cal M}^J_{\lambda\lambda'}&=i{\cal V}^J_{\lambda\lambda'}+\sum_{\lambda''}i{\cal V}^J_{\lambda\lambda''}G_0i{\cal M}^J_{\lambda''\lambda'},\quad	 \eta'i{\cal M}^J_{\lambda-\lambda'}=\eta'i{\cal V}^J_{\lambda-\lambda'}+\sum_{\lambda''}i{\cal V}^J_{\lambda\lambda''}G_0\eta'i{\cal M}^J_{\lambda''-\lambda'}\nonumber\\
-\Rightarrow i{\cal M}^{J^P}_{\lambda\lambda'}&=i{\cal V}^{J^P}_{\lambda\lambda'}+\sum_{\lambda''}i{\cal V}^J_{\lambda\lambda''}G_0i{\cal M}^{J^P}_{\lambda''\lambda'},\nonumber\\
-i{\cal M}^{J^P}_{\lambda\lambda'}&=i{\cal V}^{J^P}_{\lambda\lambda'}+\sum_{\lambda''}i{\cal V}^J_{\lambda-\lambda''}G_0i{\cal M}^{J^P}_{-\lambda''\lambda'}
-=i{\cal V}^{J^P}_{\lambda\lambda'}+\sum_{\lambda''}i{\cal V}^J_{\lambda-\lambda''}G_0\eta''i{\cal M}^{J^P}_{\lambda''\lambda'}\nonumber\\
-\Rightarrow  i{\cal M}^{J^P}_{\lambda\lambda'}&=i{\cal V}^{J^P}_{\lambda\lambda'}+\frac{1}{2}\sum_{\lambda''}i{\cal V}^{J^P}_{\lambda\lambda''}G_0i{\cal M}^{J^P}_{\lambda''\lambda'},
-\end{align}
-$$
-
-As shown in Eq. (14), the amplitudes are not independent. If we only keep the independent amplitudes, the equation for definite parity can be written as
-
-$$
-\begin{align}
-&i{\cal M}^{J^P}_{ij}=i{\cal V}^{J^P}_{ij}+\frac{1}{2}\sum_{\lambda''}i{\cal V}^{J^P}_{i\lambda''}G_0i{\cal M}^{J^P}_{\lambda''j}
-=i{\cal V}^{J^P}_{ij}+\frac{1}{2}i{\cal V}^{J^P}_{i0}Gi{\cal M}^{J^P}_{0j}+\sum_{k\neq0}i{\cal V}^{J^P}_{ik}G_0i{\cal M}^{J^P}_{kj},\nonumber\\
-\Rightarrow&i{{\cal M}}^{J^P}_{ij}=i{\cal V}^{J^P}_{ij}+\sum_{k}i{\cal V}^{J^P}_{ik}G_0i{\cal M}^{J^P}_{kj}.
-\end{align}
-$$
-
-where $i$, $j$, $k$ are the indices for the independent amplitudes. And we redefine
-
-$$
-f_if_j {\cal M}^{J^P}_{\lambda'\lambda}\to{\cal M}^{J^P}_{ij}
-$$
-
-with $f_0=\frac{1}{\sqrt{2}}$ and $f_{i\neq0}=1$ with $0$ for the amplitudes with $\lambda_1=\lambda_2=0$.
-
-The Bethe-Saltpeter equation for partial-wave amplitude with fixed spin-parity $J^P$ reads ,
-
-$$
-\begin{align}
-i{\cal M}^{J^P}_{\lambda'\lambda}({\rm k}',{\rm k})
-&=i{\cal V}^{J^P}_{\lambda',\lambda}({\rm k}',{\rm
-k})+\sum_{\lambda''}\int\frac{{\rm
-k}''^2d{\rm k}''}{(2\pi)^3}~
-i{\cal V}^{J^P}_{\lambda'\lambda''}({\rm k}',{\rm k}'')
-G_0({\rm k}'')i{\cal M}^{J^P}_{\lambda''\lambda}({\rm k}'',{\rm
-k}).
-\end{align}
-$$
-
-Note that here the sum extends only over indices for the independent amplitudes. The partial wave potential is defined as
 
 $$
 \begin{align}
@@ -277,7 +349,59 @@ i{\cal V}_{\lambda'-\lambda}({\boldsymbol k}',{\boldsymbol k})],
 \end{align}
 $$
 
-Or, with the independent amplitudes as
+The potential ${\cal V}^{J^P}_{\lambda'\lambda}$ has analogous relations.
+
+$$
+\begin{align}
+	 i{\cal M}^J_{\lambda'\lambda}&=i{\cal V}^J_{\lambda'\lambda}+\sum_{\lambda''}i{\cal V}^J_{\lambda'\lambda''}G_0i{\cal M}^J_{\lambda''\lambda},\quad	 \eta' i{\cal M}^J_{-\lambda'\lambda}=\eta' i{\cal V}^J_{-\lambda'\lambda}+\sum_{\lambda''}\eta' i{\cal V}^J_{-\lambda'\lambda''}G_0 i{\cal M}^J_{\lambda''\lambda}\nonumber\\
+\Rightarrow i{\cal M}^{J^P}_{\lambda'\lambda}&=i{\cal V}^{J^P}_{\lambda'\lambda}+\sum_{\lambda''}i{\cal V}^{J^P}_{\lambda'\lambda''}G_0i{\cal M}^{J}_{\lambda''\lambda},\nonumber\\
+&=i{\cal V}^{J^P}_{\lambda'\lambda}+\frac{1}{2}\sum_{\lambda''}(i{\cal V}^{J^P}_{\lambda'\lambda''}G_0i{\cal M}^{J}_{\lambda''\lambda}+i{\cal V}^{J^P}_{\lambda'-\lambda''}G_0i{\cal M}^{J}_{-\lambda''\lambda})\nonumber\\
+&=i{\cal V}^{J^P}_{\lambda'\lambda}+\frac{1}{2}\sum_{\lambda''}(i{\cal V}^{J^P}_{\lambda'\lambda''}G_0i{\cal M}^{J}_{\lambda''\lambda}+i{\cal V}^J_{\lambda'\lambda''}G_0\eta''i{\cal M}^{J^P}_{-\lambda''\lambda})\nonumber\\
+&=i{\cal V}^{J^P}_{\lambda'\lambda}+\frac{1}{2}\sum_{\lambda''}i{\cal V}^{J^P}_{\lambda'\lambda''}G_0i{\cal M}^{J^P}_{\lambda''\lambda},
+\end{align}
+$$
+
+In fact such relation can bde generalized as
+
+$$
+\begin{align}
+	 {\cal C}^J_{\lambda'\lambda}&=\sum_{\lambda''}{\cal A}^J_{\lambda'\lambda''}{\cal B}^J_{\lambda''\lambda}
+\Rightarrow {\cal C}^{J^P}_{\lambda'\lambda}=
+\frac{1}{2}\sum_{\lambda''}{\cal A}^{J^P}_{\lambda'\lambda''}{\cal B}^{J^P}_{\lambda''\lambda},
+\end{align}
+$$
+
+# Solution of quasipotential Bethe-Salpeter equation
+
+## Independent helictiy amplitudes
+
+With Eq. (13), the amplitudes with different helicities are not independent. To reduce the calculation time, we only keep the independent helicity amplitudes as
+
+$$
+\begin{align}
+\sum_{\lambda''}{\cal A}^{J^P}_{\lambda'\lambda''}{\cal B}^{J^P}_{\lambda''\lambda}
+={\cal A}^{J^P}_{\lambda'0}{\cal B}^{J^P}_{0\lambda}+2\sum_{ \lambda''\in I_{\neq0}}{\cal A}^{J^P}_{\lambda' \lambda''}{\cal B}^{J^P}_{\lambda''\lambda}=2\sum_{k}{\cal A}^{J^P}_{\lambda' k}{\cal B}^{J^P}_{k\lambda}.
+\end{align}
+$$
+
+where $k$ are the indices for the independent helicity amplitudes, and $I_{\neq0}$ means the nonzero independent helicites.  And we redefine
+
+$$
+f_{\lambda'} f_\lambda \mathcal{A}^{J^P}_{\lambda'\lambda} \equiv \mathcal{A}^{J^P}_{ij},
+$$
+
+with $f_0=\frac{1}{\sqrt{2}}$, $f_{\lambda\neq 0}=1$, and with the amplitudes for $\lambda_1=\lambda_2=0$ set to $\lambda=0$.
+Here, the subscript $ij$ denotes the amplitudes that include only the independent helicity amplitudes multiplied by the factors $f_i$ and $f_j$; these are directly provided by the program.
+In contrast, the subscript $\lambda$ (i.e., $\mathcal{A}_{\lambda'\lambda}$) denotes the physical amplitudes, which must be obtained from the program outputs together with the factors $f_\lambda$.
+
+If we only keep the independent amplitudes, the equation for definite parity can be written as
+$$
+\begin{align}
+i{{\cal M}}^{J^P}_{ij}=i{\cal V}^{J^P}_{ij}+\sum_{k}i{\cal V}^{J^P}_{ik}G_0i{\cal M}^{J^P}_{kj}.
+\end{align}
+$$
+
+The Bethe-Saltpeter equation for partial-wave amplitude with fixed spin-parity $J^P$ reads ,
 
 $$
 \begin{align}
@@ -291,31 +415,33 @@ k}).
 \end{align}
 $$
 
+The partial wave potential is defined  with the independent helicities as
+
 $$
 \begin{align}
 i{\cal V}^{J^P}_{ij}({\rm k}',{\rm k}'')
-&=f_if_j2\pi\int d\cos\theta
+&=f_{\lambda'}f_\lambda2\pi\int d\cos\theta
 ~[d^{J}_{\lambda\lambda'}(\theta)
 i{\cal V}_{\lambda'\lambda}({\boldsymbol k}',{\boldsymbol k})
 +\eta d^{J}_{-\lambda\lambda'}(\theta)
 i{\cal V}_{\lambda'-\lambda}({\boldsymbol k}',{\boldsymbol k})].
 \end{align}
 $$
+where $i,j$ correspond to  independent helicities $\lambda',\lambda \in I$.
+Note here the $f_{\lambda'}f_\lambda$ is also incorporated. Additionally, the form factors for the interacting particles are also included in the potential, modifying it as ${\cal V}\to f(k'){\cal V}f(k)$. Consequently, the resulting amplitude ${\cal M}$ also includes these form factors.
 
-Note here the $f_if_j$ is also incorporated. Additionally, the form factors for the interacting particles are also included in the potential, modifying it as ${\cal V}\to f(k'){\cal V}f(k)$. Consequently, the resulting amplitude ${\cal M}$ also includes these form factors.
-
-The potential ${\cal V}_{\lambda'-\lambda}({\boldsymbol k}',{\boldsymbol k})$ is introduced by `fV` function in main file as
+The potential ${\cal V}_{\lambda'\lambda}({\boldsymbol k}',{\boldsymbol k})$ is introduced by `fV` function in main file as
 
 ```julia
-fV(k, l, SYS, IA0, CHf, CHi, VVertex)
+fV(k, l, SYS, IA0, CHf, CHi, VVertex) 
 ```
 
 where `k` and `l` are for the momenta and helicities of final and initial particles. `SYS` is
 for the system information. `IA0` is for the interaction information., `CHf` and `CHi` are for the information of final and initial channels. `VVertex` is a function that returns the explicit form of the interaction or vertices, as defined in `main.jl`.
 
-Transition of ${\cal V}_{\lambda'-\lambda}({\boldsymbol k}',{\boldsymbol k})$ to ${\cal V}^{J^P}_{ij}({\rm k}',{\rm k}'')$ performed in `qBSE.fKernel` which is an internal function.
+Transition of ${\cal V}_{\lambda'\lambda}({\boldsymbol k}',{\boldsymbol k})$ to ${\cal V}^{J^P}_{ij}({\rm k}',{\rm k}'')$ performed in `qBSE.fKernel` which is an internal function.
 
-## Transformation to a matrix equation
+## Treatment of the singularity
 
 Now We have a integral equation with singularity in $G_0=\frac{1}{2 E_2[(W-E_2)^2-E_1^2]}=\frac{1}{2 E_2[(W-E_2-E_1+i\epsilon)(W-E_2+E_1)]}$  at $W=E_1+E_2$. This singularity can be isolated as,
 
@@ -376,6 +502,8 @@ $$
 $$
 
 where $T=i{\cal M}$.
+
+## Transformation to a matrix equation
 
 With the Gauss discretization, the one-dimensional equation can be transformed as a matrix equation as
 
@@ -457,11 +585,11 @@ $$
 The informations about the dimensions are calculated in `qBSE.WORKSPACE`. The matrix $V$ and $G$ are calculated in `qBSE.srAB`.
 Note that such function is internal function and not used by the user.
 
-## Code
+## For old code
 
 **Attention**: The following details are specific to the old version of the code, which includes Fortran code and Julia code versions prior to v0.2.4. In the new version, the treatment described below is obsolete.
 
-In old code, we choose $\hat{V}^{J^P}=f(k'){V}^{J^P}f(k)/4\pi$, $\hat{G}=4\pi{G}$, and $\hat{M}^{J^P}=f(k'){M}^{J^P}f(k)/4\pi$. The form factors are also included in to the ampltudes and the potential kernel. Hence, the qBSE becomes
+In old code, we choose $\hat{V}^{J^P}={V}^{J^P}/4\pi$, $\hat{G}=4\pi{G}$, and $\hat{M}^{J^P}={M}^{J^P}/4\pi$. The form factors are also included in to the ampltudes and the potential kernel. Hence, the qBSE becomes
 
 $$
 \begin{align}
@@ -473,8 +601,8 @@ Such convention is consistent with that in the chiral unitary approach.
 
 $$
 \begin{align}
-\hat{V}^{J^P}&={V}^{J^P}/4\pi=i{\cal V}^{J^P}_{\lambda'\lambda''}({\rm p}',{\rm p}'')/4\pi=f_if_j i{\cal V}_{\lambda'\lambda}^{J^P}({\rm p}',{\rm p})/4\pi \nonumber\\
-&=\frac{1}{2}f_if_j \int d\cos\theta
+\hat{V}^{J^P}&={V}^{J^P}/4\pi=i{\cal V}^{J^P}_{\lambda'\lambda''}({\rm p}',{\rm p}'')/4\pi=f_{\lambda'}f_\lambda{\cal V}_{\lambda'\lambda}^{J^P}({\rm p}',{\rm p})/4\pi \nonumber\\
+&=\frac{1}{2}f_{\lambda'}f_\lambda \int d\cos\theta
 ~[d^{J}_{\lambda\lambda'}(\theta)
 i{\cal V}_{\lambda'\lambda}({\boldsymbol p}',{\boldsymbol p})
 +\eta d^{J}_{-\lambda\lambda'}(\theta)
@@ -535,7 +663,7 @@ In the code, the `lRm` can be set to a `Int64` number `0`, `1`, or `2` for all c
 
 **Attention**: Physical observables are computed on the first Riemann sheet—more precisely, along the real axis (`lRm=1`). Therefore, for $W < m_1 + m_2$, the treatment is consistent with that used in pole searches. However, for $W > m_1 + m_2$, the pole search is carried out on the second Riemann sheet, where the propagator has an imaginary part of $i\rho/2$, in contrast to $-i\rho/2$ on the first sheet. This leads to a relative phase difference between the two Riemann sheets along the real axis.
 
-## Physical observable
+# 2-2 cross section
 
 With the obtained amplitude $M^{J^P}$, we can also calculate the physical observable. Note that all physical observable are at real axis, we choose the onshell momentum as
 
@@ -551,12 +679,33 @@ The $|M|^2$ for each channel is calculated in `qBSE.res`.
 
 ### The cross section for the channel considered
 
+The cross section, denoted by $d\sigma$, can be expressed in terms of
+amplitudes, ${\mathcal M}$, as follows:
+
+$$
+d\sigma=F\frac{1}{S}\frac{1}{\tilde{j}_1\tilde{j}_2}\sum|{\mathcal M}|^2d\Phi=(2\pi)^{4-3n}F\frac{1}{S}\frac{1}{\tilde{j}_1\tilde{j}_2}\sum|{\mathcal M}|^2dR
+$$
+
+The flux factor $F$ for the cross section is given by:
+
+$$
+F=\frac{1}{2E_12E_2v_{12}}=\frac{1}{4[(p_1\cdot p_2)^2-m_1^2m_2^2]^{1/2}}\frac{|p_1\cdot p_2|}{p_1^0p_2^0}
+$$
+
+In the laboratory or center of mass frame, the relation
+$\vec{p}_1^2 \vec{p}_2^2 = (\vec{p}_1 \cdot \vec{p}_2)^2$ is utilized.
+In the laboratory frame, the term $\frac{|p_1\cdot p_2|}{p_1^0 p_2^0}$
+simplifies to 1. In center of mass frame, $v_{12}=\frac{{\rm k}(E_1+E_2)}{E_1E_2}=\frac{{\rm k}\sqrt{s}}{E_1E_2}$. Additionally, if a boson or zero-mass spinor particle
+is replaced with a non-zero mass spinor particle, the factor $1/2$ is
+replaced with the mass of the particle, $m$,  due to convention $\bar{u}u=1$ adopted. The total symmetry factor
+$S$ is given by $\prod_i n_i!$ if there are $n_i$ identical particles.
+
 For the open channel, the cross section can be obtained as
 
 $$
 \begin{align}
 	\frac{d\sigma}{d\Omega}=\frac{1}{\tilde{j}_1\tilde{j}_2}\frac{1}{64\pi^2
-	s}\frac{{\rm k}'}{{\rm k}}\sum_{\lambda\lambda'}|i{\cal M}_{\lambda\lambda'}({\boldsymbol k}',{\boldsymbol k})|^2.
+	s}\frac{{\rm k}'}{{\rm k}}\sum_{\lambda'\lambda}|i{\cal M}_{\lambda'\lambda}({\boldsymbol k}',{\boldsymbol k})|^2.
 \end{align}
 $$
 
@@ -567,34 +716,41 @@ The total cross section can be written as
 $$
 \begin{align}
 	\sigma
+&=\frac{1}{\tilde{j}_1\tilde{j}_2}\frac{1}{64\pi^2
+	s}\frac{{\rm k}'}{{\rm k}}\sum_{J,\lambda'\lambda}N_J^2|i{\cal M}^J_{\lambda'\lambda}({\rm k}',{\rm k})|^2
 =\frac{1}{\tilde{j}_1\tilde{j}_2}\frac{1}{64\pi^2
-	s}\frac{{\rm k}'}{{\rm k}}\sum_{J,\lambda}N_J^2|i{\cal M}^J_{\lambda\lambda'}({\rm k}',{\rm k})|^2
-=\frac{1}{\tilde{j}_1\tilde{j}_2}\frac{1}{64\pi^2
+	s}\frac{{\rm k}'}{{\rm k}}\sum_{J,\lambda'\lambda}N_J^2|\frac{1}{2}i{\cal M}^{J^P}_{\lambda'\lambda}({\rm k}',{\rm k})|^2
+\nonumber\\&=\frac{1}{\tilde{j}_1\tilde{j}_2}\frac{1}{64\pi^2
 	s}\frac{{\rm k}'}{{\rm k}}\sum_{J^P,ij}N_J^2\left|{{ M}}^{J^P}_{ij}\right|^2.
 \end{align}
 $$
 
-Here, ${\rm k}$' and ${\rm k}$ are onshell momenta, so we only choose $ij$ for the onshell momenta. Since we adopt ${\cal V}\to f(k'){\cal V}f(k)$, the amplitudes ${M}^{J^P}\to f(k'){M}^{J^P}f(k)$. The form factors vanish due to onshelness for initial and final states of a scattering.
-NOTE: $4MM'$ should be multiplied due to convention $\bar{u}u=1$ adopted in code.
+Here, ${\rm k}'$ and ${\rm k}$ are onshell momenta, so we only choose $ij$ for the onshell momenta. Since we adopt ${\cal V}\to f(k'){\cal V}f(k)$, the amplitudes ${M}^{J^P}\to f(k'){M}^{J^P}f(k)$. The form factors vanish due to onshelness for initial and final states of a scattering.
+
+$M^{J^\pm}_{\lambda'\lambda}=M^{J}_{\lambda'\lambda}\pm \tilde{\eta}'M^{J}_{-\lambda'\lambda}=M^{J}_{\lambda'\lambda}\pm \tilde{\eta}M^{J}_{\lambda'-\lambda}$
+
+$M^J_{\lambda'\lambda}=\frac{1}{2}(M^{J^+}_{\lambda'\lambda}+M^{J^-}_{\lambda'\lambda})$,
+$M^J_{\lambda'-\lambda}=\frac{1}{2\tilde{\eta}}(M^{J^+}_{\lambda'\lambda}-M^{J^-}_{\lambda'\lambda})$
+
+$M^J_{\lambda' 0}=\frac{1}{2}(\delta_{\tilde{\eta}'1}M^{J^+}_{\lambda' 0}+\delta_{\tilde{\eta}'-1}M^{J^-}_{\lambda' 0})$
+
+$|M^J_{\lambda' 0}|^2=|\frac{1}{2}(\delta_{\tilde{\eta}'1}M^{J^+}_{\lambda' 0}+\delta_{\tilde{\eta}'-1}M^{J^-}_{\lambda' 0})|^2=\delta_{\tilde{\eta}'1}|\frac{1}{2}M^{J^+}_{\lambda' 0}|^2+\delta_{\tilde{\eta}'-1}|\frac{1}{2}M^{J^-}_{\lambda' 0}|^2=\sum_P|\frac{1}{2}M^{J^P}_{\lambda' 0}|^2$
 
 $$
 \begin{align}
 	\sigma&\propto \sum_{J,\lambda'\lambda}
-	|M^{J}_{\lambda'\lambda}|^2=\sum_{J,\lambda'j=0}|M^{J}_{\lambda'j}|^2+\sum_{J,\lambda'j>0}
-	\left[|M^{J}_{\lambda'j}|^2+|M^{J}_{\lambda'-j}|^2\right]\nonumber\\
-&=\sum_{J^P,\lambda'j=0}\delta_{\eta,1}|\frac{1}{2} M^{J^P}_{\lambda'j}|^2+\sum_{J,\lambda'j>0}
-	 \left[\frac{1}{4}|M^{J^+}_{\lambda'j}+M^{J^-}_{\lambda'j}|^2+\frac{1}{4}|M^{J^+}_{\lambda'j}-M^{J^-}_{\lambda'j}|^2\right]\nonumber\\
-&=\sum_{J^P,i=0j=0}\delta_{\eta,1}\delta_{\eta',1}|\frac{1}{2}M^{J^P}_{ij}|^2+\sum_{J^P,i>0j=0}2\delta_{\eta,1}|\frac{1}{2} M^{J^P}_{ij}|^2+\sum_{J^P,\lambda'j>0}
-	\frac{1}{2}|M^{J^P}_{\lambda'j}|^2\nonumber\\
-&=\sum_{J^P,i=0j=0}\delta_{\eta,1}\delta_{\eta',1}|\frac{1}{2} M^{J^P}_{ij}|^2
-+\sum_{J^P,i>0j=0}\delta_{\eta,1}|\frac{1}{\sqrt{2}} M^{J^P}_{ij}|^2
-+\sum_{J^P,i=0j>0}\delta_{\eta',1}|\frac{1}{\sqrt{2}}M^{J^P}_{ij}|^2
-+\sum_{J^P,i>0j>0}|M^{J^P}_{\lambda'j}|^2\nonumber\\
-&=\sum_{J^P,i=0j=0}\delta_{\eta,1}\delta_{\eta',1}|\frac{1}{2} M^{J^P}_{ij}|^2
-+\sum_{J^P,i>0j=0}\delta_{\eta,1}|\frac{1}{\sqrt{2}} M^{J^P}_{ij}|^2
-+\sum_{J^P,i=0j>0}\delta_{\eta',1}|\frac{1}{\sqrt{2}}M^{J^P}_{ij}|^2
-+\sum_{J^P,i>0j>0}|M^{J^P}_{ij}|^2\nonumber\\
-&=\sum_{J^P,i\geq0j\geq0}|f_{i}f_{j}M^{J^P}_{ij}|^2=\sum_{J^P,i\geq0j\geq0}|{M}^{J^P}_{ij}|^2
+	|M^{J}_{\lambda'\lambda}|^2=\sum_{J,\lambda'}|M^{J}_{\lambda'0}|^2+\sum_{J,\lambda',\lambda\in I_{\neq0}}
+	\left[|M^{J}_{\lambda'\lambda}|^2+|M^{J}_{\lambda'-\lambda}|^2\right]\nonumber\\
+&=\sum_{J^P,\lambda'}|\frac{1}{2} M^{J^P}_{\lambda'0}|^2+\sum_{J,\lambda'\lambda\in I_{\neq0}}
+	 \left[\frac{1}{4}|M^{J^+}_{\lambda'\lambda}+M^{J^-}_{\lambda'\lambda}|^2+\frac{1}{4}|M^{J^+}_{\lambda'\lambda}-M^{J^-}_{\lambda'\lambda}|^2\right]\nonumber\\
+&=\sum_{J^P,\lambda'}|\frac{1}{2} M^{J^P}_{\lambda'0}|^2+\frac{1}{2}\sum_{J^P,\lambda'\lambda\in I_{\neq0}} |M^{J^P}_{\lambda'\lambda}|^2=\sum_{J^P,\lambda'\lambda} |\frac{1}{2}M^{J^P}_{\lambda'\lambda}|^2\nonumber\\
+&=\sum_{J^P}|\frac{1}{2}M^{J^P}_{00}|^2+\sum_{J^P,\lambda'\in I_{\neq0}}2|\frac{1}{2} M^{J^P}_{\lambda'0}|^2+\sum_{J^P,\lambda'\lambda\in I_{\neq0}}
+	\frac{1}{2}|M^{J^P}_{\lambda'\lambda}|^2\nonumber\\
+&=\sum_{J^P}|\frac{1}{2} M^{J^P}_{00}|^2
++\sum_{J^P,\lambda'\in I_{\neq0}}|\frac{1}{\sqrt{2}} M^{J^P}_{\lambda'0}|^2
++\sum_{J^P,\lambda\in I_{\neq0}}|\frac{1}{\sqrt{2}}M^{J^P}_{0\lambda}|^2
++\sum_{J^P,\lambda'\in I_{\neq0}\lambda\in I_{\neq0}}|M^{J^P}_{\lambda'\lambda}|^2\nonumber\\
+&=\sum_{J^P,\lambda'\in I\lambda\in I}|f_{\lambda'}f_{\lambda}M^{J^P}_{\lambda'\lambda}|^2\to\sum_{J^P,ij}|{M}^{J^P}_{ij}|^2
 \end{align}
 $$
 
@@ -641,23 +797,23 @@ k_z&\frac{k_z k_x}{E+m}&\frac{k_z k_y}{E+m}&m+\frac{k_z k_z}{E+m}\nonumber\\
 \end{align}
 $$
 
-With  the Lorentz boost  the momenta for particle 23 in the laboratory frame $(E^{lab}_{23},{\boldsymbol p}^{lab}_{23})$ can be written with the momenta in the CMS of particles 23 $(M_{23},{\boldsymbol 0})$ as $p^{lab}=\Lambda(E^{lab}_{23},{\boldsymbol p}^{lab}_{23}) p^{cm}$,
+With  the Lorentz boost  the momenta for particle 12 in the laboratory frame $(E^{lab}_{12},{\boldsymbol p}^{lab}_{12})$ can be written with the momenta in the CMS of particles 12 $(M_{12},{\boldsymbol 0})$ as $p^{lab}=\Lambda(E^{lab}_{12},{\boldsymbol p}^{lab}_{12}) p^{cm}$,
 
 $$
 \begin{align}
-{\boldsymbol p}^{lab}&={\boldsymbol p}^{cm}+\frac{{\boldsymbol p}^{lab}_{23}}{M_{23}}\left[\frac{{\boldsymbol p}^{lab}_{23}\cdot {\boldsymbol p}^{cm}}{E^{lab}_{23}+M_{23}}+p^{0cm}\right],\nonumber\\
-p^{0lab}&=\frac{1}{M_{23}}\left[E^{lab}_{23}p^{0cm}+{\boldsymbol p}^{lab}_{23}\cdot{\boldsymbol p}^{cm}\right],
+{\boldsymbol p}^{lab}&={\boldsymbol p}^{cm}+\frac{{\boldsymbol p}^{lab}_{12}}{M_{12}}\left[\frac{{\boldsymbol p}^{lab}_{12}\cdot {\boldsymbol p}^{cm}}{E^{lab}_{12}+M_{12}}+p^{0cm}\right],\nonumber\\
+p^{0lab}&=\frac{1}{M_{12}}\left[E^{lab}_{12}p^{0cm}+{\boldsymbol p}^{lab}_{12}\cdot{\boldsymbol p}^{cm}\right],
 \end{align}
 $$
 
-where $M_{23}=\sqrt{(p^{lab}_2+p^{lab}_3)^2}=\sqrt{(p^{cm}_2+p^{cm}_3)^2}$, $E^{lab}_{23}=E^{lab}_{2}+E^{lab}_{2}$ (onshell) and $E^{lab}_{23}=W-E^{lab}_{3}-...-E^{lab}_{n}$ (offshell).
+where $M_{12}=\sqrt{(p^{lab}_1+p^{lab}_2)^2}=\sqrt{(p^{cm}_1+p^{cm}_2)^2}$, $E^{lab}_{12}=E^{lab}_{1}+E^{lab}_{2}$ (onshell) and $E^{lab}_{12}=W-\sum_{n\neq1,2}E^{lab}_{n}$ (offshell).
 
-The momenta in CMS of $23$ can also be written with the momentum in laboratory frame as $p=\Lambda(E^{lab}_{23},-{\boldsymbol p}^{lab}_{23}) p^{lab}$
+The momenta in CMS of $12$ can also be written with the momentum in laboratory frame as $p=\Lambda(E^{lab}_{12},-{\boldsymbol p}^{lab}_{12}) p^{lab}$
 
 $$
 \begin{align}
-{\boldsymbol p}^{cm}&={\boldsymbol p}^{lab}-\frac{{\boldsymbol p}^{lab}_{23}}{M_{23}}\left[-\frac{{\boldsymbol p}^{lab}_{23}\cdot {\boldsymbol p}^{lab}}{E^{lab}_{23}+M_{23}}+p^{0lab}\right], \nonumber\\
-p^{0cm}&=\frac{1}{M_{23}}\left[E^{lab}_{23}p^{0lab}-{\boldsymbol p}^{lab}_{23}\cdot{\boldsymbol p}^{lab}\right].
+{\boldsymbol p}^{cm}&={\boldsymbol p}^{lab}-\frac{{\boldsymbol p}^{lab}_{12}}{M_{23}}\left[-\frac{{\boldsymbol p}^{lab}_{12}\cdot {\boldsymbol p}^{lab}}{E^{lab}_{12}+M_{12}}+p^{0lab}\right], \nonumber\\
+p^{0cm}&=\frac{1}{M_{12}}\left[E^{lab}_{12}p^{0lab}-{\boldsymbol p}^{lab}_{12}\cdot{\boldsymbol p}^{lab}\right].
 \end{align}
 $$
 
@@ -669,30 +825,30 @@ Because the $|{\cal M}|^2$ is invariant in different reference frame, the amplit
 
 $$
 \begin{align}
-i{\cal M}^{d}_{\lambda_1,\lambda_2,\lambda_{3};\lambda}(p_1,p_2,p_{3})&=i{\cal A}_{\lambda_1,\lambda_2;\lambda_3;\lambda}(p_1,p_2,p_3)=i{\cal A}_{\lambda_1,\lambda_2;\lambda_3;\lambda}(\Omega_2,\Omega_3,M_{12}), \nonumber\\
+i{\cal M}^{d}_{\lambda'_1,\lambda'_2,\lambda'_{3};\lambda}(p'_1,p'_2,p'_{3})&=i{\cal A}_{\lambda'_1,\lambda'_2;\lambda'_3;\lambda}(p'_1,p'_2,p'_3)=i{\cal A}_{\lambda'_1,\lambda'_2;\lambda'_3;\lambda}(\Omega'_2,\Omega'_3,M_{12}), \nonumber\\
 %
-&=\sum_{JM}N_JD^{J*}_{ M\lambda_{21}}( \Omega_2)i{\cal A}^{JM}_{\lambda_1,\lambda_2;\lambda_3;\lambda}(\Omega_3,M_{12}),\ \ \ {\rm for\ onshell}\nonumber\\
+&=\sum_{JM}N_JD^{J*}_{ M\lambda'_{21}}( \Omega'_2)i{\cal A}^{JM}_{\lambda'_1,\lambda'_2;\lambda'_3;\lambda}(\Omega'_3,M_{12}),\ \ \ {\rm for\ onshell}\nonumber\\
 %
-i{\cal M}^{d}_{\lambda_1\lambda_2;\lambda_3;\lambda}(p_1,p_2,p_3)&=i{\cal A}_{\lambda_1\lambda_2;\lambda_3;\lambda}(\Omega'_2,{\rm p}'_2,\Omega_3,M_{12}) \nonumber\\
+i{\cal M}^{d}_{\lambda''_1\lambda''_2;\lambda'_3;\lambda}(p''_1,p''_2,p'_3)&=i{\cal A}_{\lambda''_1\lambda''_2;\lambda'_3;\lambda}(\Omega''_2,{\rm p}''_2,\Omega'_3,M_{12}) \nonumber\\
 %
-&=\sum_{JM}N_JD^{J*}_{M\lambda_{21}}( \Omega'_2)i{\cal A}^{JM}_{\lambda_1\lambda_2;\lambda_3;\lambda}({\rm p}'_2,\Omega_3,M_{12}),\ \ \ {\rm for\ offshell}\nonumber\\
+&=\sum_{JM}N_JD^{J*}_{M\lambda''_{21}}( \Omega''_2)i{\cal A}^{JM}_{\lambda''_1\lambda''_2;\lambda'_3;\lambda}({\rm p}''_2,\Omega_3,M_{12}),\ \ \ {\rm for\ offshell}\nonumber\\
 %
-i{\cal A}^{JM}_{\lambda'_1\lambda'_2;\lambda_3;\lambda}(\Omega_3,M_{12},{\rm p}'_2)&=
-N_J\int d\Omega'_2D^{J}_{M,\lambda'_{21}}( \Omega'_2) i{\cal A}_{\lambda'_1,\lambda'_2;\lambda_3;\lambda}(\Omega'_2,{\rm p}'_2,\Omega_3,M_{12})\nonumber\\
+i{\cal A}^{JM}_{\lambda''_1\lambda''_2;\lambda'_3;\lambda}(\Omega'_3,M_{12},{\rm p}''_2)&=
+N_J\int d\Omega''_2D^{J}_{M,\lambda''_{21}}( \Omega''_2) i{\cal A}_{\lambda''_1,\lambda''_2;\lambda'_3;\lambda}(\Omega''_2,{\rm p}''_2,\Omega'_3,M_{12})\nonumber\\
 %
-i{\cal M}^{Z}_{\lambda_1,\lambda_2;\lambda_3;\lambda}(p_1,p_2,p_3)&=i\int \frac{d^4p'_2}{(2\pi)^4} {\cal T}_{\lambda_1,\lambda_2}(p_1,p_2;p'_1,p'_2)  G(p'_2){\cal A}_{\lambda_3;\lambda}(p'_1,p'_2,p_3)\nonumber\\
+i{\cal M}^{Z}_{\lambda'_1,\lambda'_2;\lambda'_3;\lambda}(p'_1,p'_2,p'_3)&=i\int \frac{d^4p''_2}{(2\pi)^4} {\cal T}_{\lambda'_1,\lambda'_2}(p'_1,p'_2;p''_1,p''_2)  G(p''_2){\cal A}_{\lambda'_3;\lambda}(p''_1,p''_2,p_3)\nonumber\\
 %
-&=\sum_{\lambda'_1\lambda'_2}\int \frac{d^3p'_2}{(2\pi)^3} i{\cal T}_{\lambda_1,\lambda_2;\lambda'_1,\lambda'_2}(p_1,p_2;p'_1,p'_2)  G_0(p'_2)i{\cal A}_{\lambda'_1,\lambda'_2;\lambda_3;\lambda}(p'_1,p'_2,p_3)\nonumber\\
+&=\sum_{\lambda''_1\lambda''_2}\int \frac{d^3p''_2}{(2\pi)^3} i{\cal T}_{\lambda'_1,\lambda'_2;\lambda''_1,\lambda''_2}(p'_1,p'_2;p''_1,p''_2)  G_0(p''_2)i{\cal A}_{\lambda''_1,\lambda''_2;\lambda'_3;\lambda}(p''_1,p''_2,p'_3)\nonumber\\
 %
-&=\sum_{\lambda'_1\lambda'_2}\int \frac{d^3p'_2}{(2\pi)^3} i{\cal T}_{\lambda_1,\lambda_2;\lambda'_1,\lambda'_2}(\Omega_2,\Omega'_2,{\rm p}'_2,M_{12})  G_0({\rm p}'_2)i{\cal A}_{\lambda'_1,\lambda'_2;\lambda_3;\lambda}(\Omega'_2,{\rm p}'_2,\Omega_3,M_{12})\nonumber\\
+&=\sum_{\lambda''_1\lambda''_2}\int \frac{d^3p''_2}{(2\pi)^3} i{\cal T}_{\lambda'_1,\lambda'_2;\lambda''_1,\lambda''_2}(\Omega'_2,\Omega''_2,{\rm p}''_2,M_{12})  G_0({\rm p}''_2)i{\cal A}_{\lambda''_1,\lambda''_2;\lambda'_3;\lambda}(\Omega''_2,{\rm p}''_2,\Omega'_3,M_{12})\nonumber\\
 %
-&=\sum_{\lambda'_1\lambda'_2}\int \frac{{\rm p}'^{2}_2d{\rm p}'_2d\Omega'_2}{(2\pi)^3} \sum_{JM}N_J^2D^{J*}_{M\lambda_{21}}(\Omega_2)i{\cal T}^{JM}_{\lambda_1,\lambda_2;\lambda'_1,\lambda'_2}({\rm p}'_2,M_{12})D^{J}_{M\lambda'_{21}}(\Omega'_2)  \nonumber\\
-&\ \cdot\ G_0({\rm p}'_2)\sum_{J'M'}N_{J'}D^{J'*}_{M'\lambda'_{21}}( \Omega'_2)i{\cal A}^{J'M'}_{\lambda'_1,\lambda'_2;\lambda_3;\lambda}({\rm p}'_2,\Omega_3,M_{12})\nonumber\\
+&=\sum_{\lambda''_1\lambda''_2}\int \frac{{\rm p}''^{2}_2d{\rm p}''_2d\Omega''_2}{(2\pi)^3} \sum_{J'M'}N_{J'}^2D^{J'*}_{M'\lambda'_{21}}(\Omega'_2)i{\cal T}^{J'M'}_{\lambda'_1,\lambda'_2;\lambda''_1,\lambda''_2}({\rm p}''_2,M_{12})D^{J'}_{M'\lambda''_{21}}(\Omega''_2)  \nonumber\\
+&\ \cdot\ G_0({\rm p}''_2)\sum_{JM}N_{J}D^{J*}_{M\lambda''_{21}}( \Omega''_2)i{\cal A}^{JM}_{\lambda''_1,\lambda''_2;\lambda'_3;\lambda}({\rm p}''_2,\Omega'_3,M_{12})\nonumber\\
 %
-&=\sum_{\lambda'_1\lambda'_2}\int \frac{{\rm p}'^{2}_2d{\rm p}'d\Omega'_2}{(2\pi)^3} \sum_{JM}N_JD^{J*}_{M\lambda_{21}}(\Omega_2)i{\cal T}^J_{\lambda_1,\lambda_2;\lambda'_1,\lambda'_2}({\rm p}'_2,M_{12})   G_0({\rm p}'_2)i{\cal A}^{JM}_{\lambda'_1,\lambda'_2;\lambda_3;\lambda}({\rm p}'_2,\Omega_3,M_{12})\nonumber\\
+&=\sum_{\lambda''_1\lambda''_2}\int \frac{{\rm p}''^{2}_2d{\rm p}''d\Omega''_2}{(2\pi)^3} \sum_{JM}N_JD^{J*}_{M\lambda'_{21}}(\Omega'_2)i{\cal T}^J_{\lambda'_1,\lambda'_2;\lambda''_1,\lambda''_2}({\rm p}''_2,M_{12})   G_0({\rm p}''_2)i{\cal A}^{JM}_{\lambda''_1,\lambda''_2;\lambda'_3;\lambda}({\rm p}''_2,\Omega'_3,M_{12})\nonumber\\
 %
-&=\sum_{JM}N_JD^{J*}_{M\lambda_{21}}(\Omega_2)\sum_{\lambda'_1\lambda'_2}\int \frac{{\rm p}'^{2}_2d{\rm p}'^{}_2}{(2\pi)^3} i{\cal T}^J_{\lambda_1,\lambda_2;\lambda'_1,\lambda'_2}({\rm p}'_2,M_{12}) G_0({\rm p}'_2) i{\cal A}^{JM}_{\lambda'_1,\lambda'_2;\lambda_3;\lambda}({\rm p}'_2,\Omega_3,M_{12})\nonumber\\
-&\equiv i{\cal M}^{Z}_{\lambda_1,\lambda_2;\lambda}(\Omega_2,\Omega_3,M_{12}).
+&=\sum_{JM}N_JD^{J*}_{M\lambda'_{21}}(\Omega'_2)\sum_{\lambda''_1\lambda''_2}\int \frac{{\rm p}''^{2}_2d{\rm p}''_2}{(2\pi)^3} i{\cal T}^J_{\lambda'_1,\lambda'_2;\lambda''_1,\lambda''_2}({\rm p}''_2,M_{12}) G_0({\rm p}''_2) i{\cal A}^{JM}_{\lambda''_1,\lambda''_2;\lambda'_3;\lambda}({\rm p}''_2,\Omega'_3,M_{12})\nonumber\\
+&\equiv i{\cal M}^{Z}_{\lambda'_1,\lambda'_2;\lambda'_3;\lambda}(\Omega'_2,\Omega'_3,M_{12}).
 \end{align}
 $$
 
@@ -725,57 +881,99 @@ Here we consider a process with $ij$ rescattering ($k$ denote other particles).
 
 $$
 \begin{align}
-i{\cal M}^{d}_{\lambda_i,\lambda_j;\lambda_k;\lambda}(p_i,p_j,p_k)&=i{\cal A}_{\lambda_i,\lambda_j;\lambda_k;\lambda}(p_i,p_j,p_k),\nonumber\\
+i{\cal M}^{d}_{\lambda'_i,\lambda'_j;\lambda'_k;\lambda}(p'_i,p'_j,p'_k)&=i{\cal A}_{\lambda'_i,\lambda'_j;\lambda'_k;\lambda}(p'_i,p'_j,p'_k),\nonumber\\
 %
 %
-i{\cal M}^{Z}_{\lambda_i,\lambda_j;\lambda_k;\lambda}(p_i,p_j,p_k)
-&=\sum_{JM}N_{J}D^{J*}_{M\lambda_{ji}}(\Omega_j)\sum_{\lambda'_i\lambda'_j}\int \frac{{\rm p}'^{2}_jd{\rm p}'_j}{(2\pi)^3} i{\cal T}^J_{\lambda_i,\lambda_j;\lambda'_i,\lambda'_j}({\rm p}'_j,M_{ij})  \ G_0({\rm p}'_j) i{\cal A}^{JM}_{\lambda_k;\lambda'_i,\lambda'_j;\lambda}({\rm p}'_j,\Omega_k,M_{ij}).
+i{\cal M}^{Z}_{\lambda'_i,\lambda'_j;\lambda'_k;\lambda}(p'_i,p'_j,p'_k)
+&=\sum_{JM}N_{J}D^{J*}_{M\lambda'_{ji}}(\Omega_j)\sum_{\lambda''_i\lambda''_j}\int \frac{{\rm p}''^{2}_jd{\rm p}''_j}{(2\pi)^3} i{\cal T}^J_{\lambda'_i,\lambda'_j;\lambda''_i,\lambda''_j}({\rm p}''_j,M_{ij})  \ G_0({\rm p}''_j) i{\cal A}^{JM}_{\lambda''_i,\lambda''_j;\lambda'_k;\lambda}({\rm p}''_j,\Omega'_k,M_{ij}).
+\end{align}
+$$
+
+In this case, we do not make a partial-wave decomposition for the full process but only for the $ij$ system. Hence, for $A$, we do not apply partial-wave decomposition to the initial state, and it should be treated strictly according to its definition.
+
+With the standard definitions
+$|J,\lambda;\pm\rangle=\frac{1}{\sqrt{2}}\bigl(|J,+\lambda\rangle\pm\tilde{\eta}|J,-\lambda\rangle\bigr),$
+the partial-wave amplitudes with fixed parity should be
+
+$$
+A^{J^\pm}_{\lambda}=\frac{1}{\sqrt{2}}\bigl(A^{J}_{\lambda}\pm\tilde{\eta}'A^{J}_{-\lambda}\bigr).
+$$
+
+Here, $\lambda$ refers to the helicites of the $ij$ system on which we perform the partial-wave decomposition, while other helicities are omitted. The above definition differs from those with partial-wave decomposition on both the initial and final states and application of parity conservation, such as  $T$, by an additional factor $\frac{1}{\sqrt{2}}$. To be consistent with the definition of $T$, we change it to
+
+$$
+A^{J^\pm}_{\lambda}=A^{J}_{\lambda}\pm\tilde{\eta}'A^{J}_{-\lambda}.
+$$
+
+With such a definition and Eqs. (18) and (19), we have
+
+$$
+\begin{align}
+	M^{J}_{\lambda'}&=\sum_{\lambda''}
+	T^{J}_{\lambda'\lambda''}A^{J}_{\lambda''}=\frac{1}{2}\sum_P M^{J^P}_{\lambda'}
+   =\frac{1}{4}\sum_PT^{J^P}_{\lambda'\lambda''}A^{J^P}_{\lambda''}=\frac{1}{2}\sum_P T^{J^P i}_{\lambda' i}A^{J^P}_i
+   =\frac{1}{2}\sum_P T^{J^P }_{\lambda' }A^{J^P}.
 \end{align}
 $$
 
 $$
 \begin{align}
-	\sum_{\lambda'}
-	T^{J}_{\lambda\lambda'}A^{J}_{\lambda'}&=T^{J}_{\lambda0}A^{J}_{0}+\sum_{j>0}
-	\left[T^{J}_{\lambda j}A^{J}_{j}+T^{J}_{\lambda -j}A^{J}_{-j}\right]\nonumber\\
-&=\frac{1}{2}T^{J^P}_{\lambda0}A^{J^P}_{0}+\sum_{j>0}
-	 \left[\frac{1}{2}(T^{J+}_{\lambda j}+T^{J-}_{\lambda j})(A^{J+}_{j}+A^{J-}_{j})
-	 +\frac{1}{2}(T^{J+}_{\lambda j}-T^{J-}_{\lambda j})(A^{J+}_{j}-A^{J-}_{j})\right]\nonumber\\
-&=\frac{1}{2}T^{J^P}_{\lambda0}A^{J^P}_{0}+\sum_{j>0}
-	 \left[T^{J+}_{\lambda j}A^{J+}_{j}
-	  +T^{J-}_{\lambda j}A^{J-}_{j}\right]\nonumber\\
-&=\sum_P T^{J^P}_{\lambda}A^{J^P}.\nonumber\\
+&{\cal A}^{J^PM}_{\lambda''_i,\lambda''_j;\lambda'_k;\lambda}(...)=N_J
+\int d\Omega''_j \left[D^{J}_{M,\lambda''_{ji}}(\phi''_j, \theta''_j,0) {\cal A}_{\lambda''_i,\lambda''_j;\lambda'_k;\lambda}(...,\Omega''_j,...)+\eta''D^{J}_{M,-\lambda''_{ji}}(\phi''_j, \theta''_j,0) {\cal A}_{-\lambda''_i,-\lambda''_j;\lambda'_k;\lambda}(...,\Omega''_j,...)\right].
 \end{align}
 $$
 
 $$
 \begin{align}
-&{\cal A}^{J^PM}_{\lambda'_i,\lambda'_j;\lambda_k;\lambda}(...)=
-\int d\Omega'_j \left[D^{J}_{M,\lambda'_{ji}}(\phi'_j, \theta'_j,0) {\cal A}_{\lambda'_i,\lambda'_j;\lambda_k;\lambda}(...,\Omega'_j,...)+\eta'D^{J}_{M,-\lambda'_{ji}}(\phi'_j, \theta'_j,0) {\cal A}_{-\lambda'_i,-\lambda'_j;\lambda_k;\lambda}(...,\Omega'_j,...)\right].
+i{\cal M}^{Z}_{\lambda_i',\lambda'_j;\lambda_k';\lambda}(p_k,p_i,p_j)
+&=\frac{1}{2}\sum_{J^PM}N_JD^{J*}_{M\lambda'_{ji}}(\Omega'_j)\int \frac{{\rm p}''^{2}_jd{\rm p}''_j}{(2\pi)^3} \sum_{i''j''}i{\cal T}^{J^P}_{\lambda'_i,\lambda'_j;i''j''}({\rm p}'_j,M_{ij})  \ G_0({\rm p}''_j) i{\cal A}^{J^PM}_{i''j'';\lambda'_k;\lambda}({\rm p}''_j,\Omega'_k,M_{ij}).
+\end{align}
+$$
+
+The amplitude  are calculated in `qBSE.TGA`.
+
+Note that in most cases, other mechanisms such as background must be considered, so the amplitudes should be calculated directly using $i{\cal M}^{Z}_{\lambda_i',\lambda'_j;\lambda_k';\lambda}(p_k,p_i,p_j)$, where the indices between $T$ and $A$ involve only the independent helicities. However, for the final state, all helicities must be summed; therefore, we need to use the relation between the physical helicities and the independent helicities.
+
+If $A$ is a $2\to2$ process, the partial-wave decomposition can be applied to both the initial and final states.
+
+$$
+\begin{align}
+i{\cal M}^{Z}_{\lambda'_1,\lambda'_2;\lambda_1,\lambda_2}(p'_1,p'_2,p_1,p_2)
+%
+&=\sum_{\lambda''_1\lambda''_2}\int \frac{{\rm p}''^{2}_2d{\rm p}''_2d\Omega''_2}{(2\pi)^3} \sum_{J'M'}N_{J'}^2D^{J'*}_{M'\lambda'_{21}}(\Omega'_2)i{\cal T}^{J'M'}_{\lambda'_1,\lambda'_2;\lambda''_1,\lambda''_2}({\rm p}''_2,\cdots)D^{J'}_{M'\lambda''_{21}}(\Omega''_2)  \nonumber\\
+&\ \cdot\ G_0({\rm p}''_2)\sum_{JM}N^2_{J}D^{J*}_{M\lambda''_{21}}( \Omega''_2)i{\cal A}^{JM}_{\lambda''_1,\lambda''_2;\lambda_1,\lambda_2}({\rm p}_2,\cdots)\delta_{M\lambda_{21}}\nonumber\\
+%
+&=\sum_{\lambda''_1\lambda''_2}\int \frac{{\rm p}''^{2}_2d{\rm p}''d\Omega''_2}{(2\pi)^3} \sum_{J}N^2_{J}D^{{J}*}_{\lambda_{12}\lambda'_{21}}(\Omega'_2)i{\cal T}^J_{\lambda'_1,\lambda'_2;\lambda''_1,\lambda''_2}({\rm p}'_2,\cdots)   G_0({\rm p}''_2)i{\cal A}^{J}_{\lambda''_1,\lambda''_2;\lambda_1,\lambda_2}({\rm p}_2,\cdots)\nonumber\\
+%
+&=\sum_{J}N^2_JD^{J*}_{\lambda_{12}\lambda'_{21}}(\Omega'_2)\sum_{\lambda''_1\lambda''_2}\int \frac{{\rm p}''^{2}_2d{\rm p}''_2}{(2\pi)^3} i{\cal T}^J_{\lambda'_1,\lambda'_2;\lambda''_1,\lambda''_2}({\rm p}'_2,\cdots) G_0({\rm p}''_2) i{\cal A}^{J}_{\lambda''_1,\lambda''_2;\lambda_1,\lambda_2}({\rm p}''_2,\cdots)\nonumber\\
+&\equiv \sum_JN_J^2D^{J*}_{\lambda_{12}\lambda'_{21}}(\Omega'_2) i{\cal M}^{J}_{\lambda'_i,\lambda'_j;\lambda_i,\lambda_j}.
 \end{align}
 $$
 
 $$
 \begin{align}
-i{\cal M}^{Z}_{\lambda_k;\lambda_i,\lambda_j;\lambda}(p_k,p_i,p_j)
-&=\sum_{J^PM}N_J^2D^{J*}_{M\lambda_{ji}}(\Omega_j)\int \frac{{\rm p}'^{2}_jd{\rm p}'_j}{(2\pi)^3} \sum_{i'j'}i{\cal T}^{J^P}_{\lambda_i,\lambda_j;i'j'}({\rm p}'_j,M_{ij})  \ G_0({\rm p}'_j) i{\cal A}^{J^PM}_{i'j';\lambda_k;\lambda}({\rm p}'_j,\Omega_k,M_{ij}).
-\end{align}
-$$
-
-Here we move the $N_J$ in ${\cal A}^{J^P}$ to the definition of ${\cal M}$. The amplitude
-are calculated in `qBSE.TGA`.
-
-$$
-\begin{align}
-	\sum_{\lambda}|T^{J^P}_{\lambda}A^{J^P}|^2&=|T^{J^P}_{0}A^{J^P}|^2+2\sum_{j>0}|T^{J^P}_{j}A^{J^P}|^2=\sum_j|T^{J^P}A^{J^P}|^2.
+{\cal A}^{J^P}_{\lambda''_i,\lambda''_j;\lambda_i,\lambda_j}
+&=2\pi
+\int d\cos\theta'' \left[d^{J}_{\lambda,\lambda''}(\theta'') {\cal A}_{\lambda''_i,\lambda''_j;\lambda_i,\lambda_j}+\eta''d^{J}_{\lambda,-\lambda''}(\theta'') {\cal A}_{-\lambda''_i,-\lambda''_j;\lambda_i,\lambda_j}\right]
+\nonumber\\
+&=2\pi\int d\cos\theta''
+~\left[d^{J}_{\lambda\lambda''}(\theta'')
+{\cal A}_{\lambda''_i,\lambda''_j;\lambda_i,\lambda_j}
++\eta d^{J}_{-\lambda,\lambda''}(\theta'')
+{\cal A}_{\lambda''_i,\lambda''_j;-\lambda_i,-\lambda_j}\right],.
 \end{align}
 $$
 
 $$
 \begin{align}
-\sum_{\lambda_k;\lambda_i,\lambda_j;\lambda}|i{\cal M}^{Z}_{\lambda_k;\lambda_i,\lambda_j;\lambda}(p_k,p_i,p_j)|^2
-&=\sum_{J^P,\lambda_k,\lambda}N^2_{J}\sum_{j}|T^{J^P}A^{J^P}|^2.
+\int d\Omega'\sum_{\lambda'_i,\lambda'_i;\lambda_i,\lambda_j}|i{\cal M}^{Z}_{\lambda'_i,\lambda'_j;\lambda_i,\lambda_j}|^2
+=\sum_{\lambda'_i,\lambda'_i;\lambda_i,\lambda_j,J}N^2_J|i{\cal M}^{J}_{\lambda'_i,\lambda'_j;\lambda_i,\lambda_j}|^2
+=\sum_{ij,J}N^2_J|i{\cal M}^{J^P}_{ij}|^2.
 \end{align}
+$$
+
+$$
+i{\cal M}^{J^P}_{ij}=\int \frac{{\rm p}'^{2}_jd{\rm p}'_j}{(2\pi)^3} \sum_{k}i{\cal T}^{J^P}_{ik} \ G_0 i{\cal A}^{J^P}_{kj}
 $$
 
 # qBSE package
@@ -880,46 +1078,51 @@ The `mutable struct structHelicity` structure stores the helicity information fo
 
 ## Particle
 
-### `structParticle`
+### `particles!(filename::String)`
 
-The `structParticle` structure defines the properties of a single particle.
+Reads particle information from a formatted data file, dynamically generates a concrete type, and injects the result into the module-level `const qBSE.p`.
 
-**Fields:**
+**Arguments**
 
-- `name0::String` — Particle key without charge (used for identification).
-- `nameL::String` — LaTeX representation of the particle name.
-- `anti::Int` — Flags antiparticle status: `0` for particle, `1` for antiparticle.**Note:** The labeling convention distinguishes between particles and antiparticles, with specific assignments depending on the particle type (e.g., all three pions $\pi^\pm$ and $\pi^0$ are typically treated as particles (`0`), while certain kaon states $\bar{K}^0$ and $K^-$ are treated as antiparticles (`1`)).
-- `m::Float64` — Particle mass.
-- `J::Int64` — Total angular momentum.
-- `Jh::Int64` — Related spin quantum number.
-- `P::Int64` — Parity.
-
----
-
-### function to read partilce data file
-
-`function particles!(particles::Dict{String,structParticle}, filename::String)`
-
-Populates a dictionary of particle structures by reading particle information from a formatted data file.
-
-**Arguments:**
-
-- `particles::Dict{String,structParticle}` — Dictionary mapping particle  to their corresponding `structParticle` instances.
 - `filename::String` — Path to the particle data file.
 
-**Behavior:**
+**Behavior**
 
-- Reads the file line by line, skipping the header.
-- Parses each column into the corresponding `structParticle` field.
-- Stores the constructed particle object in the dictionary using the first column (charged) as the key.
+1. Reads the first line of the file as the **header**. Each header field becomes a field name of the generated type.
+2. Infers the type of each column from the first data row:
+   - `tryparse(Int, v)` succeeds for the whole column → `Int`
+   - otherwise `tryparse(Float64, v)` succeeds → `Float64`
+   - otherwise → `String`
+3. Uses `Core.eval` to generate a concrete `struct` type `T` in the current module. Field names come from the header; field types come from step 2.
+4. Parses each remaining data row, constructs a `T` instance, and stores it in a `Dict{String, T}` keyed by the first column (the charged-particle name).
+5. Binds that dictionary as the module-level `const p` via `Core.eval`. If `p` already exists, an error is raised telling the user to restart the Julia session.
 
-**Returns:**
+**Returns**
 
-- Nothing (modifies the `particles` dictionary in place).
+- `Dict{String, T}` — The newly constructed particle dictionary. Side effect: the module-level `qBSE.p` is bound to the same dictionary.
 
-`const p = Dict{String,structParticle}()`
+**Usage**
 
-store of information of particles in this global vector
+```julia
+@everywhere qBSE.particles!("particles.txt")
+```
+
+Afterwards, access it from inside the package or from the main program:
+
+```julia
+qBSE.p["11"].m      # ::Float64
+qBSE.p["11"].J      # ::Int
+qBSE.p["11"].nameL  # ::String
+```
+
+**Notes**
+
+1. **Call only once.** `p` is `const`; calling `particles!` again raises an error. Restart the session to switch files.
+2. **Under `@everywhere`, each worker generates its own type and `p` independently.**
+3. **The first data row must exist and follow the strict format.** Whether a column is `Float64` or `Int` depends on the distinction between `1.0` and `1`, so the data file must respect this convention.
+4. **Do not call `particles!` at package top level or in a `const` initializer.** Otherwise `Core.eval` runs during precompilation and breaks it.
+5. **`Base.invokelatest`** is used for `Dict{String,T}()` and `T(vals...)`. The type is generated at runtime.
+6. **Accessing `p` inside the package**: you can write `p[key].field` directly, because `p` has already been injected into the module by `Core.eval` and is present when later code is compiled. If a function is compiled before injection but executed after, use `getfield(@__MODULE__, :p)` to resolve the binding at runtime.
 
 ## Functions for the qBSE
 

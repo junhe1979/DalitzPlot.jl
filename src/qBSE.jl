@@ -87,32 +87,63 @@ mutable struct structHelicity #l
     f2h::Int64
 end
 #------------------------------------------------------------------------------------------
-#store the information of particles involved in the work. 
-struct structParticle
-    name0::String #without charge, used for the cases with symmetry.
-    nameL::String #Latex.
-    anti::Int #antiparticle
-    m::Float64 #mass
-    G::Float64 #width
-    J::Int64 #spin
-    Jh::Int64  #for fermion, the helicity is obtianed by J/Jh
-    P::Int64 #parity
+# load partilce information
+const _TYPE_CACHE = Dict{String,Type}()
+function _make_type(header, types)
+    key = join(header, "|") * "::" * join(string.(types), "|")
+    haskey(_TYPE_CACHE, key) && return _TYPE_CACHE[key]
+
+    name = gensym(:Particle)
+    fields = [Expr(:(::), Symbol(h), t) for (h, t) in zip(header, types)]
+    Core.eval(@__MODULE__, :(struct $name
+        ;$(fields...);
+    end))
+    T = Core.eval(@__MODULE__, name)
+    _TYPE_CACHE[key] = T
+    return T
 end
-#* function to read the information of partilces from a file with "filename".
-function particles!(particles::Dict{String,structParticle}, filename::String) #read the information 
-    open(filename, "r") do file
-        readline(file)
-        i = 1
-        for line in eachline(file)
-            parts = split(line)
-            particle = structParticle(parts[2], parts[3], parse(Int, parts[4]),
-                parse(Float64, parts[5]), parse(Float64, parts[6]), parse(Int64, parts[7]), parse(Int64, parts[8]), parse(Int64, parts[9]))
-            particles[parts[1]] = particle
-            i += 1
-        end
+@inline _infer_one(v) =
+    tryparse(Int, v) !== nothing ? Int :
+    tryparse(Float64, v) !== nothing ? Float64 : String
+
+function particles!(filename::String)
+    if isdefined(@__MODULE__, :p)
+        return p
     end
+    lines = readlines(filename)
+    isempty(lines) && error("empty file: $filename")
+
+    header = String.(split(lines[1]))
+    ncol = length(header)
+
+    i0 = findfirst(l -> !isempty(strip(l)), @view lines[2:end])
+    i0 === nothing && error("no data in $filename")
+    row0 = i0 + 1
+
+    parts0 = String.(split(lines[row0]))
+    types = [_infer_one(parts0[j]) for j in 1:ncol]
+    T = _make_type(header, types)
+
+    # ★ 用 invokelatest 构造 Dict{String,T}
+    d = Base.invokelatest(Dict{String,T})
+
+    for line in @view lines[row0:end]
+        isempty(strip(line)) && continue
+        parts = String.(split(line))
+        length(parts) == ncol || continue
+        vals = [types[j] === String ? parts[j] : parse(types[j], parts[j]) for j in 1:ncol]
+
+        # ★ 用 invokelatest 调用新类型的构造函数
+        d[parts[1]] = Base.invokelatest(T, vals...)
+    end
+
+    # 注入模块本地 const p
+    if isdefined(@__MODULE__, :p)
+        error("qBSE.p 已定义。如需重新加载请重启 Julia 会话。")
+    end
+    Core.eval(@__MODULE__, :(const p = $d))
+    return d
 end
-const p = Dict{String,structParticle}() #store of information of particles in this global vector
 #*******************************************************************************************
 # qBSE
 #*******************************************************************************************
@@ -780,7 +811,7 @@ function propagator_ChUA0(kv, wv, Ec, Np, CH, IH0, lRm, cutoff_type, ChUA)
     return propagator*mi2p2
 end
 
-function propagator_ChUA(kv, wv, Ec, Np, CH, IH0, lRm, cutoff_type, ChUA,width)
+function propagator_ChUA(kv, wv, Ec, Np, CH, IH0, lRm, cutoff_type, ChUA, width)
     propagator = Complex{Float64}(0, 0)
     ich = IH0.iCH
     CH0 = CH[ich]
@@ -840,7 +871,7 @@ function propagator_ChUA(kv, wv, Ec, Np, CH, IH0, lRm, cutoff_type, ChUA,width)
 
     delta=Ec^4+(mi2_sq - mi1_sq)^2-2.0*Ec^2*(mi2_sq + mi1_sq)
     konc=sqrt(delta) / (2 * Ec)
-    if imag(konc) < 0 &&  !width
+    if imag(konc) < 0 && !width
         konc=-konc
     end
     factor = konc / (4.0 * pi3 * Ec)
@@ -903,7 +934,7 @@ function fVGI(Ec, qn, SYS, IA, CH, IH, VVertex, lRm)
                         CH0 = CH[IHi.iCH]
                         kv, wv = CH0.kv, CH0.wv
                     end
-                    Gc[i_f, i_i] = propagator_ChUA(kv, wv, Ec, Np, CH, IHf, lRm, cutoff_type, ChUA,SYS.width)
+                    Gc[i_f, i_i] = propagator_ChUA(kv, wv, Ec, Np, CH, IHf, lRm, cutoff_type, ChUA, SYS.width)
                     II[i_f, i_i] = 1.0
                 end
             end
@@ -1576,7 +1607,7 @@ function TGA(para, cfinal, cinter, ranges)
                         if IHc.hel[1] == 0 && IHc.hel[2] == 0
                             A /= sqrt(2.0)
                         end
-                        TGA += (A * TG0) * cinter0.weight  #note that the weights and p20^2/(2pi)^3 is in G0
+                        TGA += 0.5 * (TG0*A) * cinter0.weight  #note that the weights and p20^2/(2pi)^3 is in G0
                     end
                 end
 

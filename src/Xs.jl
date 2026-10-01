@@ -347,14 +347,15 @@ function Xsection(tecm, proc, callback; axes=[], Range=[], nevtot=Int64(1e6),
     cs1 = []
     cs2 = []
 
-    if Nf > 2 && Naxes > 1
+    if Nf > 2
         binwidths = [(maximum(axesV[i]) - minimum(axesV[i])) / Nbin for i in 1:Naxes]
 
-
-        cs2 = [Matrix{Float64}(undef, Nbin, Nbin) for _ in 1:leng]
-        for k in 1:leng
-            for j in 1:Nbin, i in 1:Nbin
-                cs2[k][i, j] = zsumd_3d[k, i, j] / (nevtot * binwidths[1] * binwidths[2])
+        if Naxes > 1
+            cs2 = [Matrix{Float64}(undef, Nbin, Nbin) for _ in 1:leng]
+            for k in 1:leng
+                for j in 1:Nbin, i in 1:Nbin
+                    cs2[k][i, j] = zsumd_3d[k, i, j] / (nevtot * binwidths[1] * binwidths[2])
+                end
             end
         end
 

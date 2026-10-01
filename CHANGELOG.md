@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.5.2] - 2026-09-22
+
+Fixed several known issues to improve version stability and overall runtime performance.
+
+Improved the documents.
+
+Reworked the `qBSE.particles!` function to support a file-driven particle schema.
+
+- The particle type is no longer hard-coded as `structParticle`. Field names are now taken from the header line of the particle data file, and field types are inferred from the first data row (`Int`, `Float64`, or `String`).
+- A concrete `struct` is generated at runtime via `Core.eval` and stored as the value type of `Dict{String, T}`, preserving type-stable field access and performance equivalent to the previous hard-coded type.
+- The signature changed from `particles!(particles::Dict{String,structParticle}, filename::String)` to `particles!(filename::String)`. The result is injected into the module-level `const p` instead of being passed in by the caller.
+- `Base.invokelatest` is used when constructing the `Dict{String, T}` and `T` instances, since the type is created at runtime and the calling function's world age predates it.
+- Adding, removing, or renaming columns now only requires editing the data file; no source-code changes are needed.
+
 ## [0.5.1] - 2026-07-6
 
 Fixed several known issues to improve version stability and overall runtime performance.
