@@ -95,7 +95,7 @@ function _make_type(header, types)
 
     name = gensym(:Particle)
     fields = [Expr(:(::), Symbol(h), t) for (h, t) in zip(header, types)]
-    Core.eval(@__MODULE__, :(struct $name
+    Core.eval(@__MODULE__, :(mutable struct $name
         ;$(fields...);
     end))
     T = Core.eval(@__MODULE__, name)

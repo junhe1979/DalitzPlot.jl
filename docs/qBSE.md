@@ -493,7 +493,7 @@ $$
 
 It should be noted that in the region $W < m_1 + m_2$, the potential remains real, since no imaginary component emerges in this energy range.
 
-It suggests the unitary is satisfied if the potential $i{\cal V}$ is real.
+It suggests the unitary is satisfied.
 
 $$
 \begin{align}
