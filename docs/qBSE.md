@@ -379,8 +379,10 @@ With Eq. (13), the amplitudes with different helicities are not independent. To 
 
 $$
 \begin{align}
-\sum_{\lambda''}{\cal A}^{J^P}_{\lambda'\lambda''}{\cal B}^{J^P}_{\lambda''\lambda}
-={\cal A}^{J^P}_{\lambda'0}{\cal B}^{J^P}_{0\lambda}+2\sum_{ \lambda''\in I_{\neq0}}{\cal A}^{J^P}_{\lambda' \lambda''}{\cal B}^{J^P}_{\lambda''\lambda}=2\sum_{k}{\cal A}^{J^P}_{\lambda' k}{\cal B}^{J^P}_{k\lambda}.
+\sum_{\lambda''}{\cal A}^{J^P}_{\lambda'\lambda''}{\cal B}^{J^P}_{\lambda''\lambda}&={\cal A}^{J^P}_{\lambda'0}{\cal B}^{J^P}_{0\lambda}+\sum_{ \lambda''\neq0}{\cal A}^{J^P}_{\lambda' \lambda''}{\cal B}^{J^P}_{\lambda''\lambda}\nonumber\\
+&={\cal A}^{J^P}_{\lambda'0}{\cal B}^{J^P}_{0\lambda}+\sum_{ \lambda''\in I_{\neq0}}({\cal A}^{J^P}_{\lambda' \lambda''}{\cal B}^{J^P}_{\lambda''\lambda}+{\cal A}^{J^P}_{\lambda' -\lambda''}{\cal B}^{J^P}_{-\lambda''\lambda})\nonumber\\
+&={\cal A}^{J^P}_{\lambda'0}{\cal B}^{J^P}_{0\lambda}+2\sum_{ \lambda''\in I_{\neq0}}{\cal A}^{J^P}_{\lambda' \lambda''}{\cal B}^{J^P}_{\lambda''\lambda}\nonumber\\
+&=2\sum_{k}{\cal A}^{J^P}_{\lambda' k}{\cal B}^{J^P}_{k\lambda}.
 \end{align}
 $$
 
@@ -427,7 +429,7 @@ i{\cal V}_{\lambda'\lambda}({\boldsymbol k}',{\boldsymbol k})
 i{\cal V}_{\lambda'-\lambda}({\boldsymbol k}',{\boldsymbol k})].
 \end{align}
 $$
-where $i,j$ correspond to  independent helicities $\lambda',\lambda \in I$.
+where $i,j$ correspond to  independent helicities $\lambda',\lambda \in I$, where $I$ is the set of independent helicities.
 Note here the $f_{\lambda'}f_\lambda$ is also incorporated. Additionally, the form factors for the interacting particles are also included in the potential, modifying it as ${\cal V}\to f(k'){\cal V}f(k)$. Consequently, the resulting amplitude ${\cal M}$ also includes these form factors.
 
 The potential ${\cal V}_{\lambda'\lambda}({\boldsymbol k}',{\boldsymbol k})$ is introduced by `fV` function in main file as
@@ -490,6 +492,8 @@ $$
 Im~G=-\rho/2=-\frac{\bar{{\rm k}''}}{32\pi^2 W}.
 \end{align}
 $$
+
+Here, the definition of $\rho$ differs from the literature value $\frac{\bar{{\rm k}''}}{4\pi W}$ by a factor of $4\pi$, which arises from the difference between our definitions of $\mathcal{V}$ and $\mathcal{M}$ and those used in the literature [Roca:2005nm].
 
 It should be noted that in the region $W < m_1 + m_2$, the potential remains real, since no imaginary component emerges in this energy range.
 
