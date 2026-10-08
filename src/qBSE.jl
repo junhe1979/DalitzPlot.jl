@@ -175,7 +175,7 @@ function print_config(config)
 
     println(repeat('-', 90))
     println(rpad("Configuration", 20) * rpad("Value", 18) * " | " *
-            rpad("Configuration", 20) * rpad("Value", 18))
+        rpad("Configuration", 20) * rpad("Value", 18))
     println(repeat('-', 90))
 
     for i in 1:2:length(params)
@@ -188,12 +188,12 @@ function print_config(config)
             val2, isdef2 = get_and_flag(config, key2, default2)
             str2 = fmt_val(val2, isdef2)
         else
-            key2 = "";
+            key2 = ""
             str2 = ""
         end
 
         println(rpad(string(key1), 20) * rpad(str1, 18) * " | " *
-                rpad(string(key2), 20) * rpad(str2, 18))
+            rpad(string(key2), 20) * rpad(str2, 18))
     end
 
     println(repeat('-', 90))
@@ -221,8 +221,8 @@ function preprocessing(Sys, qn, channels, Ff, config, Np, Nx, Nphi, showInfo)
         Nih0 = Nih
         IH0 = Vector{structIndependentHelicity}()
         if get(config, :potential, :noPW)==:noPW
-            for i1 in -J1:Jh1:J1
-                for i2 in -J2:Jh2:J2
+            for i1 in (-J1):Jh1:J1
+                for i2 in (-J2):Jh2:J2
 
                     Jh = 1.0
                     if Jh1 == 1 && Jh2 == 2 || Jh1 == 2 && Jh2 == 1
@@ -376,7 +376,7 @@ function workSpace(Ec, lRm, Np, SYS, CH, IH)
             mass1 = p[CH[IH[i1].iCH].p[1]].m
             mass2 = p[CH[IH[i1].iCH].p[2]].m
             IH[i1].kon = sqrt((Ec^2 - (mass1 + mass2)^2) *
-                              (Ec^2 - (mass1 - mass2)^2)) / (2.0 * Ec)
+                (Ec^2 - (mass1 - mass2)^2)) / (2.0 * Ec)
         else
             IH[i1].Dimb = Nt_count + 1
 
@@ -411,7 +411,7 @@ function workSpace(Ec, lRm, Np, SYS, CH, IH)
                 end
             end
             kon = sqrt((Ec^2 - (mass1 + mass2)^2) *
-                       (Ec^2 - (mass1 - mass2)^2)) / (2.0 * Ec)
+                (Ec^2 - (mass1 - mass2)^2)) / (2.0 * Ec)
             IH[i1].kon = kon
             IH[i1].Dime = Nt_count
         end
@@ -610,7 +610,7 @@ function kernel(kf, ki, Ec, qn, SYS, IA, CH, IHf, IHi, VVertex)::ComplexF64 # Ca
 
     if SYS.potential==:noPW
         eta = CHi.P[1] * CHi.P[2] * qn.P *
-              (-1)^(qn.J / qn.Jh - CHi.J[1] / CHi.Jh[1] - CHi.J[2] / CHi.Jh[2])
+            (-1)^(qn.J / qn.Jh - CHi.J[1] / CHi.Jh[1] - CHi.J[2] / CHi.Jh[2])
         lJJ = qn.J / qn.Jh
         l21i = -l.i2 / l.i2h + l.i1 / l.i1h
         l21f = l.f2 / l.f2h - l.f1 / l.f1h
@@ -1172,7 +1172,7 @@ function resc0(Range, iER, qn, SYS, IA, CH, IH, VVertex)
 
     # 循环虚部 EI
     NEI = Range.NEI
-    for iEI in -NEI:NEI
+    for iEI in (-NEI):NEI
         EI = (NEI != 0) ? iEI * Range.EIt / NEI : 0.0
         Ec = ER + EI * im
 
@@ -1421,7 +1421,7 @@ function proc(pf, pin, amps)
     namef = [p[p0].nameL for p0 in pf]
     mi = [p[p0].m for p0 in pin]
     namei = [p[p0].nameL for p0 in pin]
-    ranges = Tuple([-p[p0].J:p[p0].Jh:p[p0].J for p0 in pf])
+    ranges = Tuple([(-p[p0].J):p[p0].Jh:p[p0].J for p0 in pf])
     ch = (pf=pf, namef=namef, mf=mf, pin=pin, namei=namei, mi=mi, amps=amps, ranges=ranges)
 end
 #------------------------------------------------------------------------------------------
@@ -1513,7 +1513,7 @@ function TGA(para, cfinal, cinter, ranges)
     ii = Xs.Nsij(E, Range.ERmin, Range.ERmax, Range.NER - 1)
     Elower, Eupper = Et[ii], Et[ii+1]
     dlower, dupper = TGt[2][ii], TGt[2][ii+1]
-    Tlower, Tupper = view(TGt[1],:,:,(ii)), view(TGt[1],:,:,(ii+1))
+    Tlower, Tupper = view(TGt[1], :, :, (ii)), view(TGt[1], :, :, (ii+1))
     TeT = dlower == dupper
 
 
@@ -1524,7 +1524,7 @@ function TGA(para, cfinal, cinter, ranges)
     else
         mid = 0.5 * (Elower + Eupper)
         idx = (E > mid) + 1
-        TG = view(TGt[1],:,:,(ii+idx-1))
+        TG = view(TGt[1], :, :, (ii+idx-1))
         #TG = TGt[ii+idx-1]
 
     end
@@ -1588,7 +1588,7 @@ function TGA(para, cfinal, cinter, ranges)
                                 Ap = cinter0.Vertex(k, P, lp, cinter0.cached)
                                 Am = cinter0.Vertex(k, P, lm, cinter0.cached)
                                 Dp, Dm = 0., 0.
-                                for M in -qn.J:qn.Jh:qn.J
+                                for M in (-qn.J):qn.Jh:qn.J
                                     dM = Int64(lJJ + M / qn.Jh) + 1
                                     expphi = SYS.expphi[dM, j]
                                     Dp += D[dl21, dM] * SYS.d[i][dM, dl21pp] * expphi
@@ -1629,6 +1629,428 @@ function TGA(para, cfinal, cinter, ranges)
     return TGAdic
 end
 
+
+#*******************************************************************************************
+# CORRELATION FUNCTION IN THE J-HELICITY REPRESENTATION
+#*******************************************************************************************
+"""
+ Convention
+ ----------
+ qBSE T/TG are stored in the reduced independent-helicity basis:
+
+     Xhat_fi = f_f f_i X_fi,
+
+ with
+
+     f_0 = 1/sqrt(2)   for the true (0,0) helicity state,
+     f   = 1           otherwise.
+
+ The free kernel is fundamentally diagonal in J-helicity space:
+
+     F_fi = delta_fi F_i,
+     F_ci = delta_ci F_i.
+
+ We first construct Fhat and TGFhat in the same reduced basis as qBSE,
+ then remove ONLY the two external factors f_f f_i:
+
+     F_fi   = Fhat_fi   / (f_f f_i),
+     TGF_fi = TGFhat_fi / (f_f f_i),
+     Psi_fi = F_fi + TGF_fi.
+
+ The probability is then calculated directly from the un-hatted amplitudes:
+
+     Delta_i = sum_f n_f [ |Psi_fi|^2 - |F_fi|^2 ],
+
+ where n_f = 1 for the self-conjugate true (0,0) state and n_f = 2 for a
+ nonzero independent representative, accounting for its physical +/- partner.
+ The INTERNAL f_c^2 contained in TGhat_fc * Fhat_ci is retained.
+"""
+const HBARC = 0.1973269804
+const CF_PARAM = (Nr=100, r_max=30.0, Nx_kernel=80, eps=0.0im, lRm_CF=1, wminus=1.0/3.0, w0=1.0/3.0, wplus=1.0/3.0)
+const INV_SQRT2_CF = 1.0 / sqrt(2.0)
+#------------------------------------------------------------------------------------------
+# Basic helpers
+function energy_from_Range_local(Range, iER)
+    ER = Range.ERmax - (iER - 1) * (Range.ERmax - Range.ERmin) / (Range.NER - 1)
+    if Range.Ep[1] == "L"
+        PL = Range.ERmax - iER * (Range.ERmax - Range.ERmin) / (Range.NER - 1)
+        ER = sqrt((sqrt(PL^2 + p[Range.Ep[2]].m^2) + p[Range.Ep[3]].m)^2 - PL^2)
+    end
+    return ER
+end
+function trapz_CF(x, y)
+    s = zero(eltype(y))
+    @inbounds for i in 1:(length(x)-1)
+        s += 0.5 * (y[i] + y[i+1]) * (x[i+1] - x[i])
+    end
+    return s
+end
+@inline gaussian_source_CF(r, R) = exp(-r^2 / (4R^2)) / ((4pi)^(3/2) * R^3)
+@inline helicity_value_CF(IH0) = IH0.hel[2] / IH0.helh[2] - IH0.hel[1] / IH0.helh[1]
+@inline d_index_CF(J, lambda) = Int(round(J + lambda)) + 1
+@inline true_zero_CF(IH0) = IH0.hel[1] == 0 && IH0.hel[2] == 0
+@inline fixed_parity_f_CF(IH0) = true_zero_CF(IH0) ? INV_SQRT2_CF : 1.0
+@inline physical_helicity_multiplicity_CF(IH0) = true_zero_CF(IH0) ? 1.0 : 2.0
+function eta_parity_CF(qn, CH0)
+    J = qn.J / qn.Jh
+    s1 = CH0.J[1] / CH0.Jh[1]
+    s2 = CH0.J[2] / CH0.Jh[2]
+    return qn.P * CH0.P[1] * CH0.P[2] * (-1)^Int(round(J - s1 - s2))
+end
+#------------------------------------------------------------------------------------------
+# Endpoint factor for the reduced free matrix
+"""
+ Fhat_xi = f_x f_i delta_xi F_i.
+
+ For true (0,0), the state exists only for the allowed parity.  No extra
+ (1+etaP) is inserted here: after dividing by f_x f_i we recover exactly
+ F_xi = delta_xi F_i, including F_00 = F_0.
+"""
+@inline function free_parity_endpoint_factor_CF(IHx, IHi, etaP)
+    fx = fixed_parity_f_CF(IHx)
+    fi = fixed_parity_f_CF(IHi)
+    if true_zero_CF(IHx) && true_zero_CF(IHi)
+        return etaP == 1 ? fx * fi : 0.0
+    end
+    return fx * fi
+end
+@inline raw_external_factor_CF(IHf, IHi) = fixed_parity_f_CF(IHf) * fixed_parity_f_CF(IHi)
+@inline raw_from_reduced_CF(Ahat, IHf, IHi) = Ahat / raw_external_factor_CF(IHf, IHi)
+#------------------------------------------------------------------------------------------
+# Helicity selection
+function selected_helicities_CF(IH, channel, lambdas)
+    out = Int[]
+    for ih in eachindex(IH)
+        IH[ih].iCH == channel || continue
+        lambda = helicity_value_CF(IH[ih])
+        if lambdas === nothing || any(abs(lambda - lambda0) < 1e-10 for lambda0 in lambdas)
+            push!(out, ih)
+        end
+    end
+    return out
+end
+#------------------------------------------------------------------------------------------
+# Momentum belonging to one qBSE dimension
+@inline function momentum_from_dim_CF(idim, Dim, IH, SYS, CH)
+    ih = Dim[1, idim]
+    Dim[3, idim] == 1 && return real(IH[ih].kon)
+    iq = Dim[2, idim]
+    SYS.cutoff_type == :infty && return real(SYS.kv[iq])
+    SYS.cutoff_type == :cut && return real(CH[IH[ih].iCH].kv[iq])
+    error("Unsupported cutoff_type: $(SYS.cutoff_type)")
+end
+#------------------------------------------------------------------------------------------
+# Raw single-branch radial kernel
+# F_i^J(k,r) = 1/2 int_{-1}^{1} dx d^J_{0,lambda_i}(theta) exp(i k r x).
+function precompute_radial_kernel_CF(lambda_vals, J)
+    xs, ws = gausslegendre(CF_PARAM.Nx_kernel)
+    iM0 = d_index_CF(J, 0.0)
+    coeff = Array{ComplexF64}(undef, length(lambda_vals), length(xs))
+    @inbounds for ix in eachindex(xs)
+        d = wignerd(J, acos(clamp(xs[ix], -1.0, 1.0)))
+        for i in eachindex(lambda_vals)
+            coeff[i, ix] = ws[ix] * d[iM0, d_index_CF(J, lambda_vals[i])]
+        end
+    end
+    return xs, coeff
+end
+@inline function free_radial_kernel_CF(z, xs, coeff, i)
+    s = 0.0 + 0.0im
+    @inbounds @simd for ix in eachindex(xs)
+        s += coeff[i, ix] * cis(z * xs[ix])
+    end
+    return 0.5 * s
+end
+#------------------------------------------------------------------------------------------
+# Remove the numerical q ~= k discretization artifact
+function interpolate_CF_artifact(k, C, q_grid; k_artifact_min::Real=0.1, width::Real=0.015)
+    Cnew = copy(C)
+    for qv in q_grid
+        qv < k_artifact_min && continue
+        bad = findall(abs.(k .- qv) .<= width)
+        isempty(bad) && continue
+        il = first(bad) - 1
+        ir = last(bad) + 1
+        (il <= 1 || ir >= length(k)) && continue
+        kL, kR = k[il], k[ir]
+        CL, CR = C[il], C[ir]
+        sL = (C[il] - C[il-1]) / (k[il] - k[il-1])
+        sR = (C[ir+1] - C[ir]) / (k[ir+1] - k[ir])
+        h = kR - kL
+        for ik in bad
+            t = (k[ik] - kL) / h
+            h00 = 2t^3 - 3t^2 + 1
+            h10 = t^3 - 2t^2 + t
+            h01 = -2t^3 + 3t^2
+            h11 = t^3 - t^2
+            Cnew[ik] = h00 * CL + h10 * h * sL + h01 * CR + h11 * h * sR
+        end
+    end
+    return Cnew
+end
+@inline function phase_shift_from_T_CF(Ton, kon, ER)
+    abs(Ton) < 1e-14 && return 0.0
+    return atan(imag(Ton), real(Ton))
+end
+#------------------------------------------------------------------------------------------
+# Prepare CF
+function prepare_correlation_function_J(Range, qn, SYS, IA, CH, IH, VVertex; channel::Int=1, J::Real=qn.J/qn.Jh, lambdas=nothing, progressbar::Bool=true)
+    P = CF_PARAM
+    tol = 1e-10
+    r_grid = collect(range(0.0, P.r_max / HBARC, length=P.Nr))
+    CHc = CH[channel]
+    m1, m2 = CHc.m
+    threshold = m1 + m2
+    etaP = eta_parity_CF(qn, CHc)
+
+    ih_base = selected_helicities_CF(IH, channel, lambdas)
+    isempty(ih_base) && error("No selected helicity for channel $channel")
+    lambda_vals = [helicity_value_CF(IH[h]) for h in ih_base]
+    nH = length(ih_base)
+
+    i0 = findfirst(lambda -> abs(lambda) < tol, lambda_vals)
+    i1 = findfirst(lambda -> abs(abs(lambda) - 1.0) < tol, lambda_vals)
+    i0 === nothing && error("No lambda=0 independent helicity was found. lambda_vals=$lambda_vals")
+    i1 === nothing && error("No |lambda|=1 independent helicity was found. lambda_vals=$lambda_vals")
+
+    xs, coeff = precompute_radial_kernel_CF(lambda_vals, J)
+    ER_CF = sort!(unique!(vcat(threshold, filter(E -> E > threshold, [energy_from_Range_local(Range, iER) for iER in 1:Range.NER]))))
+    q_grid = SYS.cutoff_type == :infty ? collect(real.(SYS.kv)) : SYS.cutoff_type == :cut ? collect(real.(CHc.kv)) : error("Unsupported cutoff_type: $(SYS.cutoff_type)")
+
+    kon_vals = Float64[]
+    delta0_table = Vector{Vector{Float64}}()
+    delta1_table = Vector{Vector{Float64}}()
+    Ton_abs = Float64[]
+    Ton_re = Float64[]
+    Ton_im = Float64[]
+    ER_vals = Float64[]
+    Ton0_vals = ComplexF64[]
+    Ton1_vals = ComplexF64[]
+    phase0_deg = Float64[]
+    phase1_deg = Float64[]
+
+    # =========================================================
+    # CF calculation progress bar
+    # =========================================================
+    ER_iterator = progressbar ? ProgressBar(ER_CF) : ER_CF
+
+    for ER in ER_iterator
+        k2 = ((ER^2 - (m1 + m2)^2) * (ER^2 - (m1 - m2)^2)) / (4ER^2)
+        k2 >= -100eps(Float64) || continue
+        kon = sqrt(max(k2, 0.0))
+
+        Vc, Gc, II, IHn, Dim = fVGI(ComplexF64(ER) + P.eps, qn, SYS, IA, CH, deepcopy(IH), VVertex, P.lRm_CF)
+        T = inv(II - Vc * Gc) * Vc
+        TG = T * Gc
+
+        ih = selected_helicities_CF(IHn, channel, lambdas)
+        length(ih) == nH || error("Helicity number changed at E=$ER")
+        for i in 1:nH
+            abs(helicity_value_CF(IHn[ih[i]]) - lambda_vals[i]) < tol || error("Helicity ordering changed at i=$i")
+        end
+
+        d0 = IHn[ih[i0]].Dime
+        d1 = IHn[ih[i1]].Dime
+        Ton0 = Dim[3, d0] == 1 ? T[d0, d0] : ComplexF64(NaN, NaN)
+        Ton1 = Dim[3, d1] == 1 ? T[d1, d1] : ComplexF64(NaN, NaN)
+        push!(ER_vals, ER)
+        push!(Ton0_vals, Ton0)
+        push!(Ton1_vals, Ton1)
+        push!(phase0_deg, isfinite(real(Ton0)) ? phase_shift_from_T_CF(Ton0, kon, ER) * 180 / pi : NaN)
+        push!(phase1_deg, isfinite(real(Ton1)) ? phase_shift_from_T_CF(Ton1, kon, ER) * 180 / pi : NaN)
+
+        dim_list = Int[]
+        ihloc = Int[]
+        q_list = Float64[]
+        for c in 1:nH, d in IHn[ih[c]].Dimb:IHn[ih[c]].Dime
+            Dim[1, d] == ih[c] || error("Dimension/helicity mismatch")
+            push!(dim_list, d)
+            push!(ihloc, c)
+            push!(q_list, momentum_from_dim_CF(d, Dim, IHn, SYS, CH))
+        end
+        nDim = length(dim_list)
+
+        function delta_for_initial(i)
+            Delta = zeros(Float64, P.Nr)
+            Fci_hat = Vector{ComplexF64}(undef, nDim)
+            IHi = IHn[ih[i]]
+            fi = fixed_parity_f_CF(IHi)
+
+            @inbounds for ir in eachindex(r_grid)
+                r = r_grid[ir]
+                for jd in 1:nDim
+                    c = ihloc[jd]
+                    if c == i
+                        IHc = IHn[ih[c]]
+                        rawFi = free_radial_kernel_CF(q_list[jd] * r, xs, coeff, i)
+                        Fci_hat[jd] = free_parity_endpoint_factor_CF(IHc, IHi, etaP) * rawFi
+                    else
+                        Fci_hat[jd] = 0.0 + 0.0im
+                    end
+                end
+
+                rawFi_on = free_radial_kernel_CF(kon * r, xs, coeff, i)
+                for f in 1:nH
+                    IHf = IHn[ih[f]]
+                    ff = fixed_parity_f_CF(IHf)
+                    dim_f = IHf.Dime
+                    Dim[3, dim_f] == 1 || continue
+
+                    Ffi_hat = f == i ? free_parity_endpoint_factor_CF(IHf, IHi, etaP) * rawFi_on : 0.0 + 0.0im
+                    TGF_hat = 0.0 + 0.0im
+                    for jd in 1:nDim
+                        TGF_hat += TG[dim_f, dim_list[jd]] * Fci_hat[jd]
+                    end
+
+                    fffi = ff * fi
+                    Ffi = Ffi_hat / fffi
+                    TGF = TGF_hat / fffi
+                    Psi = Ffi + TGF
+                    final_mult = physical_helicity_multiplicity_CF(IHf)
+                    Delta[ir] += final_mult * (abs2(Psi) - abs2(Ffi))
+                end
+            end
+            return Delta
+        end
+
+        Delta0 = delta_for_initial(i0)
+        Delta1 = delta_for_initial(i1)
+        push!(kon_vals, kon)
+        push!(delta0_table, Delta0)
+        push!(delta1_table, Delta1)
+        Ton_store = isfinite(real(Ton1)) ? Ton1 : isfinite(real(Ton0)) ? Ton0 : (0.0 + 0.0im)
+        push!(Ton_abs, abs(Ton_store))
+        push!(Ton_re, real(Ton_store))
+        push!(Ton_im, imag(Ton_store))
+    end
+
+    return (
+        r_grid=r_grid, kon_vals=kon_vals,
+        delta0_table=delta0_table, delta1_table=delta1_table,
+        delta_m1_table=delta1_table, delta_p1_table=delta1_table,
+        Ton_abs=Ton_abs, Ton_re=Ton_re, Ton_im=Ton_im,
+        ER_vals=ER_vals, Ton0_vals=Ton0_vals, Ton1_vals=Ton1_vals,
+        phase0_deg=phase0_deg, phase1_deg=phase1_deg,
+        J=J, channel=channel, q_grid=q_grid, etaP=etaP, lambda_vals=lambda_vals,
+        i0=i0, i1=i1, lRm_CF=P.lRm_CF, Nx_kernel=P.Nx_kernel,
+        wminus=Float64(P.wminus), w0=Float64(P.w0), wplus=Float64(P.wplus),
+    )
+end
+#------------------------------------------------------------------------------------------
+# Scattering-wave asymptotic check in the un-hatted J^P convention
+function check_CF_scattering_asymptotic(Range, qn, SYS, IA, CH, IH, VVertex; channel::Int=1, J::Real=qn.J/qn.Jh, lambdas=nothing, k_test::Real=0.10, r_min::Real=5.0, r_max::Real=100.0, Nr::Int=600, tail_fraction::Real=0.25)
+    k_test > 0 || error("k_test must be > 0.")
+    r_max > r_min || error("r_max must be larger than r_min.")
+    Nr >= 20 || error("Nr must be >= 20.")
+
+    CHc = CH[channel]
+    m1, m2 = CHc.m
+    ER = sqrt(m1^2 + k_test^2) + sqrt(m2^2 + k_test^2)
+    etaP = eta_parity_CF(qn, CHc)
+    ih_base = selected_helicities_CF(IH, channel, lambdas)
+    isempty(ih_base) && error("No selected helicities for channel $channel.")
+    lambda_vals = [helicity_value_CF(IH[h]) for h in ih_base]
+    nH = length(ih_base)
+    xs, coeff = precompute_radial_kernel_CF(lambda_vals, J)
+
+    Vc, Gc, II, IHn, Dim = fVGI(ComplexF64(ER) + CF_PARAM.eps, qn, SYS, IA, CH, deepcopy(IH), VVertex, CF_PARAM.lRm_CF)
+    T = inv(II - Vc * Gc) * Vc
+    TG = T * Gc
+    ih = selected_helicities_CF(IHn, channel, lambdas)
+    length(ih) == nH || error("Helicity number changed in asymptotic check.")
+
+    dim_list = Int[]
+    ihloc = Int[]
+    q_list = Float64[]
+    for c in 1:nH, d in IHn[ih[c]].Dimb:IHn[ih[c]].Dime
+        Dim[1, d] == ih[c] || error("Dimension/helicity mismatch.")
+        push!(dim_list, d)
+        push!(ihloc, c)
+        push!(q_list, momentum_from_dim_CF(d, Dim, IHn, SYS, CH))
+    end
+    nDim = length(dim_list)
+
+    r_fm = collect(range(r_min, r_max, length=Nr))
+    r_nat = r_fm ./ HBARC
+    results = NamedTuple[]
+
+    println()
+    println("============================================================")
+    println("        CF SCATTERING-WAVE ASYMPTOTIC CHECK")
+    println("============================================================")
+    @printf("k_test = %.8f GeV,  E_test = %.8f GeV\n", k_test, ER)
+    println("Diagnostic norm: sqrt(sum_f n_f |TGF_fi|^2), using un-hatted J^P amplitudes")
+    println("------------------------------------------------------------")
+
+    for i in 1:nH
+        IHi = IHn[ih[i]]
+        fi = fixed_parity_f_CF(IHi)
+        A = zeros(Float64, Nr)
+        Sfi = zeros(ComplexF64, nH, Nr)
+        for ir in 1:Nr
+            r = r_nat[ir]
+            Fci_hat = zeros(ComplexF64, nDim)
+            for jd in 1:nDim
+                c = ihloc[jd]
+                c == i || continue
+                IHc = IHn[ih[c]]
+                rawFi = free_radial_kernel_CF(q_list[jd] * r, xs, coeff, i)
+                Fci_hat[jd] = free_parity_endpoint_factor_CF(IHc, IHi, etaP) * rawFi
+            end
+
+            norm2 = 0.0
+            for f in 1:nH
+                IHf = IHn[ih[f]]
+                ff = fixed_parity_f_CF(IHf)
+                dim_f = IHf.Dime
+                Dim[3, dim_f] == 1 || continue
+                TGF_hat = 0.0 + 0.0im
+                for jd in 1:nDim
+                    TGF_hat += TG[dim_f, dim_list[jd]] * Fci_hat[jd]
+                end
+                TGF = TGF_hat / (ff * fi)
+                Sfi[f, ir] = TGF
+                norm2 += physical_helicity_multiplicity_CF(IHf) * abs2(TGF)
+            end
+            A[ir] = sqrt(norm2)
+        end
+
+        rA = r_fm .* A
+        itail = max(2, Int(floor((1.0 - tail_fraction) * Nr)) + 1)
+        tail_inds = itail:Nr
+        imid1 = max(1, Int(floor((1.0 - 2tail_fraction) * Nr)) + 1)
+        mid_inds = imid1:(itail-1)
+        mid_rms = sqrt(sum(abs2, A[mid_inds]) / length(mid_inds))
+        tail_rms = sqrt(sum(abs2, A[tail_inds]) / length(tail_inds))
+        decay_ratio = mid_rms > 0 ? tail_rms / mid_rms : NaN
+        @printf("lambda_i = %+6.2f   tail/mid = %.6e\n", lambda_vals[i], decay_ratio)
+        push!(results, (i=i, lambda=lambda_vals[i], r_fm=copy(r_fm), A=A, rA=rA, Sfi=Sfi, mid_rms=mid_rms, tail_rms=tail_rms, decay_ratio=decay_ratio))
+    end
+
+    println("============================================================")
+    println()
+    return (k_test=Float64(k_test), ER_test=Float64(real(ER)), J=Float64(J), etaP=etaP, r_fm=r_fm, lambda_vals=lambda_vals, results=results)
+end
+#------------------------------------------------------------------------------------------
+# Correlation function
+function correlation_function_J(cache; R_source::Real=1.0, remove_grid_artifact::Bool=true, k_artifact_min::Real=0.05, artifact_width::Real=0.015)
+    r = cache.r_grid
+    S = gaussian_source_CF.(r, R_source / HBARC)
+    normS = 4pi * trapz_CF(r, r .^ 2 .* S)
+    abs(normS - 1.0) > 1e-3 && @warn("Gaussian source is not sufficiently covered: R=$R_source fm, integrated norm=$normS. Increase r_max.")
+    weight = r .^ 2 .* S
+    prefactor = 4pi * (2cache.J + 1)
+    C = Vector{Float64}(undef, length(cache.kon_vals))
+    w1 = cache.wminus + cache.wplus
+    @inbounds for ie in eachindex(C)
+        Delta = cache.w0 .* cache.delta0_table[ie] .+ w1 .* cache.delta1_table[ie]
+        C[ie] = 1 + prefactor * trapz_CF(r, weight .* Delta)
+    end
+    if remove_grid_artifact
+        C = interpolate_CF_artifact(cache.kon_vals, C, cache.q_grid; k_artifact_min=k_artifact_min, width=artifact_width)
+    end
+    return (cache.kon_vals, C, cache.Ton_abs, cache.Ton_re, cache.Ton_im)
+end
 
 
 end
