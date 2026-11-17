@@ -1,21 +1,34 @@
-MIT License
+PROPRIETARY SOFTWARE LICENSE
 
-Copyright (c) 2024 junhe1979
+Copyright (c) 2026 [Your Full Name]. All rights reserved.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+1. OWNERSHIP
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+This software, including its source code, algorithms, numerical implementations, models, documentation, and associated materials, is the intellectual property of the copyright holder.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+2. RESTRICTIONS
+
+Unless explicitly authorized in writing by the copyright holder, no person or organization is permitted to:
+
+- Copy, reproduce, redistribute, or publish the source code.
+- Modify, adapt, or create derivative software based on this software.
+- Incorporate this software or its substantial portions into another software project.
+- Distribute, sublicense, sell, or commercially exploit this software.
+- Present this software, its implementation, or its original code as their own work.
+
+3. ACADEMIC AND RESEARCH USE
+
+Access to this repository or installation of this package does not automatically grant permission to use the software in independent research or publications.
+
+Any research use, publication, or redistribution requires prior written authorization from the copyright holder. Appropriate acknowledgment and citation must be provided as specified in the authorization.
+
+4. NO TRANSFER OF RIGHTS
+
+Access to the repository, package, or associated documentation does not transfer ownership or intellectual property rights.
+
+5. PERMISSION
+
+Any permission beyond the scope explicitly granted in writing must be obtained from the copyright holder.
+
+For licensing inquiries, please contact:
+[Your Email Address]
