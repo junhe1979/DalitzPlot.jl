@@ -63,8 +63,9 @@ several subpackages):
 > consider using specialized tools designed for that purpose. 
 
 If you use this package in your research, please consider citing the following publications:
-- Jun He, *Physical Review C* **112** (2025), 015205.
-- Jun He, *Chinese Physics Letters* **43** (2026), 090201.
+
+- Jun He, Physical Review C 112 (2025), 015205.
+- Jun He, Chinese Physics Letters 43 (2026), 090201.
 
 ## Installation
 
