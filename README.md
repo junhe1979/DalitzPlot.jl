@@ -54,17 +54,18 @@ several subpackages):
 -   `FR`: Focuses on Feynman rules. This subpackage includes functions
     for calculating spinor or polarized vectors with momentum and spin,
     gamma matrices, and other related calculations.
--   `qBSE`: Refers to the Quasipotential Bethe-Salpeter Equation. This
-    subpackage provides tools for solving the Bethe-Salpeter equation,
-    which is used in the study of bound states in quantum field theory.
-    This is a specific theoretical model, and those not interested can
-    disregard it. For those interested, please refer to `doc/qBSE.md`.
+-   `qBSE`:  Provides tools for solving the quasipotential Bethe-Salpeter equation, which is used in the study of bound states in quantum field theory. Users interested in this subpackage or its theoretical framework are welcome to contact the author for further information. Those who are not interested in these functionalities can simply disregard this subpackage.
 -   `AUXs`: A collection of auxiliary functions designed to support and
     enhance the functionality of the main subpackages.
 
 > **Note**: This package is primarily intended for theoretical and
 > phenomenological studies. For experimental data analysis, please
-> consider using specialized tools designed for that purpose.
+> consider using specialized tools designed for that purpose. 
+
+If you use this package in your research, please consider citing the following publications:
+
+- Jun He, *Physical Review C* **112** (2025), 015205.
+- Jun He, *Chinese Physics Letters* **43** (2026), 090201.
 
 ## Installation
 
